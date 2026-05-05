@@ -45,7 +45,8 @@ import { ExternalSchemaError }   from '../errors/ExternalSchemaError.js';
 import { readFile, writeFile }   from 'node:fs/promises';
 import { resolve, basename, dirname as pathDirname, join } from 'node:path';
 import { JsonLdGraph }           from '../viz/JsonLdGraph.js';
-import { GraphRenderer }         from '../viz/GraphRenderer.js';
+import { ChunkBuilder }          from '../viz/ChunkBuilder.js';
+import { SigmaGraphRenderer }    from '../viz/SigmaGraphRenderer.js';
 
 // ---------------------------------------------------------------------------
 // Package metadata
@@ -227,17 +228,18 @@ export function buildCli(): Command {
 
   program
     .command('viz')
-    .description('Render a squashage JSON-LD output file as a standalone interactive HTML graph')
+    .description('Render a squashage JSON-LD as a chunked interactive graph (sigma + WebGL)')
     .requiredOption('--in <path>', 'Path to a squashage-produced JSON-LD file')
-    .option('--out <path>', 'Output HTML path (default: <basename>.html next to --in)')
+    .option('--out <dir>', 'Output directory (default: <basename>/ next to --in)')
     .option('--title <string>', 'HTML page title (default: Squashage — <basename>)')
-    .action(async (opts: { in: string; out?: string; title?: string }): Promise<void> => {
-      const inPath  = resolve(opts.in);
-      const inBase  = basename(inPath, '.jsonld');
-      const outPath = opts.out !== undefined
+    .option('--iterations <n>', 'ForceAtlas2 iterations (default: 800 for >5k nodes, else 400)')
+    .action(async (opts: { in: string; out?: string; title?: string; iterations?: string }): Promise<void> => {
+      const inPath = resolve(opts.in);
+      const inBase = basename(inPath, '.jsonld');
+      const outDir = opts.out !== undefined
         ? resolve(opts.out)
-        : join(pathDirname(inPath), `${inBase}.html`);
-      const title   = opts.title ?? `Squashage — ${inBase}`;
+        : join(pathDirname(inPath), inBase);
+      const title  = opts.title ?? `Squashage — ${inBase}`;
 
       let doc: unknown;
       try {
@@ -250,19 +252,24 @@ export function buildCli(): Command {
         return;
       }
 
-      const payload = await JsonLdGraph.fromJsonLd(doc);
-      const html    = GraphRenderer.render(payload, { title });
+      const payload            = await JsonLdGraph.fromJsonLd(doc);
+      const explicitIterations = opts.iterations !== undefined ? Number(opts.iterations) : NaN;
+      const iterations         = Number.isFinite(explicitIterations) && explicitIterations > 0
+        ? explicitIterations
+        : (payload.nodes.length > 5000 ? 800 : 400);
 
       try {
-        await writeFile(outPath, html, 'utf-8');
+        const manifest = await ChunkBuilder.build(payload, { outDir, iterations });
+        const html     = SigmaGraphRenderer.render({ title, indexUrl: './index.json' });
+        await writeFile(join(outDir, `${inBase}.html`), html, 'utf-8');
+        process.stdout.write(`viz: wrote ${manifest.length.toString()} chunks + index.json + HTML wrapper to ${outDir}\n`);
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
-        process.stderr.write(`viz: cannot write ${outPath}: ${msg}\n`);
+        process.stderr.write(`viz: cannot write to ${outDir}: ${msg}\n`);
         _exitCode = 1;
         return;
       }
 
-      process.stdout.write(`viz: wrote ${html.length.toString()} bytes to ${outPath}\n`);
       _exitCode = 0;
     });
 

@@ -9,18 +9,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- `JsonLdGraph.fromJsonLd` (async): expands compacted JSON-LD via `jsonld.expand` before walking, so `@type: @id` CURIE-string references produce edges in the cytoscape demo. Fixes missing edges in `docs/public/examples/aonprd/aonprd.html`.
-- `docs/examples/aonprd.md`: VitePress page embedding the cytoscape demo in an iframe within the site chrome.
-- `docs/usage.md`: Walk-through — end-to-end example from `feat-power-attack.json` input to JSON-LD output via the Pathfinder/aonprd pipeline.
+- `JsonLdGraph.fromJsonLd` (async): expands compacted JSON-LD via `jsonld.expand` before walking, so `@type: @id` CURIE-string references produce edges. Fixes missing edges in the aonprd demo.
+- `src/viz/ChunkBuilder.ts`: build-time partitioner — runs ForceAtlas2 per named graph (canonical `inferSettings`), normalises positions onto a tile grid, bakes node sizes (`degree/3`, capped 2-20), bakes a 16-color categorical palette per chunk, writes `index.json` + `chunks/<slug>.json` with positions / sizes / colors frozen.
+- `src/viz/SigmaGraphRenderer.ts`: small HTML wrapper (~170 KB) embedding the vendored sigma + graphology bundle. Init script fetches `index.json` then progressively merges chunks into a graphology Graph in ascending node-count order; sigma renders incrementally via WebGL. Hover/select reducers hue-shift the focus node + neighbours toward the rose accent (size unchanged) and hide non-incident edges; labels render with a 4-px dark halo for readability against any cluster color.
+- `scripts/bundle-sigma.mjs`: produces `src/viz/vendor/sigmaBundle.ts` (sigma + graphology IIFE bundle, ~155 KB minified) via esbuild.
+- `docs/examples/aonprd.md`: VitePress page embedding the chunked demo via iframe.
+- `docs/usage.md`: end-to-end walk-through against the Pathfinder/aonprd fixture.
 - `docs/index.md` switched from `layout: home` to `layout: doc` so the sidebar is visible on the home page.
 - Sidebar "Demo" and "Walk-through" entries in `docs/.vitepress/config.ts`.
 - `@types/jsonld` stub extended with `expand()` method declaration.
 
 ### Changed
 
+- **Visualisation engine replaced**: cytoscape + cytoscape-fcose (canvas, single 18 MB inlined HTML, runtime layout) → sigma 3 + graphology + graphology-layout-forceatlas2 (WebGL, multi-file chunked artifacts, layout baked at build time). Cold load on the full AON corpus (13 089 nodes / 40 078 edges) goes from "never finishes" to <5 s even in hidden tabs; vendor bundle 760 KB → 155 KB; HTML wrapper 18 MB → ~170 KB.
+- `viz` CLI command emits a directory (`<basename>/<basename>.html`, `<basename>/index.json`, `<basename>/chunks/*.json`) instead of a single inline-everything HTML file. New `--iterations <n>` flag for ForceAtlas2 override.
+- Streaming kicks off via `setTimeout` rather than `requestAnimationFrame` so it fires regardless of tab visibility (rAF callbacks are throttled / never fire in hidden Chrome tabs).
 - All Bulbapedia/Torreya/Pokémon vocabulary references replaced with Pathfinder/aonprd vocabulary throughout source TSDoc examples, unit-test fixture class names, integration-test records, documentation prose, and config snippets. The canonical example is now the aonprd Pathfinder fixture.
 - `squashage.config.torreya.example.json` deleted.
 - `scripts/create-type-stubs.js`: `@types/jsonld` stub updated with `expand()` declaration.
+
+### Removed
+
+- `src/viz/GraphRenderer.ts`, `src/viz/vendor/cytoscapeBundle.ts`, `src/viz/vendor/cytoscapeFcoseBundle.ts`, `scripts/refresh-viz-vendor.js`, `tests/unit/viz/GraphRenderer.test.ts`.
+- `cytoscape` and `cytoscape-fcose` devDependencies; replaced with `sigma`, `graphology`, `graphology-layout-forceatlas2`, `graphology-types`, `esbuild`.
 
 ## [0.1.0-beta.1] - 2026-05-04
 
