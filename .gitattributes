@@ -1,0 +1,7 @@
+# Linguist hints — these are demo/build artefacts, not authored project source.
+# Excluding them keeps GitHub's language breakdown reflecting the TypeScript
+# library, not the size of the embedded WebGL viewer or its baked corpus data.
+docs/public/examples/**/*.html linguist-vendored=true
+docs/public/examples/**/*.jsonld linguist-vendored=true
+docs/public/examples/**/chunks/*.json linguist-generated=true
+src/viz/vendor/*.ts linguist-vendored=true

@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- `.gitattributes`: demo HTML wrapper, baked JSON-LD payload, per-graph chunk JSON, and the inlined sigma+graphology vendor bundle marked `linguist-vendored` / `linguist-generated` so GitHub's language detector reflects the TypeScript library, not the size of the embedded WebGL viewer or its corpus data.
+
 ## [0.2.0] - 2026-05-05
 
 ### Added
