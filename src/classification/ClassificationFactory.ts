@@ -36,6 +36,8 @@ import type { AjvClassEntryInterface }             from './AjvClassifier.js';
 import { OntologyClassifier }                      from './tasks/OntologyClassifier.js';
 import { ConflictResolver }                        from './tasks/ConflictResolver.js';
 import type { ConflictResolverConfigInterface }    from './tasks/ConflictResolver.js';
+import { ShaclShapeClassifier }                    from './tasks/ShaclShapeClassifier.js';
+import type { ShaclShapeClassifierConfigInterface } from './tasks/ShaclShapeClassifier.js';
 import { OutputConfigError }                       from '../errors/OutputConfigError.js';
 import { Logger }                                  from '../modules/logger/logger.js';
 
@@ -132,6 +134,11 @@ export interface ClassificationConfigInterface {
   readonly ontology?:   { readonly classes: Readonly<Record<string, string>> } | undefined;
   /** Config for `classify:conflict`. All three fields are required when present. */
   readonly conflict?:   ConflictResolverConfigInterface | undefined;
+  /**
+   * Config for `classify:shacl-shape`. Sits between structural (priority 30)
+   * and ontology (priority 50) in the cascade by default (priority 45).
+   */
+  readonly shaclShape?: ShaclShapeClassifierConfigInterface | undefined;
 }
 
 /**
@@ -161,6 +168,8 @@ export interface ClassifierInstancesInterface {
   readonly 'classify:ontology'?:   OntologyClassifier   | undefined;
   /** Instantiated `classify:conflict` task, when `config.conflict` is present. */
   readonly 'classify:conflict'?:   ConflictResolver     | undefined;
+  /** Instantiated `classify:shacl-shape` task, when `config.shaclShape` is present. */
+  readonly 'classify:shacl-shape'?: ShaclShapeClassifier | undefined;
 }
 
 // ── ClassificationFactory ─────────────────────────────────────────────────────
@@ -319,6 +328,16 @@ export class ClassificationFactory {
         classCount: Object.keys(config.ontology.classes).length,
       });
       result['classify:ontology'] = new OntologyClassifier({ classes: config.ontology.classes });
+    }
+
+    // ── classify:shacl-shape ───────────────────────────────────────────────
+    if (config.shaclShape !== undefined) {
+      logger.debug('build', 'Instantiating ShaclShapeClassifier', {
+        targetId,
+        shapesFrom: config.shaclShape.shapesFrom,
+        priority:   config.shaclShape.priority ?? 45,
+      });
+      result['classify:shacl-shape'] = ShaclShapeClassifier.create(config.shaclShape, schemasBase);
     }
 
     // ── classify:conflict ──────────────────────────────────────────────────

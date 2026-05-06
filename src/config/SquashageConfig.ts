@@ -158,6 +158,20 @@ const TARGET_SCHEMA = {
             evidence:   { type: 'boolean' },
           },
         },
+        shaclShape: {
+          type: 'object',
+          additionalProperties: false,
+          required: ['shapesFrom'],
+          properties: {
+            shapesFrom: {
+              oneOf: [
+                { type: 'string', const: 'ontology' as const },
+                { type: 'string', minLength: 1 },
+              ],
+            },
+            priority: { type: 'integer', minimum: 0 },
+          },
+        },
       },
     },
     quarantine:     { type: 'object' },
@@ -286,6 +300,7 @@ const CLASS_PROPOSERS = new Set<string>([
   'classify:structural',
   'classify:rules',
   'classify:schema',
+  'classify:shacl-shape',
 ]);
 
 /**
@@ -295,12 +310,13 @@ const CLASS_PROPOSERS = new Set<string>([
  * @internal
  */
 const CLASSIFY_TASK_CONFIG_KEYS: Readonly<Record<string, string>> = {
-  'classify:source':     'source',
-  'classify:structural': 'structural',
-  'classify:rules':      'rules',
-  'classify:schema':     'schemas',
-  'classify:ontology':   'ontology',
-  'classify:conflict':   'conflict',
+  'classify:source':       'source',
+  'classify:structural':   'structural',
+  'classify:rules':        'rules',
+  'classify:schema':       'schemas',
+  'classify:ontology':     'ontology',
+  'classify:conflict':     'conflict',
+  'classify:shacl-shape':  'shaclShape',
 };
 
 /**

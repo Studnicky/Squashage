@@ -279,6 +279,9 @@ export class SquashageOrchestrator {
       if (pipelineSet.has('classify:conflict') && classifierInstances['classify:conflict'] !== undefined) {
         registry.register('classify:conflict', classifierInstances['classify:conflict'].execute);
       }
+      if (pipelineSet.has('classify:shacl-shape') && classifierInstances['classify:shacl-shape'] !== undefined) {
+        registry.register('classify:shacl-shape', classifierInstances['classify:shacl-shape'].execute);
+      }
 
       logger.info('run', 'Classifier tasks registered', { target, tasks: Object.keys(classifierInstances) });
     }

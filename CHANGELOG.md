@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - json-tology integration scaffold under `targets.<id>.ontology.engine: "json-tology"`. New `JsonTologyOntology` class wraps json-tology's JsonTology + OntologyBuilder, exposing `classMap()`, `tbox()`, `shacl()`, `toQuads()` for downstream classification and emission.
 - New pipeline task `ontology:emit` writes auto-derived OWL TBox + SHACL shapes to configured paths when the json-tology engine is active.
 - `state.context.jt` (optional) gives plugins access to the typed ABox projection (`jt.toQuads(schemaId, instance)`) for opt-in adoption.
+- New `classify:shacl-shape` classifier task (`ShaclShapeClassifier`). Validates each record's property-projected ABox against loaded SHACL NodeShapes using `rdf-validate-shacl` and emits one proposal per conforming shape. Configurable via `classification.shaclShape.shapesFrom` (`"ontology"` for json-tology-derived shapes or a Turtle file path) and `classification.shaclShape.priority` (default 45, sits between schema classifier at 30 and ontology classifier at 50). Config schema updated; cross-validation and `classify:shacl-shape` task registration added to orchestrator.
+- Documentation page `docs/usage/shacl-shape-classifier.md` covering problem framing, state machine, full config worked examples (ontology and file-path modes), and edge cases.
 
 ## [0.4.0] - 2026-05-06
 
