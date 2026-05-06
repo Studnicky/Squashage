@@ -134,7 +134,7 @@ TaskRegistry.register('aonprd:squash', async (next, state) => {
 Open [`docs/public/examples/aonprd/aonprd.html`](docs/public/examples/aonprd/aonprd.html) in
 any browser to see the package's JSON-LD output rendered as an interactive graph.
 Nodes are coloured by RDF class, edges show object-property links, and clicking
-a node reveals its properties in the sidebar. The file runs entirely offline —
+a node reveals its properties in the sidebar. The file runs entirely offline ,
 no network access, no Node.js, no `node_modules` required at display time.
 
 To rebuild the demo from the fixture data:

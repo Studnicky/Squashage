@@ -1,7 +1,7 @@
 {
   "name": "squashage",
   "version": "0.3.0",
-  "description": "Graph reconstitution pipeline — squashes classified JSON records into deterministic RDF (Turtle, TriG, JSON-LD, N-Triples, N-Quads).",
+  "description": "Graph reconstitution pipeline; squashes classified JSON records into deterministic RDF (Turtle, TriG, JSON-LD, N-Triples, N-Quads).",
   "type": "module",
   "bin": {
     "squashage": "./dist/cli/cli.js"

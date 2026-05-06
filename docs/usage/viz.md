@@ -17,9 +17,9 @@ Takes a JSON-LD file, produces a self-contained HTML document with sigma+graphol
 ## What you get
 
 A two-pane layout:
-- **Graph canvas** — sigma renders nodes and edges. Pan, zoom, click.
-- **Detail sidebar** — click a node to see its IRI, class, and all outgoing predicates.
-- **Node list** — alphabetical index of all nodes, grouped by class. Click to focus.
+- **Graph canvas**: sigma renders nodes and edges. Pan, zoom, click.
+- **Detail sidebar**: click a node to see its IRI, class, and all outgoing predicates.
+- **Node list**: alphabetical index of all nodes, grouped by class. Click to focus.
 
 ## How it works
 
@@ -27,7 +27,7 @@ The viz build happens in two stages: (1) `ChunkBuilder` reads the JSON-LD, deser
 
 ## Color scheme
 
-Node color is derived from the class IRI via a hash-to-hue function. Same class IRI → same color across every graph you render with the same version of squashage. The mapping is not configurable and not intended to be — consistency across builds matters more than custom palettes.
+Node color is derived from the class IRI via a hash-to-hue function. Same class IRI → same color across every graph you render with the same version of squashage. The mapping is not configurable and not intended to be; consistency across builds matters more than custom palettes.
 
 Edge color comes from the named graph IRI via the same mechanism. If you have three named graphs, you get three distinct edge colors.
 
@@ -45,7 +45,7 @@ The same node in the node list is highlighted when you click it on the canvas.
 
 ## iframe embedding
 
-The output file is self-contained — no external dependencies. Embed it in another page via `<iframe>`:
+The output file is self-contained; no external dependencies. Embed it in another page via `<iframe>`:
 
 ```html
 <iframe
@@ -68,7 +68,7 @@ The file is an HTML document, not a VitePress component. It works anywhere a bro
 
 ## Vendor bundle
 
-The sigma+graphology bundle is vendored into the package at `src/viz/vendor/sigmaBundle.ts`. It's inlined into every generated HTML file at build time. This is intentional — the point is offline operation.
+The sigma+graphology bundle is vendored into the package at `src/viz/vendor/sigmaBundle.ts`. It's inlined into every generated HTML file at build time. This is intentional; the point is offline operation.
 
 To refresh the vendor bundle when a new sigma version ships:
 
@@ -82,9 +82,9 @@ This runs `scripts/refresh-viz-vendor.js`, which downloads the current sigma UMD
 
 ## Demo
 
-The Pathfinder/AONPRD graph lives at [examples/aonprd](../examples/aonprd) — built from the fixture in `tests/e2e/aonprd/` via `npm run viz:demo`.
+The Pathfinder/AONPRD graph lives at [examples/aonprd](../examples/aonprd); built from the fixture in `tests/e2e/aonprd/` via `npm run viz:demo`.
 
 ## Related
 
-- [Getting started](../getting-started) — running viz:demo for the first time
-- [Output](./output) — JSON-LD output that feeds into viz
+- [Getting started](../getting-started); running viz:demo for the first time
+- [Output](./output); JSON-LD output that feeds into viz

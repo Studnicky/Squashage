@@ -10,7 +10,7 @@ Squashage
                                                            rdfxml + n3: deferred; no maintained streaming serializer on npm)
 ```
 
-RDF/JS is the **internal canonical product** of the build — the shape every
+RDF/JS is the **internal canonical product** of the build; the shape every
 plugin emits into and the serializer reads from. It is not the output. The
 output is the file. To load the file into a graph store, hand it to
 downstream graph-store loaders separately; Squashage does not load stores.
@@ -84,7 +84,7 @@ factory and dataset come from `src/rdf/DataFactory.ts` and
 `src/rdf/Dataset.ts` (v0.x backed by `@rdfjs/data-model` and
 `@rdfjs/dataset`); convenience builders come from `src/rdf/GraphBuilder.ts`
 (vendored from semantics/rdf-builder). Plugins do not write Turtle,
-JSON-LD, or any other format directly — they emit quads, and the finalize
+JSON-LD, or any other format directly; they emit quads, and the finalize
 step serializes the canonical dataset to the configured output file via
 `src/rdf/Serializer.ts`.
 
@@ -100,13 +100,13 @@ the rationale and the `ClassificationProposalInterface` /
 ### File Output
 
 The output is a single serialized RDF file in one of the formats
-squashage's `src/rdf/Serializer.ts` supports. Turtle, TriG, N-Triples, N-Quads, JSON-LD are supported now. RDF/XML and N3 output are deferred — no maintained streaming serializer exists on npm and that is not Squashage's problem to solve. Format defaults from the file extension via
+squashage's `src/rdf/Serializer.ts` supports. Turtle, TriG, N-Triples, N-Quads, JSON-LD are supported now. RDF/XML and N3 output are deferred; no maintained streaming serializer exists on npm and that is not Squashage's problem to solve. Format defaults from the file extension via
 `src/rdf/Formats.ts`.
 
 A target must declare an `output` block. To produce more than one file,
 re-run the build with a different `--out`. To translate between formats
 or load into a graph store, use any RDF format converter or graph-store
-loader of your choice on the produced file — neither is squashage's
+loader of your choice on the produced file; neither is squashage's
 job. See
 `src/schemas/output.schema.json` and `src/rdf/Serializer.ts` define the output interface and configuration.
 
@@ -145,11 +145,11 @@ per-record pipeline registers no failure and the build exit code stays
 `0`. Quarantine artifacts on disk are how the caller learns which
 records were rejected. Exit codes:
 
-- `0` — every record either projected cleanly or landed in quarantine
+- `0`: every record either projected cleanly or landed in quarantine
   gracefully.
-- `1` — a per-record task threw, or `rdfjs:finalize` threw (output,
+- `1`: a per-record task threw, or `rdfjs:finalize` threw (output,
   validation, atomic-write).
-- `2` — config / schema / startup error before any record processed.
+- `2`: config / schema / startup error before any record processed.
 
 ## Implementation History
 

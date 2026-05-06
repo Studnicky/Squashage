@@ -9,7 +9,7 @@ One concrete end-to-end example from raw JSON to interactive RDF graph. The sour
 
 ---
 
-## Before — the input
+## Before; the input
 
 ```json
 {
@@ -29,13 +29,13 @@ One concrete end-to-end example from raw JSON to interactive RDF graph. The sour
 }
 ```
 
-This is what an upstream tool (a scraper, an API client, anything) produced. Squashage does not care which tool — only that the record carries `_source` metadata for reproducibility.
+This is what an upstream tool (a scraper, an API client, anything) produced. Squashage does not care which tool; only that the record carries `_source` metadata for reproducibility.
 
 Field breakdown:
 
-- `_type` — the discriminator the classifier reads. Every structural, rules, schema, and ontology predicate in the cascade runs against this value.
-- `_source.url` — where prefix derivation gets the instance namespace. `https://2e.aonprd.com/` → instance base `https://squashage.dev/instance/aonprd/`.
-- `level`, `rarity`, `traits`, `action_cost` — structural fields that become RDF predicates in the output graph.
+- `_type`: the discriminator the classifier reads. Every structural, rules, schema, and ontology predicate in the cascade runs against this value.
+- `_source.url`: where prefix derivation gets the instance namespace. `https://2e.aonprd.com/` → instance base `https://squashage.dev/instance/aonprd/`.
+- `level`, `rarity`, `traits`, `action_cost`; structural fields that become RDF predicates in the output graph.
 
 ---
 
@@ -112,7 +112,7 @@ Each pipeline step:
 | `classify:rules` | Runs decision-table rules over the same predicate language; emits `feat` at higher priority. |
 | `classify:ontology` | Checks proposed classNames against the ontology map; rejects unknowns. |
 | `classify:conflict` | Picks the winner by `priority` desc then `className` lex asc; routes ties to quarantine. |
-| `aonprd:squash` | User plugin — emits RDF/JS quads into the shared dataset. |
+| `aonprd:squash` | User plugin; emits RDF/JS quads into the shared dataset. |
 | `rdfjs:finalize` | Serializes the canonical dataset to JSON-LD; runs RDFC-1.0 canonicalization. |
 
 ---
@@ -166,11 +166,11 @@ TaskRegistry.register('aonprd:squash', async (next, state) => {
 });
 ```
 
-`state.context.prefixes` carries derived IRIs — squashage resolves `_source.url` into instance / graph / vocabulary base IRIs so the plugin never hardcodes a domain.
+`state.context.prefixes` carries derived IRIs; squashage resolves `_source.url` into instance / graph / vocabulary base IRIs so the plugin never hardcodes a domain.
 
 ---
 
-## After — the output
+## After; the output
 
 The relevant slice of `docs/public/examples/aonprd/aonprd.jsonld` for the Power Attack entity:
 
@@ -204,11 +204,11 @@ The relevant slice of `docs/public/examples/aonprd/aonprd.jsonld` for the Power 
 
 What each field shows:
 
-- **`@id`** — derived from `_source.url` via `PrefixResolver`. No IRI was hardcoded; the pipeline computed it.
-- **`@type`** — the classifier's winning `className` mapped to its ontology class IRI.
-- **`aonprd:rarity`** — declared `@type: @id` in the context because every rarity value is a named node, not a literal. Auto-inferred by `JsonldContext.build`.
-- **`aonprd:level`** — typed as `xsd:integer` because the source JSON value was a number. Auto-inferred.
-- **`aonprd:trait`** — containerised as `@set` because the source JSON value was an array. Auto-inferred.
+- **`@id`**: derived from `_source.url` via `PrefixResolver`. No IRI was hardcoded; the pipeline computed it.
+- **`@type`**: the classifier's winning `className` mapped to its ontology class IRI.
+- **`aonprd:rarity`**: declared `@type: @id` in the context because every rarity value is a named node, not a literal. Auto-inferred by `JsonldContext.build`.
+- **`aonprd:level`**: typed as `xsd:integer` because the source JSON value was a number. Auto-inferred.
+- **`aonprd:trait`**: containerised as `@set` because the source JSON value was an array. Auto-inferred.
 
 ---
 
@@ -220,7 +220,7 @@ What each field shows:
 4. **Squasher** emitted 6 quads: `rdf:type`, `name`, `level`, `rarity`, `trait`, `actionCost`.
 5. **RDFC-1.0 canonicalization** normalized blank node labels and quad order.
 6. **JSON-LD compaction** applied the auto-built `@context`, collapsed the dataset into a single file.
-7. **Output report** written to `out/aonprd.jsonld` — 0 quarantine artifacts, exit code 0.
+7. **Output report** written to `out/aonprd.jsonld`; 0 quarantine artifacts, exit code 0.
 
 ---
 
@@ -232,6 +232,6 @@ See the full Pathfinder/AONPRD fixture rendered as an interactive cytoscape grap
 
 ## Where to look next
 
-- [Architecture](./architecture) — pipeline phases, package boundaries, output contract
-- [Classifier engines](./classification-engines) — the six task classes, the predicate language
-- [Architecture](./architecture) — implementation record and open work
+- [Architecture](./architecture); pipeline phases, package boundaries, output contract
+- [Classifier engines](./classification-engines); the six task classes, the predicate language
+- [Architecture](./architecture); implementation record and open work

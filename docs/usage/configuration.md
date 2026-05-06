@@ -7,7 +7,7 @@ title: Configuration
 
 The config is a JSON file. Load it with `squashage build --config squashage.config.json`. Schema source of truth: `src/schemas/squashage-config.schema.json`.
 
-Copy `squashage.config.example.json` as a starting point — the unprefixed file is gitignored so you don't accidentally commit credentials.
+Copy `squashage.config.example.json` as a starting point; the unprefixed file is gitignored so you don't accidentally commit credentials.
 
 ## Top-level shape
 
@@ -40,24 +40,24 @@ An object whose keys are target names (e.g. `"aonprd"`) and values are target co
   input:          string;            // required
   pipeline:       string[];          // required, min 1 item
   output:         OutputConfig;      // required
-  classification: ClassificationConfig;  // optional — needed if classify:* tasks are in pipeline
+  classification: ClassificationConfig;  // optional; needed if classify:* tasks are in pipeline
   concurrency:    number;            // optional, default 1
-  graphs:         { [key: string]: string };  // optional — named graph IRI overrides
-  ontology:       object;            // optional — free-form ontology metadata
-  quarantine:     object;            // optional — quarantine path overrides
+  graphs:         { [key: string]: string };  // optional; named graph IRI overrides
+  ontology:       object;            // optional; free-form ontology metadata
+  quarantine:     object;            // optional; quarantine path overrides
 }
 ```
 
 | Key | Type | Required | Default | Notes |
 |-----|------|----------|---------|-------|
-| `input` | string | yes | — | Path to input directory (resolved relative to `input.basePath`). |
-| `pipeline` | string[] | yes | — | Ordered list of task names. Each must be registered (built-in or plugin). |
-| `output` | OutputConfig | yes | — | See [Output config](#output-config) below. |
-| `classification` | ClassificationConfig | no | — | Required when pipeline includes `classify:*` tasks. |
+| `input` | string | yes |  | Path to input directory (resolved relative to `input.basePath`). |
+| `pipeline` | string[] | yes |  | Ordered list of task names. Each must be registered (built-in or plugin). |
+| `output` | OutputConfig | yes |  | See [Output config](#output-config) below. |
+| `classification` | ClassificationConfig | no |  | Required when pipeline includes `classify:*` tasks. |
 | `concurrency` | integer ≥ 1 | no | `1` | How many records to process in parallel. `ConcurrentPipeline` uses this. |
-| `graphs` | object | no | — | Named-graph IRI overrides. Keys map to task-specific graph names. |
-| `ontology` | object | no | — | Free-form metadata passed to plugins via `state.context`. |
-| `quarantine` | object | no | — | Path overrides for quarantine artifact directories. |
+| `graphs` | object | no |  | Named-graph IRI overrides. Keys map to task-specific graph names. |
+| `ontology` | object | no |  | Free-form metadata passed to plugins via `state.context`. |
+| `quarantine` | object | no |  | Path overrides for quarantine artifact directories. |
 
 ---
 
@@ -176,15 +176,15 @@ Source of truth: `src/schemas/output.schema.json`.
 
 | Key | Type | Required | Default | Notes |
 |-----|------|----------|---------|-------|
-| `kind` | `"file"` | yes | — | Only `"file"` is supported. |
-| `path` | string | yes | — | Output file path. Extension determines format if `format` is omitted. |
-| `format` | enum | no | inferred from extension | One of `turtle`, `trig`, `ntriples`, `nquads`, `jsonld`. RDF/XML and N3 are deferred — no maintained streaming serializer exists on npm. |
+| `kind` | `"file"` | yes |  | Only `"file"` is supported. |
+| `path` | string | yes |  | Output file path. Extension determines format if `format` is omitted. |
+| `format` | enum | no | inferred from extension | One of `turtle`, `trig`, `ntriples`, `nquads`, `jsonld`. RDF/XML and N3 are deferred; no maintained streaming serializer exists on npm. |
 | `mode` | `"dataset"` \| `"stream"` | no | `"dataset"` | `dataset` buffers the full graph before writing; `stream` writes quads as they arrive. Stream mode disables `canonicalize` and `validate`. |
-| `prefixes` | object | no | — | Additional prefix declarations merged into the output context. |
-| `baseIRI` | URI | no | — | Base IRI for relative IRI resolution. |
-| `graph` | URI | no | — | Collapse all quads into this named graph at write time. Required when using a triple-only format (turtle, ntriples) with a target that emits named-graph quads. |
+| `prefixes` | object | no |  | Additional prefix declarations merged into the output context. |
+| `baseIRI` | URI | no |  | Base IRI for relative IRI resolution. |
+| `graph` | URI | no |  | Collapse all quads into this named graph at write time. Required when using a triple-only format (turtle, ntriples) with a target that emits named-graph quads. |
 | `canonicalize` | boolean | no | `false` | Run RDFC-1.0 before writing. Produces byte-identical output across runs. Incompatible with stream mode. |
-| `validate.shapes` | string | no | — | Path to a SHACL shapes graph. Validated by `src/shacl/ShaclGate.ts` before write. On failure: writes quarantine report, skips output file. |
+| `validate.shapes` | string | no |  | Path to a SHACL shapes graph. Validated by `src/shacl/ShaclGate.ts` before write. On failure: writes quarantine report, skips output file. |
 | `dryRun` | boolean | no | `false` | Run the full pipeline including classification and projection; skip writing the output file. |
 | `jsonldContext` | string \| object | no | auto | Compaction context for JSON-LD output. Path string, inline object, or omit to let squashage build one from the quad set. Rejected by cross-validation when `format` is not `jsonld`. |
 
@@ -292,6 +292,6 @@ All classifiers active, SHACL validation, RDFC-1.0 canonicalization, concurrent 
 
 ## Related
 
-- [Pipeline](./pipeline) — how the task queue works
-- [Classifier cascade](./classifier-cascade) — predicate language, per-task behavior
-- [Output](./output) — format details, canonicalization, SHACL gate
+- [Pipeline](./pipeline); how the task queue works
+- [Classifier cascade](./classifier-cascade); predicate language, per-task behavior
+- [Output](./output); format details, canonicalization, SHACL gate

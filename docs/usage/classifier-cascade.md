@@ -15,7 +15,7 @@ The cascade is purely deterministic. Same config + same record = same classifica
 
 | Task | When to use it | Config block |
 |------|---------------|--------------|
-| `classify:source` | Always — marks the record's origin. | `classification.source: true` |
+| `classify:source` | Always; marks the record's origin. | `classification.source: true` |
 | `classify:structural` | Records have a reliable discriminator field (`_type`, `type`, `kind`). | `classification.structural: []` |
 | `classify:rules` | Multi-field conditions (field X AND field Y exists AND field Z matches regex). | `classification.rules: []` |
 | `classify:schema` | You have or can write a JSON Schema per class. | `classification.schemas: []` |
@@ -28,7 +28,7 @@ The cascade is purely deterministic. Same config + same record = same classifica
 
 ## classify:source
 
-Reads the `_source` block from the record. If `_source` is present and valid, emits a `__source__` marker proposal at priority 0. Does not propose a class — just marks the record as traceable.
+Reads the `_source` block from the record. If `_source` is present and valid, emits a `__source__` marker proposal at priority 0. Does not propose a class; just marks the record as traceable.
 
 Config: `"source": true`. No other options.
 
@@ -81,7 +81,7 @@ Same rule shape as structural, but the predicate can compose multiple conditions
 ]
 ```
 
-Priority 20 is higher than structural's 10 — so if both fire, the rules proposal wins.
+Priority 20 is higher than structural's 10; so if both fire, the rules proposal wins.
 
 ---
 
@@ -138,7 +138,7 @@ Resolution order:
 4. If no proposals survive → unknown. `onUnknown` decides: `quarantine` writes to `quarantine/unknown/<id>.json`; `skip` drops the record.
 5. Winner is written to `state.classification`.
 
-Quarantine is graceful. The build doesn't fail when records land there — exit code stays `0`. Check `graphs/<target>/quarantine/` after a build.
+Quarantine is graceful. The build doesn't fail when records land there; exit code stays `0`. Check `graphs/<target>/quarantine/` after a build.
 
 **Edge cases**: If structural proposes `feat` at priority 10 and rules proposes `feat` at priority 20, both for the same record, conflict resolution sees one className (feat) with two distinct priorities. The higher-priority rules proposal wins; the structural proposal is superseded, not a conflict. A true conflict happens when structural and rules both fire for different classes at the same priority: `feat` at 20 and `spell` at 20. Then `onConflict` decides whether to quarantine or pick the lexicographically first one (spell). Unreachable rules (predicates that never evaluate to true for any input record in the dataset) produce zero proposals; these records may land unknown or be caught by structural/schema.
 
@@ -149,9 +149,9 @@ Quarantine is graceful. The build doesn't fail when records land there — exit 
 All structural and rules predicates use JSON Pointer paths (RFC 6901) and a closed operator set defined in `src/schemas/predicate.schema.json`.
 
 Paths:
-- `/field` — top-level field
-- `/nested/field` — nested
-- `/array/0` — array index
+- `/field`: top-level field
+- `/nested/field`: nested
+- `/array/0`: array index
 - `~1` escapes `/`, `~0` escapes `~`
 - Empty pointer `""` is rejected
 
@@ -178,50 +178,50 @@ Paths:
 One predicate per operator:
 
 ```jsonc
-// equals — exact value match
+// equals; exact value match
 { "path": "/_type", "equals": "feat" }
 
-// notEquals — exclude a value
+// notEquals; exclude a value
 { "path": "/_type", "notEquals": "spell" }
 
-// in — set membership
+// in; set membership
 { "path": "/rarity", "in": ["common", "uncommon"] }
 
-// notIn — set exclusion
+// notIn; set exclusion
 { "path": "/rarity", "notIn": ["rare", "unique"] }
 
-// exists — field present and non-null
+// exists; field present and non-null
 { "path": "/level", "exists": true }
 
-// missing — field absent or null
+// missing; field absent or null
 { "path": "/deprecated", "missing": true }
 
-// type — JSON type
+// type; JSON type
 { "path": "/level", "type": "number" }
 
-// regex — pattern match (anchors required)
+// regex; pattern match (anchors required)
 { "path": "/url", "regex": "^https://2e\\.aonprd\\.com/Feats\\.aspx" }
 
-// length — string or array length bounds
+// length; string or array length bounds
 { "path": "/traits", "length": { "gte": 1 } }
 
-// range — numeric range
+// range; numeric range
 { "path": "/level", "range": { "gte": 1, "lte": 20 } }
 
-// all — conjunction
+// all; conjunction
 { "all": [
     { "path": "/_type", "equals": "feat" },
     { "path": "/level", "type": "number" },
     { "path": "/rarity", "exists": true }
 ] }
 
-// any — disjunction
+// any; disjunction
 { "any": [
     { "path": "/_type", "equals": "feat" },
     { "path": "/_type", "equals": "archetype" }
 ] }
 
-// not — negation
+// not; negation
 { "not": { "path": "/_type", "equals": "spell" } }
 ```
 
@@ -240,12 +240,12 @@ Composition works to arbitrary depth:
 }
 ```
 
-Predicates are compiled once at config load. Runtime evaluation is a single switch over the AST — no interpretation overhead per record.
+Predicates are compiled once at config load. Runtime evaluation is a single switch over the AST; no interpretation overhead per record.
 
 ---
 
 ## Related
 
-- [Configuration](./configuration) — how to wire classifiers in the config
-- [Pipeline](./pipeline) — where classification fits in the task queue
-- [Plugins](./plugins) — classifier plugins that emit custom proposals
+- [Configuration](./configuration); how to wire classifiers in the config
+- [Pipeline](./pipeline); where classification fits in the task queue
+- [Plugins](./plugins); classifier plugins that emit custom proposals

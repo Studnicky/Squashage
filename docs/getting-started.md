@@ -22,8 +22,8 @@ npm run viz:demo
 
 This writes two files:
 
-- `docs/examples/aonprd/aonprd.jsonld` — the raw JSON-LD output
-- `docs/examples/aonprd/aonprd.html` — the self-contained interactive graph
+- `docs/examples/aonprd/aonprd.jsonld`: the raw JSON-LD output
+- `docs/examples/aonprd/aonprd.html`: the self-contained interactive graph
 
 Open `aonprd.html` in any browser. No network required.
 
@@ -50,7 +50,7 @@ file is gitignored.
 
 ## Where to look next
 
-- [Architecture](./architecture.md) — pipeline phases, package boundaries, output contract
-- [Classifier engines](./classification-engines.md) — the six task classes, the predicate language, what was considered and rejected
-- [Configuration](./usage/configuration) — full config schema walkthrough
-- [Classifier engines](./classification-engines) — the six task classes and the predicate language
+- [Architecture](./architecture.md); pipeline phases, package boundaries, output contract
+- [Classifier engines](./classification-engines.md); the six task classes, the predicate language, what was considered and rejected
+- [Configuration](./usage/configuration); full config schema walkthrough
+- [Classifier engines](./classification-engines); the six task classes and the predicate language

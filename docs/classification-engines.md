@@ -83,7 +83,7 @@ the report's W3C SHACL `dataset` are written to
 `./graphs/<target>/quarantine/output/validation.report.{txt,ttl}` and
 the destination output file is *not* written.
 
-`SHACLValidator` is constructed without a `factory` option — the
+`SHACLValidator` is constructed without a `factory` option; the
 validator's bundled `defaultEnv` is required (passing only
 `@rdfjs/dataset`'s factory triggers `factory.clownface is not a
 function`). `Dataset` from `@rdfjs/dataset` already implements the
@@ -113,8 +113,8 @@ and to keep future contributors from re-running the same evaluation.
 If a future lane needs any of these, it lands as an *advisory*
 classifier that writes proposals into `quarantine/<bucket>/` for human
 review and never participates in the canonical RDF emission. The
-`SHOULD NOT run in `squashage build`` rule from the original design
-holds: a deterministic config update promotes a proposal, never a
+"SHOULD NOT run in `squashage build`" rule from the original design
+holds; a deterministic config update promotes a proposal, never a
 probabilistic ranker.
 
 ## Embeddings (advisory only)

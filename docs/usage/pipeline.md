@@ -11,33 +11,33 @@ The pipeline is an ordered async middleware queue. Each task receives `(next, st
 type TaskFnInterface<TState> = (next: () => Promise<void>, state: TState) => Promise<void>
 ```
 
-`TState` extends `Record<string, unknown>`. Tasks mutate state directly — the same object reference flows through the entire chain.
+`TState` extends `Record<string, unknown>`. Tasks mutate state directly; the same object reference flows through the entire chain.
 
 ## Pipeline vs ConcurrentPipeline
 
 Two classes:
 
-- `Pipeline` — runs one record at a time, in order.
-- `ConcurrentPipeline` — runs batches of records concurrently, bounded by `concurrency` from the target config.
+- `Pipeline`: runs one record at a time, in order.
+- `ConcurrentPipeline`: runs batches of records concurrently, bounded by `concurrency` from the target config.
 
 The orchestrator picks which one based on `targets[].concurrency`. Default is `1`, which gives sequential `Pipeline` behavior.
 
 **Why batching matters**: A single `Pipeline` executes the full task chain once per record. When `concurrency > 1`, `ConcurrentPipeline` fans the record list across multiple concurrent `pipeline.execute()` calls sharing the same task queue, using a semaphore to cap live executions. This keeps memory footprint bounded while parallelizing I/O-heavy tasks (schema validation, file reads, external lookups). Set `concurrency: 4` to run 4 records through the same pipeline at once; set it to `1` for sequential behavior identical to looping.
 
-**Shared state across concurrent runs**: The underlying `Pipeline` instance is read-only during execution — each concurrent `execute()` call gets its own state closure. However, if you wire a shared HTTP cache, logger, or materialized schema into `context`, all concurrent records see the same instance. This is intentional: caches need to be shared to deduplicate work. Your config responsibility is ensuring any shared resource is thread-safe.
+**Shared state across concurrent runs**: The underlying `Pipeline` instance is read-only during execution; each concurrent `execute()` call gets its own state closure. However, if you wire a shared HTTP cache, logger, or materialized schema into `context`, all concurrent records see the same instance. This is intentional: caches need to be shared to deduplicate work. Your config responsibility is ensuring any shared resource is thread-safe.
 
 ## TaskRegistry
 
 Tasks are registered by name and resolved at pipeline build time. Two modes:
 
-**Static (global default)** — call `TaskRegistry.register('name', fn)` at module load time. The orchestrator picks them up automatically.
+**Static (global default)**: call `TaskRegistry.register('name', fn)` at module load time. The orchestrator picks them up automatically.
 
-**Instance (per-run isolation)** — `new TaskRegistry()` gives an isolated map. Pass it to `new Pipeline(config, registry)`. Tasks registered on the instance don't bleed into other concurrent runs.
+**Instance (per-run isolation)**: `new TaskRegistry()` gives an isolated map. Pass it to `new Pipeline(config, registry)`. Tasks registered on the instance don't bleed into other concurrent runs.
 
 ```ts
 import { TaskRegistry } from 'squashage/registry/TaskRegistry';
 
-// Global registration — plugins self-register at import time
+// Global registration; plugins self-register at import time
 TaskRegistry.register('aonprd:squash', async (next, state) => {
   // ... emit quads ...
   await next();
@@ -48,7 +48,7 @@ Plugin files are loaded dynamically via `TaskRegistry.load('./path/to/plugin.js'
 
 ## state.context
 
-`state.context` is `PipelineContextInterface` — populated by the orchestrator before tasks run. It carries everything a task needs to emit quads:
+`state.context` is `PipelineContextInterface`; populated by the orchestrator before tasks run. It carries everything a task needs to emit quads:
 
 ```ts
 interface PipelineContextInterface {
@@ -56,10 +56,10 @@ interface PipelineContextInterface {
   outDir:   string;           // base output directory
   config:   Record<string, unknown>;  // the full target config object
   factory:  DataFactory;      // RDF/JS term factory (namedNode, literal, quad, ...)
-  dataset:  DatasetCore;      // canonical dataset — every plugin writes quads here
+  dataset:  DatasetCore;      // canonical dataset; every plugin writes quads here
   builder:  GraphBuilder;     // convenience quad-builder with prefix/IRI helpers
   graphs:   Record<string, NamedNode>;  // named-graph IRIs by lane key
-  iri:      NamespaceBuilder; // Proxy — ctx.iri.MyClass → NamedNode for vocabulary IRI
+  iri:      NamespaceBuilder; // Proxy; ctx.iri.MyClass → NamedNode for vocabulary IRI
   output:   OutputConfigInterface;  // resolved output config
   prefixes: PrefixResolutionInterface;  // instances/graphs/vocabulary base IRIs
 }
@@ -67,7 +67,7 @@ interface PipelineContextInterface {
 
 ### `state.context.prefixes`
 
-`PrefixResolver` derives instance, graph, and vocabulary base IRIs from `_source.url`. You don't hardcode a domain — the pipeline computes it:
+`PrefixResolver` derives instance, graph, and vocabulary base IRIs from `_source.url`. You don't hardcode a domain; the pipeline computes it:
 
 ```ts
 {
@@ -77,7 +77,7 @@ interface PipelineContextInterface {
 }
 ```
 
-**Resolution flow**: Given `_source.url = 'https://2e.aonprd.com/Feats.aspx?ID=750'`, the resolver applies a priority cascade: (1) check user override in `targets[].ontology.prefixes`; (2) derive from the URL hostname (here, `2e.aonprd.com` becomes the instances base and target name is slugified into `aonprd`); (3) fall back to synthetic `https://squashage.dev/` bases if derivation fails. The same `(_source.url, config)` pair always produces the same prefix resolution — deterministic and reproducible across runs.
+**Resolution flow**: Given `_source.url = 'https://2e.aonprd.com/Feats.aspx?ID=750'`, the resolver applies a priority cascade: (1) check user override in `targets[].ontology.prefixes`; (2) derive from the URL hostname (here, `2e.aonprd.com` becomes the instances base and target name is slugified into `aonprd`); (3) fall back to synthetic `https://squashage.dev/` bases if derivation fails. The same `(_source.url, config)` pair always produces the same prefix resolution; deterministic and reproducible across runs.
 
 ### `state.context.builder`
 
@@ -107,7 +107,7 @@ interface PipelineStateInterface extends Record<string, unknown> {
 }
 ```
 
-Tasks can attach extra keys — the `Record<string, unknown>` index signature allows it. Use this for inter-task communication that doesn't belong on the canonical fields.
+Tasks can attach extra keys; the `Record<string, unknown>` index signature allows it. Use this for inter-task communication that doesn't belong on the canonical fields.
 
 ## Built-in tasks
 
@@ -122,7 +122,7 @@ Tasks can attach extra keys — the `Record<string, unknown>` index signature al
 | `classify:conflict` | Picks winning class; quarantines ties and unknowns. |
 | `rdfjs:finalize` | Serializes dataset to file; runs canonicalization and SHACL validation. |
 
-## Custom task — minimal example
+## Custom task; minimal example
 
 Registers a squasher plugin that emits one quad per record:
 
@@ -159,15 +159,15 @@ Put this in a file that your config references under `plugins[]`. It self-regist
 
 The pipeline array must be consistent with which tasks exist:
 
-- `json:read` goes first — everything else reads `state.input`.
+- `json:read` goes first; everything else reads `state.input`.
 - `classify:conflict` must come after all class-proposing tasks (`classify:structural`, `classify:rules`, `classify:schema`).
-- `rdfjs:finalize` goes last — it writes the file.
+- `rdfjs:finalize` goes last; it writes the file.
 - Your `squash:*` task goes after `classify:conflict` and before `rdfjs:finalize`.
 
 The config loader cross-validates this at startup and rejects invalid orderings.
 
 ## Related
 
-- [Configuration](./configuration) — how to declare a pipeline in config
-- [Classifier cascade](./classifier-cascade) — what the classify:* tasks do
-- [Plugins](./plugins) — how to write a squasher plugin
+- [Configuration](./configuration); how to declare a pipeline in config
+- [Classifier cascade](./classifier-cascade); what the classify:* tasks do
+- [Plugins](./plugins); how to write a squasher plugin

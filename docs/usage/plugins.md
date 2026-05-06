@@ -20,14 +20,14 @@ The task receives `next` (call it when you're done) and `state` (the pipeline st
 ## What state.context provides
 
 ```ts
-state.context.factory   // RDF/JS DataFactory — namedNode, literal, quad, blankNode
-state.context.dataset   // DatasetCore — the shared dataset; add quads here
-state.context.builder   // GraphBuilder — helpers for common quad patterns
-state.context.iri       // NamespaceBuilder — Proxy; ctx.iri.MyClass → NamedNode
-state.context.prefixes  // PrefixResolutionInterface — instances/graphs/vocabulary bases
-state.context.graphs    // Record<string, NamedNode> — named-graph nodes by lane key
-state.context.output    // OutputConfigInterface — the resolved output config
-state.context.config    // Record<string, unknown> — the full target config object
+state.context.factory   // RDF/JS DataFactory; namedNode, literal, quad, blankNode
+state.context.dataset   // DatasetCore; the shared dataset; add quads here
+state.context.builder   // GraphBuilder; helpers for common quad patterns
+state.context.iri       // NamespaceBuilder; Proxy; ctx.iri.MyClass → NamedNode
+state.context.prefixes  // PrefixResolutionInterface; instances/graphs/vocabulary bases
+state.context.graphs    // Record<string, NamedNode>; named-graph nodes by lane key
+state.context.output    // OutputConfigInterface; the resolved output config
+state.context.config    // Record<string, unknown>; the full target config object
 ```
 
 `state.classification` gives you the winning class: `.type` (className string), `.confidence`, `.engine`, `.reasons`.
@@ -41,9 +41,9 @@ state.context.config    // Record<string, unknown> — the full target config ob
 
 ```ts
 const { builder, prefixes } = ctx;
-// builder.triple(s, p, o) — adds to default graph
-// builder.quad(s, p, o, g) — adds to named graph
-// builder.literal(value, datatype?) — literal with optional datatype IRI
+// builder.triple(s, p, o); adds to default graph
+// builder.quad(s, p, o, g); adds to named graph
+// builder.literal(value, datatype?); literal with optional datatype IRI
 ```
 
 ## Using NamespaceBuilder
@@ -130,7 +130,7 @@ Save this to `plugins/myproject/squash.ts`, build it with your tsconfig, and dec
 
 A classifier plugin registers a task under a `classify:*` name and emits `ClassificationProposalInterface` objects onto `state.classifications`.
 
-When to write one: you have a classification source that doesn't fit the built-in operators — an external lookup table, a flag file, a custom field format — and you want it to participate in the standard conflict resolution.
+When to write one: you have a classification source that doesn't fit the built-in operators; an external lookup table, a flag file, a custom field format; and you want it to participate in the standard conflict resolution.
 
 Shape your proposals emit:
 
@@ -170,10 +170,10 @@ List `classify:myproject` in the pipeline after the other classifiers and before
 
 ## Guards
 
-Check both `ctx` and `state.classification` before using them. `ctx` is set by the orchestrator but not by unit tests that run tasks in isolation. `state.classification` is `null` until `classify:conflict` runs — your squasher task runs after it, but defensive checks are cheaper than debugging a null dereference.
+Check both `ctx` and `state.classification` before using them. `ctx` is set by the orchestrator but not by unit tests that run tasks in isolation. `state.classification` is `null` until `classify:conflict` runs; your squasher task runs after it, but defensive checks are cheaper than debugging a null dereference.
 
 ## Related
 
-- [Pipeline](./pipeline) — how tasks are registered and run
-- [Configuration](./configuration) — declaring plugins in the config
-- [Classifier cascade](./classifier-cascade) — built-in classify:* tasks and the proposal shape
+- [Pipeline](./pipeline); how tasks are registered and run
+- [Configuration](./configuration); declaring plugins in the config
+- [Classifier cascade](./classifier-cascade); built-in classify:* tasks and the proposal shape
