@@ -153,6 +153,29 @@ export const XSD: NamespaceBuilder = Namespaces.for('http://www.w3.org/2001/XMLS
  */
 export const SHACL: NamespaceBuilder = Namespaces.for('http://www.w3.org/ns/shacl#');
 
+/**
+ * Namespace builder for the PROV-O (Provenance Ontology) vocabulary.
+ *
+ * @remarks
+ * Base IRI: `http://www.w3.org/ns/prov#`
+ *
+ * Common terms: `PROV.Activity`, `PROV.wasGeneratedBy`, `PROV.atTime`,
+ * `PROV.value`, `PROV.reason`.
+ *
+ * @example
+ * ```ts
+ * import { PROV } from './Vocab.js';
+ * PROV.Activity.value        // 'http://www.w3.org/ns/prov#Activity'
+ * PROV.wasGeneratedBy.value  // 'http://www.w3.org/ns/prov#wasGeneratedBy'
+ * ```
+ *
+ * @category RDF
+ * @since 0.5.0
+ * @see {@link https://www.w3.org/TR/prov-o/ | PROV-O: The PROV Ontology}
+ * @group Vocab
+ */
+export const PROV: NamespaceBuilder = Namespaces.for('http://www.w3.org/ns/prov#');
+
 // ---------------------------------------------------------------------------
 // STANDARD_PREFIXES
 // ---------------------------------------------------------------------------
@@ -196,10 +219,11 @@ export const SHACL: NamespaceBuilder = Namespaces.for('http://www.w3.org/ns/shac
  * @see {@link SHACL}
  * @group Vocab
  */
-export const STANDARD_PREFIXES: Readonly<Record<'rdf' | 'rdfs' | 'owl' | 'xsd' | 'sh', string>> = Object.freeze({
+export const STANDARD_PREFIXES: Readonly<Record<'rdf' | 'rdfs' | 'owl' | 'xsd' | 'sh' | 'prov', string>> = Object.freeze({
   rdf:  'http://www.w3.org/1999/02/22-rdf-syntax-ns#',
   rdfs: 'http://www.w3.org/2000/01/rdf-schema#',
   owl:  'http://www.w3.org/2002/07/owl#',
   xsd:  'http://www.w3.org/2001/XMLSchema#',
   sh:   'http://www.w3.org/ns/shacl#',
+  prov: 'http://www.w3.org/ns/prov#',
 });

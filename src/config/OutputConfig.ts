@@ -61,6 +61,31 @@ export const OUTPUT_SCHEMA = {
       ] as const,
       description: 'Compaction context for JSON-LD output. Path string (resolved against config dir), inline object, or omit/auto to let squashage build one from the quad set + ctx.prefixes. Rejected when format is not jsonld.',
     },
+    provenance: {
+      type: 'object',
+      additionalProperties: false,
+      description: 'PROV-O sidecar provenance graph configuration (Phase 6).',
+      properties: {
+        enabled: {
+          type: 'boolean',
+          default: false,
+          description: 'When true, provenance quads are emitted into a separate named graph for each processed record.',
+        },
+        graph: {
+          type: 'string',
+          description: 'Named-graph IRI suffix (resolved against runBase) or a full IRI for the provenance graph.',
+        },
+        include: {
+          type: 'array',
+          items: {
+            type: 'string',
+            enum: ['classifier', 'confidence', 'reasons', 'timestamp'] as const,
+          },
+          description: 'Metadata categories to include in provenance output. Omit an item to suppress that metadata.',
+          default: ['classifier', 'confidence', 'reasons', 'timestamp'],
+        },
+      },
+    },
   },
   allOf: [
     {

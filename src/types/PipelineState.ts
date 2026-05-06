@@ -140,6 +140,18 @@ export interface PipelineContextInterface {
    * @since 0.5.0
    */
   readonly jt?: JsonTologyOntology;
+  /**
+   * ISO 8601 timestamp frozen at the moment the orchestrator constructed this
+   * context (i.e. once per target run, not per record).
+   *
+   * @remarks
+   * Used by `output:provenance` to stamp all provenance quads with a single,
+   * deterministic run-start time. Preserving determinism across two identical
+   * runs requires that the timestamp is fixed before record processing begins.
+   *
+   * @since 0.5.0
+   */
+  readonly runStartTime?: string | undefined;
 }
 
 /**

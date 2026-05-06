@@ -341,7 +341,9 @@ export class SquashageOrchestrator {
     const jtInstance = await SquashageOrchestrator.#buildJtInstance(targetConfig, schemasBase);
 
     // Step 3 (deferred) — Construct run-wide PipelineContextInterface with resolved prefixes.
-    const ctx = SquashageOrchestrator.#buildContext(target, outDir, targetConfig, outputConfig, prefixes, jtInstance);
+    // Freeze the run-start time once here so provenance timestamps are deterministic.
+    const runStartTime = new Date().toISOString();
+    const ctx = SquashageOrchestrator.#buildContext(target, outDir, targetConfig, outputConfig, prefixes, jtInstance, runStartTime);
 
     logger.debug('run', 'Run-wide context constructed', {
       target,
@@ -498,12 +500,13 @@ export class SquashageOrchestrator {
    * @returns Fully populated `PipelineContextInterface`.
    */
   static #buildContext(
-    target:       string,
-    outDir:       string,
-    targetConfig: TargetConfigInterface,
-    outputConfig: OutputConfigInterface,
-    prefixes:     PrefixResolutionInterface,
-    jt?:          JsonTologyOntology,
+    target:        string,
+    outDir:        string,
+    targetConfig:  TargetConfigInterface,
+    outputConfig:  OutputConfigInterface,
+    prefixes:      PrefixResolutionInterface,
+    jt?:           JsonTologyOntology,
+    runStartTime?: string,
   ): PipelineContextInterface {
     const ontology = targetConfig.ontology;
     const baseIri  =
@@ -526,6 +529,7 @@ export class SquashageOrchestrator {
       output:  outputConfig,
       prefixes,
       ...(jt !== undefined ? { jt } : {}),
+      ...(runStartTime !== undefined ? { runStartTime } : {}),
     };
 
     return ctx;

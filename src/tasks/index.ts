@@ -12,7 +12,7 @@
  * @example
  * ```ts
  * import './tasks/index.js';
- * // TaskRegistry now contains 'json:read' and 'rdfjs:finalize'.
+ * // TaskRegistry now contains 'json:read', 'rdfjs:finalize', 'ontology:emit', and 'output:provenance'.
  * ```
  *
  * @category Tasks
@@ -24,3 +24,4 @@
 import './jsonRead.js';
 import './rdfjsFinalize.js';
 import './ontologyEmit.js';
+import './provenanceEmit.js';

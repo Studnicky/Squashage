@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **v0.5.0-beta.1 Phase 6: sidecar provenance reification.** New built-in pipeline task `output:provenance` emits PROV-O metadata quads into a dedicated sidecar named graph for each processed record. Controlled by `targets.<id>.output.provenance` config block (`enabled`, `graph`, `include`). Default-off; existing configs and e2e behaviour are unaffected. Four metadata categories are emitted when enabled: `prov:wasGeneratedBy` (winning classifier engine), `prov:value` (confidence decimal), `prov:atTime` (frozen run-start timestamp -- deterministic across replays), and `prov:reason` (comma-joined evidence reasons). The run-start timestamp is frozen once at orchestrator context construction and stored as `ctx.runStartTime`, ensuring two replays of the same input produce byte-identical provenance graphs. `PROV` namespace builder added to `src/rdf/Vocab.ts`; `prov` prefix added to `STANDARD_PREFIXES`. `PipelineContextInterface` extended with optional `runStartTime?: string`. Documentation page `docs/usage/provenance.md` added with problem framing, state machine, full config examples across all four `include` flavours, edge cases, and SPARQL query examples.
+
+
+
 - json-tology integration scaffold under `targets.<id>.ontology.engine: "json-tology"`. New `JsonTologyOntology` class wraps json-tology's JsonTology + OntologyBuilder, exposing `classMap()`, `tbox()`, `shacl()`, `toQuads()` for downstream classification and emission.
 - New pipeline task `ontology:emit` writes auto-derived OWL TBox + SHACL shapes to configured paths when the json-tology engine is active.
 - `state.context.jt` (optional) gives plugins access to the typed ABox projection (`jt.toQuads(schemaId, instance)`) for opt-in adoption.
