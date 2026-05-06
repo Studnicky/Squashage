@@ -49,6 +49,7 @@
     "ajv-formats": "^3.0.1",
     "commander": "^14.0.3",
     "json-schema-to-ts": "^3.1.1",
+    "json-tology": "file:../../../../json-tology",
     "jsonld": "^9.0.0",
     "n3": "^2.0.3",
     "rdf-canonize": "^5.0.0",
