@@ -282,6 +282,9 @@ export class SquashageOrchestrator {
       if (pipelineSet.has('classify:shacl-shape') && classifierInstances['classify:shacl-shape'] !== undefined) {
         registry.register('classify:shacl-shape', classifierInstances['classify:shacl-shape'].execute);
       }
+      if (pipelineSet.has('classify:taxonomic-narrowing') && classifierInstances['classify:taxonomic-narrowing'] !== undefined) {
+        registry.register('classify:taxonomic-narrowing', classifierInstances['classify:taxonomic-narrowing'].execute);
+      }
 
       logger.info('run', 'Classifier tasks registered', { target, tasks: Object.keys(classifierInstances) });
     }

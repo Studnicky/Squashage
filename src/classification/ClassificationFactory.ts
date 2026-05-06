@@ -38,6 +38,8 @@ import { ConflictResolver }                        from './tasks/ConflictResolve
 import type { ConflictResolverConfigInterface }    from './tasks/ConflictResolver.js';
 import { ShaclShapeClassifier }                    from './tasks/ShaclShapeClassifier.js';
 import type { ShaclShapeClassifierConfigInterface } from './tasks/ShaclShapeClassifier.js';
+import { TaxonomicNarrowingClassifier }                    from './tasks/TaxonomicNarrowingClassifier.js';
+import type { TaxonomicNarrowingConfigInterface }          from './tasks/TaxonomicNarrowingClassifier.js';
 import { OutputConfigError }                       from '../errors/OutputConfigError.js';
 import { Logger }                                  from '../modules/logger/logger.js';
 
@@ -139,6 +141,12 @@ export interface ClassificationConfigInterface {
    * and ontology (priority 50) in the cascade by default (priority 45).
    */
   readonly shaclShape?: ShaclShapeClassifierConfigInterface | undefined;
+  /**
+   * Config for `classify:taxonomic-narrowing`. Runs after all proposers but
+   * before ConflictResolver. Collapses supertype proposals when a more-specific
+   * subtype is also proposed, using the OWL subClassOf transitive closure.
+   */
+  readonly taxonomicNarrowing?: TaxonomicNarrowingConfigInterface | undefined;
 }
 
 /**
@@ -170,6 +178,8 @@ export interface ClassifierInstancesInterface {
   readonly 'classify:conflict'?:   ConflictResolver     | undefined;
   /** Instantiated `classify:shacl-shape` task, when `config.shaclShape` is present. */
   readonly 'classify:shacl-shape'?: ShaclShapeClassifier | undefined;
+  /** Instantiated `classify:taxonomic-narrowing` task, when `config.taxonomicNarrowing` is present. */
+  readonly 'classify:taxonomic-narrowing'?: TaxonomicNarrowingClassifier | undefined;
 }
 
 // ── ClassificationFactory ─────────────────────────────────────────────────────
@@ -338,6 +348,19 @@ export class ClassificationFactory {
         priority:   config.shaclShape.priority ?? 45,
       });
       result['classify:shacl-shape'] = ShaclShapeClassifier.create(config.shaclShape, schemasBase);
+    }
+
+    // ── classify:taxonomic-narrowing ───────────────────────────────────────
+    if (config.taxonomicNarrowing !== undefined) {
+      logger.debug('build', 'Instantiating TaxonomicNarrowingClassifier', {
+        targetId,
+        tboxFrom: config.taxonomicNarrowing.tboxFrom,
+        enabled:  config.taxonomicNarrowing.enabled ?? false,
+      });
+      result['classify:taxonomic-narrowing'] = TaxonomicNarrowingClassifier.create(
+        config.taxonomicNarrowing,
+        schemasBase,
+      );
     }
 
     // ── classify:conflict ──────────────────────────────────────────────────

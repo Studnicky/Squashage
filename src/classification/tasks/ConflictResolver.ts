@@ -95,7 +95,7 @@ export interface ConflictResolverConfigInterface {
  *
  * @internal
  */
-const METADATA_SENTINELS = new Set<string>(['__source__', '__validation__', 'unknown']);
+const METADATA_SENTINELS = new Set<string>(['__source__', '__validation__', '__narrowing_applied__', 'unknown']);
 
 // ── ConflictResolver ──────────────────────────────────────────────────────────
 

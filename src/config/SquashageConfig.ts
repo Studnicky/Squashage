@@ -172,6 +172,20 @@ const TARGET_SCHEMA = {
             priority: { type: 'integer', minimum: 0 },
           },
         },
+        taxonomicNarrowing: {
+          type: 'object',
+          additionalProperties: false,
+          required: ['tboxFrom'],
+          properties: {
+            tboxFrom: {
+              oneOf: [
+                { type: 'string', const: 'ontology' as const },
+                { type: 'string', minLength: 1 },
+              ],
+            },
+            enabled: { type: 'boolean' },
+          },
+        },
       },
     },
     quarantine:     { type: 'object' },
@@ -310,13 +324,14 @@ const CLASS_PROPOSERS = new Set<string>([
  * @internal
  */
 const CLASSIFY_TASK_CONFIG_KEYS: Readonly<Record<string, string>> = {
-  'classify:source':       'source',
-  'classify:structural':   'structural',
-  'classify:rules':        'rules',
-  'classify:schema':       'schemas',
-  'classify:ontology':     'ontology',
-  'classify:conflict':     'conflict',
-  'classify:shacl-shape':  'shaclShape',
+  'classify:source':               'source',
+  'classify:structural':           'structural',
+  'classify:rules':                'rules',
+  'classify:schema':               'schemas',
+  'classify:ontology':             'ontology',
+  'classify:conflict':             'conflict',
+  'classify:shacl-shape':          'shaclShape',
+  'classify:taxonomic-narrowing':  'taxonomicNarrowing',
 };
 
 /**

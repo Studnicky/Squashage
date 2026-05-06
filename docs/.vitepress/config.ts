@@ -16,6 +16,7 @@ const sidebar = [
       { link: '/usage/pipeline',           text: 'Pipeline' },
       { link: '/usage/classifier-cascade',      text: 'Classifier cascade' },
       { link: '/usage/shacl-shape-classifier',  text: 'SHACL-shape classifier' },
+      { link: '/usage/taxonomic-narrowing',     text: 'Taxonomic narrowing' },
       { link: '/usage/ontology',                text: 'Ontology (json-tology)' },
       { link: '/usage/output',             text: 'Output' },
       { link: '/usage/viz',                text: 'Viz' },
