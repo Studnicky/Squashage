@@ -57,7 +57,7 @@ const SCHEMA_INPUTS: ReadonlyArray<JsonTologySchemaInputInterface> = [
 // classMap()
 // ---------------------------------------------------------------------------
 
-describe('JsonTologyOntology — classMap()', () => {
+describe('JsonTologyOntology:classMap()', () => {
   it('returns a Record with one entry per schema', () => {
     const ontology = JsonTologyOntology.create({ baseIRI: BASE_IRI, schemas: SCHEMA_INPUTS });
     const map = ontology.classMap();
@@ -94,7 +94,7 @@ describe('JsonTologyOntology — classMap()', () => {
 // tbox()
 // ---------------------------------------------------------------------------
 
-describe('JsonTologyOntology — tbox()', () => {
+describe('JsonTologyOntology:tbox()', () => {
   it('returns a non-empty Quad array', async () => {
     const ontology = JsonTologyOntology.create({ baseIRI: BASE_IRI, schemas: SCHEMA_INPUTS });
     const quads = await ontology.tbox();
@@ -130,7 +130,7 @@ describe('JsonTologyOntology — tbox()', () => {
 // shacl()
 // ---------------------------------------------------------------------------
 
-describe('JsonTologyOntology — shacl()', () => {
+describe('JsonTologyOntology:shacl()', () => {
   it('returns a non-empty Quad array', async () => {
     const ontology = JsonTologyOntology.create({ baseIRI: BASE_IRI, schemas: SCHEMA_INPUTS });
     const quads    = await ontology.shacl();
@@ -166,7 +166,7 @@ describe('JsonTologyOntology — shacl()', () => {
 // toQuads()
 // ---------------------------------------------------------------------------
 
-describe('JsonTologyOntology — toQuads()', () => {
+describe('JsonTologyOntology:toQuads()', () => {
   it('routes through the ABox projection path for a known schemaId (result is array or JSON-LD error)', async () => {
     // The v0.5.0-alpha.1 scaffold implements toQuads() by routing through
     // OntologyBuilder.addQuads + jsonLdObject + Parser.parse. This path
@@ -210,7 +210,7 @@ describe('JsonTologyOntology — toQuads()', () => {
 // Construction validation
 // ---------------------------------------------------------------------------
 
-describe('JsonTologyOntology — construction errors', () => {
+describe('JsonTologyOntology:construction errors', () => {
   it('throws OutputConfigError when schemas array is empty', () => {
     assert.throws(
       () => JsonTologyOntology.create({ baseIRI: BASE_IRI, schemas: [] }),

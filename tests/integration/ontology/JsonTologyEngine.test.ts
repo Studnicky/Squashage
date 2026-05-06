@@ -144,7 +144,7 @@ after(async () => {
   await rm(rootDir, { recursive: true, force: true });
 });
 
-describe('JsonTologyEngine integration — orchestrator wires jt on context', () => {
+describe('JsonTologyEngine integration:orchestrator wires jt on context', () => {
   const TARGET = 'widgets';
   let capturedJt: unknown;
   let tboxFilePath  = '';
@@ -261,7 +261,7 @@ describe('JsonTologyEngine integration — orchestrator wires jt on context', ()
   });
 });
 
-describe('JsonTologyEngine integration — no jt when engine is absent', () => {
+describe('JsonTologyEngine integration:no jt when engine is absent', () => {
   let capturedJtAbsent: unknown = 'NOT_SET';
 
   before(async () => {
