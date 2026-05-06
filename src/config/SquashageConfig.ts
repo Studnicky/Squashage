@@ -186,6 +186,27 @@ const TARGET_SCHEMA = {
             enabled: { type: 'boolean' },
           },
         },
+        urlPattern: {
+          type: 'object',
+          additionalProperties: false,
+          required: ['patterns'],
+          properties: {
+            patterns: {
+              type: 'array',
+              minItems: 1,
+              items: {
+                type: 'object',
+                additionalProperties: false,
+                required: ['className', 'match'],
+                properties: {
+                  className: { type: 'string', minLength: 1 },
+                  match:     { type: 'string', minLength: 1 },
+                  priority:  { type: 'integer', minimum: 0 },
+                },
+              },
+            },
+          },
+        },
       },
     },
     quarantine:     { type: 'object' },
@@ -315,6 +336,7 @@ const CLASS_PROPOSERS = new Set<string>([
   'classify:rules',
   'classify:schema',
   'classify:shacl-shape',
+  'classify:url-pattern',
 ]);
 
 /**
@@ -332,6 +354,7 @@ const CLASSIFY_TASK_CONFIG_KEYS: Readonly<Record<string, string>> = {
   'classify:conflict':             'conflict',
   'classify:shacl-shape':          'shaclShape',
   'classify:taxonomic-narrowing':  'taxonomicNarrowing',
+  'classify:url-pattern':          'urlPattern',
 };
 
 /**

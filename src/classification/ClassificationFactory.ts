@@ -40,6 +40,8 @@ import { ShaclShapeClassifier }                    from './tasks/ShaclShapeClass
 import type { ShaclShapeClassifierConfigInterface } from './tasks/ShaclShapeClassifier.js';
 import { TaxonomicNarrowingClassifier }                    from './tasks/TaxonomicNarrowingClassifier.js';
 import type { TaxonomicNarrowingConfigInterface }          from './tasks/TaxonomicNarrowingClassifier.js';
+import { UrlPatternClassifier }                            from './tasks/UrlPatternClassifier.js';
+import type { UrlPatternConfigInterface }                  from './tasks/UrlPatternClassifier.js';
 import { OutputConfigError }                       from '../errors/OutputConfigError.js';
 import { Logger }                                  from '../modules/logger/logger.js';
 
@@ -147,6 +149,12 @@ export interface ClassificationConfigInterface {
    * subtype is also proposed, using the OWL subClassOf transitive closure.
    */
   readonly taxonomicNarrowing?: TaxonomicNarrowingConfigInterface | undefined;
+  /**
+   * Config for `classify:url-pattern`. Evaluates pre-compiled regexes against
+   * the record's `_source.url` (or fallback `url`) and emits one proposal per
+   * matching pattern.
+   */
+  readonly urlPattern?: UrlPatternConfigInterface | undefined;
 }
 
 /**
@@ -180,6 +188,8 @@ export interface ClassifierInstancesInterface {
   readonly 'classify:shacl-shape'?: ShaclShapeClassifier | undefined;
   /** Instantiated `classify:taxonomic-narrowing` task, when `config.taxonomicNarrowing` is present. */
   readonly 'classify:taxonomic-narrowing'?: TaxonomicNarrowingClassifier | undefined;
+  /** Instantiated `classify:url-pattern` task, when `config.urlPattern` is present. */
+  readonly 'classify:url-pattern'?: UrlPatternClassifier | undefined;
 }
 
 // ── ClassificationFactory ─────────────────────────────────────────────────────
@@ -361,6 +371,15 @@ export class ClassificationFactory {
         config.taxonomicNarrowing,
         schemasBase,
       );
+    }
+
+    // ── classify:url-pattern ───────────────────────────────────────────────
+    if (config.urlPattern !== undefined) {
+      logger.debug('build', 'Instantiating UrlPatternClassifier', {
+        targetId,
+        patternCount: config.urlPattern.patterns.length,
+      });
+      result['classify:url-pattern'] = UrlPatternClassifier.create(config.urlPattern);
     }
 
     // ── classify:conflict ──────────────────────────────────────────────────
