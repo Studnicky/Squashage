@@ -1,5 +1,5 @@
 /**
- * @fileoverview `JsonTologyOntology` — typed projection from JSON Schema to OWL TBox,
+ * @fileoverview `JsonTologyOntology`: typed projection from JSON Schema to OWL TBox,
  *               SHACL shapes, and ABox quads via the json-tology integration.
  *
  * @remarks
@@ -92,7 +92,7 @@ function deriveClassName(schema: Record<string, unknown> & { readonly '$id': str
   const last = segments.length > 0 ? segments[segments.length - 1] : undefined;
   if (last === undefined || last.length === 0) {
     throw OutputConfigError.create(
-      `Cannot derive className from schema "$id": "${id}" — supply an explicit "title" field or a $id with a non-empty trailing segment`,
+      `Cannot derive className from schema "$id": "${id}" (supply an explicit "title" field or a $id with a non-empty trailing segment)`,
       { metadata: { schemaId: id } },
     );
   }
@@ -318,7 +318,7 @@ export class JsonTologyOntology {
     const jtQuads = this.#jt.toQuads(schema, instance);
     if (jtQuads.length === 0) return [];
 
-    // Cast to OntologyBuilder's expected QuadInterface[] — they're the same shape
+    // Cast to OntologyBuilder's expected QuadInterface[]; they're the same shape
     // structurally; the type-import boundary is what's tight.
     const aboxBuilder = new OntologyBuilder({
       baseIRI:      this.#baseIRI,
