@@ -288,6 +288,9 @@ export class SquashageOrchestrator {
       if (pipelineSet.has('classify:url-pattern') && classifierInstances['classify:url-pattern'] !== undefined) {
         registry.register('classify:url-pattern', classifierInstances['classify:url-pattern'].execute);
       }
+      if (pipelineSet.has('classify:property-fingerprint') && classifierInstances['classify:property-fingerprint'] !== undefined) {
+        registry.register('classify:property-fingerprint', classifierInstances['classify:property-fingerprint'].execute);
+      }
 
       logger.info('run', 'Classifier tasks registered', { target, tasks: Object.keys(classifierInstances) });
     }

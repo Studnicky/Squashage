@@ -42,6 +42,8 @@ import { TaxonomicNarrowingClassifier }                    from './tasks/Taxonom
 import type { TaxonomicNarrowingConfigInterface }          from './tasks/TaxonomicNarrowingClassifier.js';
 import { UrlPatternClassifier }                            from './tasks/UrlPatternClassifier.js';
 import type { UrlPatternConfigInterface }                  from './tasks/UrlPatternClassifier.js';
+import { PropertyFingerprintClassifier }                   from './tasks/PropertyFingerprintClassifier.js';
+import type { PropertyFingerprintConfigInterface }         from './tasks/PropertyFingerprintClassifier.js';
 import { OutputConfigError }                       from '../errors/OutputConfigError.js';
 import { Logger }                                  from '../modules/logger/logger.js';
 
@@ -155,6 +157,12 @@ export interface ClassificationConfigInterface {
    * matching pattern.
    */
   readonly urlPattern?: UrlPatternConfigInterface | undefined;
+  /**
+   * Config for `classify:property-fingerprint`. Computes Jaccard similarity
+   * between the record's top-level key set and pre-loaded fingerprints; emits
+   * one proposal per fingerprint that meets `minMatchScore`.
+   */
+  readonly propertyFingerprint?: PropertyFingerprintConfigInterface | undefined;
 }
 
 /**
@@ -190,6 +198,8 @@ export interface ClassifierInstancesInterface {
   readonly 'classify:taxonomic-narrowing'?: TaxonomicNarrowingClassifier | undefined;
   /** Instantiated `classify:url-pattern` task, when `config.urlPattern` is present. */
   readonly 'classify:url-pattern'?: UrlPatternClassifier | undefined;
+  /** Instantiated `classify:property-fingerprint` task, when `config.propertyFingerprint` is present. */
+  readonly 'classify:property-fingerprint'?: PropertyFingerprintClassifier | undefined;
 }
 
 // ── ClassificationFactory ─────────────────────────────────────────────────────
@@ -380,6 +390,20 @@ export class ClassificationFactory {
         patternCount: config.urlPattern.patterns.length,
       });
       result['classify:url-pattern'] = UrlPatternClassifier.create(config.urlPattern);
+    }
+
+    // ── classify:property-fingerprint ─────────────────────────────────────
+    if (config.propertyFingerprint !== undefined) {
+      logger.debug('build', 'Instantiating PropertyFingerprintClassifier', {
+        targetId,
+        fingerprintsFrom: config.propertyFingerprint.fingerprintsFrom,
+        minMatchScore:    config.propertyFingerprint.minMatchScore ?? 0.85,
+        priority:         config.propertyFingerprint.priority      ?? 32,
+      });
+      result['classify:property-fingerprint'] = PropertyFingerprintClassifier.create(
+        config.propertyFingerprint,
+        schemasBase,
+      );
     }
 
     // ── classify:conflict ──────────────────────────────────────────────────

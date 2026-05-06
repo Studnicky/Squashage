@@ -35,6 +35,7 @@
     "test:integration": "node --import tsx --test 'tests/integration/**/*.test.ts'",
     "test:e2e": "node --import tsx --test 'tests/e2e/**/*.test.ts'",
     "viz:demo": "node --import tsx scripts/build-aonprd-demo.ts",
+    "viz:fingerprints": "tsx scripts/build-fingerprints.ts",
     "viz:refresh-vendor": "node scripts/refresh-viz-vendor.js",
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",

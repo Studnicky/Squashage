@@ -207,6 +207,16 @@ const TARGET_SCHEMA = {
             },
           },
         },
+        propertyFingerprint: {
+          type: 'object',
+          additionalProperties: false,
+          required: ['fingerprintsFrom'],
+          properties: {
+            fingerprintsFrom: { type: 'string', minLength: 1 },
+            minMatchScore:    { type: 'number', minimum: 0, maximum: 1 },
+            priority:         { type: 'integer', minimum: 0 },
+          },
+        },
       },
     },
     quarantine:     { type: 'object' },
@@ -337,6 +347,7 @@ const CLASS_PROPOSERS = new Set<string>([
   'classify:schema',
   'classify:shacl-shape',
   'classify:url-pattern',
+  'classify:property-fingerprint',
 ]);
 
 /**
@@ -346,15 +357,16 @@ const CLASS_PROPOSERS = new Set<string>([
  * @internal
  */
 const CLASSIFY_TASK_CONFIG_KEYS: Readonly<Record<string, string>> = {
-  'classify:source':               'source',
-  'classify:structural':           'structural',
-  'classify:rules':                'rules',
-  'classify:schema':               'schemas',
-  'classify:ontology':             'ontology',
-  'classify:conflict':             'conflict',
-  'classify:shacl-shape':          'shaclShape',
-  'classify:taxonomic-narrowing':  'taxonomicNarrowing',
-  'classify:url-pattern':          'urlPattern',
+  'classify:source':                'source',
+  'classify:structural':            'structural',
+  'classify:rules':                 'rules',
+  'classify:schema':                'schemas',
+  'classify:ontology':              'ontology',
+  'classify:conflict':              'conflict',
+  'classify:shacl-shape':           'shaclShape',
+  'classify:taxonomic-narrowing':   'taxonomicNarrowing',
+  'classify:url-pattern':           'urlPattern',
+  'classify:property-fingerprint':  'propertyFingerprint',
 };
 
 /**
