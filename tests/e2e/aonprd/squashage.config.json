@@ -315,6 +315,21 @@
           "evidence": true
         }
       },
+      "ontology": {
+        "engine": "json-tology",
+        "baseIRI": "https://squashage.dev/vocabulary/aonprd",
+        "schemas": [
+          { "schemaPath": "./schemas/feat.schema.json" },
+          { "schemaPath": "./schemas/spell.schema.json" },
+          { "schemaPath": "./schemas/monster.schema.json" },
+          { "schemaPath": "./schemas/action.schema.json" },
+          { "schemaPath": "./schemas/equipment.schema.json" }
+        ],
+        "emit": {
+          "tbox":  "graphs/aonprd/ontology.ttl",
+          "shacl": "graphs/aonprd/shapes.ttl"
+        }
+      },
       "output": {
         "kind": "file",
         "path": "./out/aonprd.jsonld",

@@ -325,3 +325,34 @@ describe('OntologyClassifier — metadata sentinels ignored', () => {
     assert.strictEqual(next.called, true);
   });
 });
+
+// ── Backward-compatibility: engine undefined uses legacy classes map ───────────
+
+describe('OntologyClassifier — engine: undefined still uses legacy classes map', () => {
+  it('proves engine: undefined still uses the legacy classes map for classification', async () => {
+    // A config WITHOUT any ontology.engine field; only classification.ontology.classes.
+    // This matches the v0.4.0 behavior: OntologyClassifier receives the classes map
+    // from the classification config, not from a JsonTologyOntology instance.
+    const legacyClassMap: OntologyConfigInterface = {
+      classes: {
+        feat:  'https://squashage.dev/vocabulary/aonprd#Feat',
+        spell: 'https://squashage.dev/vocabulary/aonprd#Spell',
+      },
+    };
+    const classifier = new OntologyClassifier(legacyClassMap);
+
+    // A proposal for a known class in the legacy map passes without validation proposals.
+    const state = buildState([makeProposal('feat', 'classify:rules')]);
+    const next  = makeNext();
+
+    await classifier.execute(next.fn, state);
+
+    // No __validation__ proposals emitted: the legacy map recognized the class.
+    assert.strictEqual(
+      state.classifications.filter((p) => p.className === '__validation__').length,
+      0,
+      'Legacy classes map must recognize known className without validation proposals',
+    );
+    assert.strictEqual(next.called, true);
+  });
+});

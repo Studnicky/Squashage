@@ -34,7 +34,7 @@
  */
 
 import { readdir, stat, readFile } from 'node:fs/promises';
-import { join, extname, dirname }  from 'node:path';
+import { join, extname, dirname, resolve as resolvePath } from 'node:path';
 
 // Bootstrap built-in task registrations (json:read, rdfjs:finalize).
 import '../tasks/index.js';
@@ -58,6 +58,8 @@ import { GraphBuilder }            from '../rdf/GraphBuilder.js';
 import { Namespaces }              from '../rdf/Namespaces.js';
 import { QuarantineWriter }        from '../quarantine/QuarantineWriter.js';
 import { Logger }                  from '../modules/logger/logger.js';
+import { JsonTologyOntology }      from '../ontology/JsonTologyOntology.js';
+import type { JsonTologySchemaInputInterface } from '../ontology/JsonTologyOntology.js';
 
 const logger = Logger.forComponent('SquashageOrchestrator');
 
@@ -319,8 +321,15 @@ export class SquashageOrchestrator {
 
     const prefixes = PrefixResolver.resolve(target, targetConfig, sampleSource);
 
+    // Step 3a — Build optional json-tology ontology instance when engine === 'json-tology'.
+    const schemasBase = options.configPath !== undefined
+      ? dirname(options.configPath)
+      : process.cwd();
+
+    const jtInstance = await SquashageOrchestrator.#buildJtInstance(targetConfig, schemasBase);
+
     // Step 3 (deferred) — Construct run-wide PipelineContextInterface with resolved prefixes.
-    const ctx = SquashageOrchestrator.#buildContext(target, outDir, targetConfig, outputConfig, prefixes);
+    const ctx = SquashageOrchestrator.#buildContext(target, outDir, targetConfig, outputConfig, prefixes, jtInstance);
 
     logger.debug('run', 'Run-wide context constructed', {
       target,
@@ -473,6 +482,7 @@ export class SquashageOrchestrator {
    * @param targetConfig - Validated target config.
    * @param outputConfig - Synthesized output config (CLI overrides already applied).
    * @param prefixes     - Resolved prefix-base pairs from {@link PrefixResolver.resolve}.
+   * @param jt           - Optional json-tology ontology instance (present when engine === "json-tology").
    * @returns Fully populated `PipelineContextInterface`.
    */
   static #buildContext(
@@ -481,6 +491,7 @@ export class SquashageOrchestrator {
     targetConfig: TargetConfigInterface,
     outputConfig: OutputConfigInterface,
     prefixes:     PrefixResolutionInterface,
+    jt?:          JsonTologyOntology,
   ): PipelineContextInterface {
     const ontology = targetConfig.ontology;
     const baseIri  =
@@ -502,9 +513,49 @@ export class SquashageOrchestrator {
       iri:     Namespaces.for(baseIri),
       output:  outputConfig,
       prefixes,
+      ...(jt !== undefined ? { jt } : {}),
     };
 
     return ctx;
+  }
+
+  /**
+   * Builds a {@link JsonTologyOntology} instance when
+   * `targetConfig.ontology.engine === "json-tology"`, otherwise returns `undefined`.
+   *
+   * @param targetConfig - Per-target config containing the optional ontology block.
+   * @param schemasBase  - Base directory for resolving relative schemaPath entries.
+   * @returns The constructed instance, or `undefined` when the engine is absent or "map".
+   */
+  static async #buildJtInstance(
+    targetConfig: TargetConfigInterface,
+    schemasBase:  string,
+  ): Promise<JsonTologyOntology | undefined> {
+    const ontologyBlock = targetConfig.ontology as Record<string, unknown> | undefined;
+    if (ontologyBlock === undefined) return undefined;
+
+    const engine = ontologyBlock['engine'];
+    if (engine !== 'json-tology') return undefined;
+
+    const baseIRI  = ontologyBlock['baseIRI'] as string;
+    const rawSchemas = ontologyBlock['schemas'] as ReadonlyArray<{ readonly schemaPath: string }> | undefined;
+    if (rawSchemas === undefined || rawSchemas.length === 0) return undefined;
+
+    const schemaInputs: JsonTologySchemaInputInterface[] = await Promise.all(
+      rawSchemas.map(async entry => {
+        const absPath = resolvePath(schemasBase, entry.schemaPath);
+        const text    = await readFile(absPath, 'utf8');
+        const schema  = JSON.parse(text) as Record<string, unknown> & { readonly '$id': string };
+        return { schemaPath: entry.schemaPath, schema };
+      }),
+    );
+
+    logger.debug('run', 'Building JsonTologyOntology instance', {
+      baseIRI,
+      schemaCount: schemaInputs.length,
+    });
+
+    return JsonTologyOntology.create({ baseIRI, schemas: schemaInputs });
   }
 
   /**

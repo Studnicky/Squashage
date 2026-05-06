@@ -15,6 +15,7 @@ const sidebar = [
       { link: '/usage/configuration',      text: 'Configuration' },
       { link: '/usage/pipeline',           text: 'Pipeline' },
       { link: '/usage/classifier-cascade', text: 'Classifier cascade' },
+      { link: '/usage/ontology',           text: 'Ontology (json-tology)' },
       { link: '/usage/output',             text: 'Output' },
       { link: '/usage/viz',                text: 'Viz' },
       { link: '/usage/plugins',            text: 'Plugins' },

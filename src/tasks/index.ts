@@ -23,3 +23,4 @@
 
 import './jsonRead.js';
 import './rdfjsFinalize.js';
+import './ontologyEmit.js';

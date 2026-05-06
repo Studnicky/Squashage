@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- json-tology integration scaffold under `targets.<id>.ontology.engine: "json-tology"`. New `JsonTologyOntology` class wraps json-tology's JsonTology + OntologyBuilder, exposing `classMap()`, `tbox()`, `shacl()`, `toQuads()` for downstream classification and emission.
+- New pipeline task `ontology:emit` writes auto-derived OWL TBox + SHACL shapes to configured paths when the json-tology engine is active.
+- `state.context.jt` (optional) gives plugins access to the typed ABox projection (`jt.toQuads(schemaId, instance)`) for opt-in adoption.
+
 ## [0.4.0] - 2026-05-06
 
 ### Changed

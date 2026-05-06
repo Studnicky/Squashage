@@ -43,7 +43,50 @@ const TARGET_SCHEMA = {
     pipeline:       { type: 'array', items: { type: 'string', minLength: 1 }, minItems: 1 },
     output:         { $ref: 'https://squashage.dev/schemas/output.json' },
     graphs:         { type: 'object', additionalProperties: { type: 'string', format: 'uri' } },
-    ontology:       { type: 'object' },
+    ontology: {
+      type: 'object',
+      properties: {
+        engine:  { type: 'string', enum: ['map', 'json-tology'] as const },
+        baseIRI: { type: 'string' },
+        baseIri: { type: 'string' },
+        schemas: {
+          type: 'array',
+          items: {
+            type: 'object',
+            required: ['schemaPath'] as const,
+            properties: {
+              schemaPath: { type: 'string' },
+            },
+          },
+        },
+        emit: {
+          type: 'object',
+          properties: {
+            tbox:  { type: 'string' },
+            shacl: { type: 'string' },
+          },
+        },
+        classes: {
+          type: 'object',
+          additionalProperties: { type: 'string', format: 'uri' },
+        },
+        prefixes: { type: 'object' },
+      },
+      if:   {
+        properties: { engine: { const: 'json-tology' } },
+        required: ['engine'] as const,
+      },
+      then: {
+        properties: {
+          baseIRI: { type: 'string' },
+          schemas: {
+            type:  'array',
+            items: { type: 'object', required: ['schemaPath'] as const, properties: { schemaPath: { type: 'string' } } },
+          },
+        },
+        required: ['baseIRI', 'schemas'] as const,
+      },
+    },
     classification: {
       type: 'object',
       additionalProperties: false,
