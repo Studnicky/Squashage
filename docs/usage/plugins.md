@@ -7,6 +7,8 @@ title: Plugins
 
 A squasher plugin is a file that calls `TaskRegistry.register` at module load time. The orchestrator loads the file, the registration fires as a side effect, and the task is available under its name.
 
+**Plugin discovery**: Config lists plugin paths (glob patterns, absolute, or relative to the config file). The orchestrator loads each plugin module; the `TaskRegistry.register` call happens as the module evaluates. If a plugin throws during load, the orchestrator exits with code `2` before any record is processed. If a plugin throws during per-record execution, that record is quarantined under `quarantine/projection/` and the build continues (exit code stays `0`).
+
 ## Squasher plugin signature
 
 ```ts
@@ -52,6 +54,8 @@ const { builder, prefixes } = ctx;
 const featClass = ctx.iri.Feat;           // NamedNode('https://squashage.dev/vocabulary/aonprd#Feat')
 const namePred  = ctx.iri['aonprd-name']; // NamedNode('https://squashage.dev/vocabulary/aonprd#aonprd-name')
 ```
+
+**Why a Proxy**: Prevents typos and invalid IRIs. Direct string concatenation lets you construct `https://example.com/MyClass` and `https://example.com/my-class` as distinct IRIs; the Proxy forces consistent casing and structure. It also prevents off-by-one slash errors and missing fragment identifiers.
 
 ## Using PrefixResolver
 
@@ -119,6 +123,8 @@ TaskRegistry.register('myproject:squash', async (next, state: PipelineStateInter
 ```
 
 Save this to `plugins/myproject/squash.ts`, build it with your tsconfig, and declare the compiled path in your config's `plugins[]` array.
+
+**Quad generation patterns**: Emit quads using `dataset.add(factory.quad(...))` or `builder.quad(...)`. Generator functions (`function* emit()`) and accumulation arrays work equally; emit each quad independently rather than batching or buffering. If a quad is malformed (invalid IRI, mismatched term types), the builder catches it immediately; silent buffering can hide mistakes until serialization.
 
 ## Classifier plugins
 

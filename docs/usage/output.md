@@ -25,6 +25,8 @@ RDF/XML and N3 output are deferred. No maintained streaming serializer for eithe
 
 Format defaults from the file extension. Explicit `format:` overrides.
 
+**Format selection rationale**: Turtle is human-readable and compact for graph inspection. TriG is readable and preserves named graphs for multi-class organization. N-Quads is the canonical form for content-addressed storage and bit-for-bit reproducibility. JSON-LD is linked-data-friendly when your downstream consumer expects it. All formats serialize the same RDF/JS dataset; the difference is syntax and verbosity, not semantic content.
+
 ---
 
 ## mode: dataset vs stream
@@ -45,6 +47,8 @@ Use this when:
 - You want to sign or hash the graph.
 
 Costs: `dataset` mode only (buffers everything first), extra CPU for the canonicalization pass. Not worth it if you're just doing a one-off export.
+
+**Canonicalization purpose**: Blank nodes are nondeterministic (each run generates new labels). Without canonicalization, two runs produce semantically identical graphs with different byte sequences. Canonicalization deterministically relabels blank nodes and sorts all quads so the output is invariant. This enables CI tests that compare output files bit-for-bit and detect unintended changes.
 
 ---
 
@@ -80,6 +84,8 @@ Incompatible with `stream` mode.
 Runs the full pipeline — reads records, classifies, projects quads, runs canonicalization and SHACL validation if configured — but skips writing the output file. Useful for smoke-testing config and plugins against real data without producing output.
 
 Quarantine artifacts still land on disk (quarantine is a graceful path, not a dry run concern).
+
+**dryRun semantics**: Skips the atomic-write step after SHACL validation passes. The dataset is fully populated and validated; the only step omitted is the file write. This lets you test whether a config change will break SHACL validation without clobbering your production output file. Exit code stays `0` if the pipeline completes cleanly; SHACL failures still exit with `1` (same as a normal run would).
 
 ---
 

@@ -15,6 +15,8 @@ plugin emits into and the serializer reads from. It is not the output. The
 output is the file. To load the file into a graph store, hand it to
 downstream graph-store loaders separately; Squashage does not load stores.
 
+**Why this ordering**: The pipeline isolates failure modes by stage. Classify-and-fail (unknown class, SHACL violation, schema mismatch) produces quarantine artifacts without corrupting the dataset. Normalize failures are contained to that record and later stages skip it cleanly. Project failures write the bad record to quarantine and don't emit partial quads. This ordering means a config mistake doesn't corrupt valid data that's already been emitted.
+
 ## Package Boundaries
 
 Squashage *uses* a thin `src/rdf/*` and `src/shacl/*` wrapper layer over
@@ -53,6 +55,8 @@ metadata to make classification reproducible and attribution tractable:
 }
 ```
 
+**Determinism contract**: The entire classification and projection pipeline is deterministic. No `Math.random`, no `Date.now()` inside the build path, no network calls, no filesystem reads after config load. Same record and same config produce byte-identical quads and exit codes across runs and machines. This is what lets you compare output bit-for-bit in CI.
+
 ### Classification
 
 Classification identifies the ontology class or projection lane for an input
@@ -71,6 +75,8 @@ record. It is not just a label; it is a decision with evidence.
 }
 ```
 
+**Per-record state machine**: Each record flows through: (1) input (parsed JSON + source); (2) classify (zero or more proposals accumulated); (3) conflict resolution (one winner picked, or quarantine); (4) project (emit quads using the winning class) or skip (unknown + onUnknown: skip); (5) output (final dataset serialized) or quarantine (SHACL failure). A single state.classification value at step (3) controls whether projection happens.
+
 ### RDF/JS As Internal Canonical Product
 
 Plugins emit RDF/JS terms and quads into a shared dataset. The canonical
@@ -81,6 +87,8 @@ factory and dataset come from `src/rdf/DataFactory.ts` and
 JSON-LD, or any other format directly — they emit quads, and the finalize
 step serializes the canonical dataset to the configured output file via
 `src/rdf/Serializer.ts`.
+
+**Why RDF/JS**: RDF/JS is a standard interface contract, not a concrete implementation. This lets you test plugins in isolation by passing a mock dataset that collects what was added, then swap to the real factory/dataset at run time. Serializers and validators also accept any RDF/JS-compliant dataset, so output format becomes a plugin detail, not a structural constraint. If a future plugin needs to emit into both Turtle and JSON-LD, it writes to RDF/JS once and the serializer picks the format.
 
 `PipelineStateInterface` and `PipelineContextInterface` keep their existing
 names from `src/types/PipelineState.ts`; their fields adapt to the
@@ -102,7 +110,7 @@ loader of your choice on the produced file — neither is squashage's
 job. See
 `src/schemas/output.schema.json` and `src/rdf/Serializer.ts` define the output interface and configuration.
 
-Programmatic callers can additionally consume the in-process dataset directly
+Programmatic callers can also consume the in-process dataset directly
 through the build API; that is not an output, just the API return value.
 
 ## Pipeline Phases

@@ -22,6 +22,8 @@ The cascade is purely deterministic. Same config + same record = same classifica
 | `classify:ontology` | Sanity-check that only known class names get through. | `classification.ontology: {}` |
 | `classify:conflict` | Any time more than one proposing task is in the pipeline. | `classification.conflict: {}` |
 
+**Proposal accumulation flow**: Each proposing task (source, structural, rules, schema) appends to `state.classifications` independently. A single record can accumulate 6+ proposals if multiple classifiers match. The conflict resolver then examines all of them, filters metadata sentinels like `__source__`, and picks one winner by priority (highest first) and className (lex asc as tiebreak). If two proposals tie on priority and disagree on class, `onConflict: 'quarantine'` writes the record to quarantine with both candidates preserved; `onConflict: 'pickPriority'` deterministically picks the lexicographically first className.
+
 ---
 
 ## classify:source
@@ -137,6 +139,8 @@ Resolution order:
 5. Winner is written to `state.classification`.
 
 Quarantine is graceful. The build doesn't fail when records land there — exit code stays `0`. Check `graphs/<target>/quarantine/` after a build.
+
+**Edge cases**: If structural proposes `feat` at priority 10 and rules proposes `feat` at priority 20, both for the same record, conflict resolution sees one className (feat) with two distinct priorities. The higher-priority rules proposal wins; the structural proposal is superseded, not a conflict. A true conflict happens when structural and rules both fire for different classes at the same priority: `feat` at 20 and `spell` at 20. Then `onConflict` decides whether to quarantine or pick the lexicographically first one (spell). Unreachable rules (predicates that never evaluate to true for any input record in the dataset) produce zero proposals; these records may land unknown or be caught by structural/schema.
 
 ---
 

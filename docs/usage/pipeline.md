@@ -22,6 +22,10 @@ Two classes:
 
 The orchestrator picks which one based on `targets[].concurrency`. Default is `1`, which gives sequential `Pipeline` behavior.
 
+**Why batching matters**: A single `Pipeline` executes the full task chain once per record. When `concurrency > 1`, `ConcurrentPipeline` fans the record list across multiple concurrent `pipeline.execute()` calls sharing the same task queue, using a semaphore to cap live executions. This keeps memory footprint bounded while parallelizing I/O-heavy tasks (schema validation, file reads, external lookups). Set `concurrency: 4` to run 4 records through the same pipeline at once; set it to `1` for sequential behavior identical to looping.
+
+**Shared state across concurrent runs**: The underlying `Pipeline` instance is read-only during execution — each concurrent `execute()` call gets its own state closure. However, if you wire a shared HTTP cache, logger, or materialized schema into `context`, all concurrent records see the same instance. This is intentional: caches need to be shared to deduplicate work. Your config responsibility is ensuring any shared resource is thread-safe.
+
 ## TaskRegistry
 
 Tasks are registered by name and resolved at pipeline build time. Two modes:
@@ -73,13 +77,19 @@ interface PipelineContextInterface {
 }
 ```
 
+**Resolution flow**: Given `_source.url = 'https://2e.aonprd.com/Feats.aspx?ID=750'`, the resolver applies a priority cascade: (1) check user override in `targets[].ontology.prefixes`; (2) derive from the URL hostname (here, `2e.aonprd.com` becomes the instances base and target name is slugified into `aonprd`); (3) fall back to synthetic `https://squashage.dev/` bases if derivation fails. The same `(_source.url, config)` pair always produces the same prefix resolution — deterministic and reproducible across runs.
+
 ### `state.context.builder`
 
-`GraphBuilder` wraps the factory and dataset with helpers for common quad patterns. Use it instead of raw `factory.quad(...)` calls when you want prefix-aware IRI construction.
+`GraphBuilder` wraps the factory and dataset with helpers for common quad patterns. Use it instead of raw `factory.quad(...)` calls when you want prefix-aware IRI construction. It validates IRIs at emit time and raises on malformed quads before they land in the dataset.
+
+**Rationale**: Mismatched named nodes, invalid literal datatypes, or malformed IRIs are caught immediately at the call site, not silently accepted then discovered during serialization. Factory methods are low-level and permissive; builders enforce correctness.
 
 ### `state.context.iri`
 
 `NamespaceBuilder` is a Proxy. Accessing `ctx.iri.MyClass` returns a `NamedNode` for `<vocabulary-base>MyClass`. Accessing `ctx.iri['my-predicate']` returns `<vocabulary-base>my-predicate`. No string concatenation at call sites.
+
+**Why**: Direct IRI construction via string concatenation is error-prone (missing slash, typos in predicate names, inconsistent casing). The Proxy ensures all vocabulary IRIs are minted from the same base, validated at construction time. This prevents invalid IRIs from being emitted.
 
 ## PipelineStateInterface
 

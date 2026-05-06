@@ -33,6 +33,8 @@ allocates only the proposal array. `ClassificationFactory.build`
 instantiates the set per target; `SquashageOrchestrator` registers each
 instance's bound `execute` on a fresh per-run `TaskRegistry`.
 
+**Classification state machine**: (1) propose: each task accumulates proposals onto `state.classifications`, a growing array. (2) conflict detection: ConflictResolver examines all proposals, filters metadata sentinels (`__source__`, `__validation__`), and checks for ties on priority. (3) resolution: picks one winner by priority desc, then className lex asc as tiebreak. (4) emit or quarantine: writes the winning class to `state.classification`, or quarantines the record if onConflict/onUnknown policies say so.
+
 ## Predicate Vocabulary
 
 `StructuralClassifier` and `RulesClassifier` consume compiled
@@ -57,6 +59,8 @@ Paths are RFC 6901 JSON Pointers (`/types/0`, `~1` escapes `/`,
 Compilation pre-builds RegExp objects and pre-splits path segments;
 runtime evaluation is a single switch over the AST.
 
+**Worked example**: A feat record with `_type: 'feat'`, `level: 5`, and `traits: ['action']` matches: `{ all: [{ path: "/_type", equals: "feat" }, { path: "/level", range: { gte: 1, lte: 20 } }, { path: "/traits", type: "array" }] }`. Regex paths require full anchoring: `{ path: "/url", regex: "^https://2e\\\\.aonprd\\\\.com" }` matches but `{ path: "/url", regex: "aonprd" }` does not. Compilation happens once at startup; runtime is deterministic and zero-allocation.
+
 ## AJV Schema Engine
 
 `AjvClassifier` runs records against an ordered set of pre-compiled AJV
@@ -65,6 +69,8 @@ validators (one per class). Schema files are read by
 through a single AJV instance with `addFormats` and strict mode (matching
 `SquashageConfig`). The engine itself does no I/O and no compilation.
 Per-class entries carry `{ className, priority, validate }`.
+
+**Compilation rationale**: Schemas are compiled once at config load, not per-record. This costs CPU upfront but eliminates the per-record overhead of parsing schema syntax and building validators. A record flowing through an AJV validator is just a function call; no interpretation or meta-programming at runtime. This keeps classification fast and deterministic even with large, complex schemas.
 
 ## SHACL Validation
 

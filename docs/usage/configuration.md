@@ -67,6 +67,8 @@ Only needed when the pipeline includes `classify:source`, `classify:structural`,
 
 The cascade is opt-in by task. If you list `classify:rules` in `pipeline`, you must supply `classification.rules`. The AJV schema rejects partial configs at load time.
 
+**Validation timing**: Config is validated at load time (before any record is processed). If a pipeline lists `classify:rules` but `classification.rules` is missing or empty, the orchestrator throws exit code `2`. If a listed task's config block is present but invalid (e.g., malformed predicate), the schema rejects it during parsing. Schema files are loaded and compiled once at startup; if a schema file doesn't exist or is invalid JSON Schema, the build fails before the first record is read. This fail-fast behavior prevents silent mode where 1000 records process before a config mistake is discovered.
+
 ```ts
 {
   source:     true;                          // enable SourceClassifier
@@ -207,6 +209,8 @@ Source of truth: `src/schemas/output.schema.json`.
 ```
 
 No classifier tasks in the pipeline means records go straight from `json:read` to your squasher plugin. Fine if you're classifying in the plugin itself or all records are the same type.
+
+**Cross-field validation**: If you list a classifier task in the pipeline but omit its config block (e.g., `pipeline: ["json:read", "classify:rules", ...]` but no `classification.rules`), the orchestrator rejects the config at load time and exits with code `2`. This fail-fast prevents silent skipping where a rule file doesn't exist and classification appears to work but produces no proposals. Schema path resolution is relative to the config file's directory; if a schema file path is absolute or relative to the wrong directory, file-not-found errors surface before the first record is processed.
 
 ---
 
