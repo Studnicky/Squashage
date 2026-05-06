@@ -235,7 +235,7 @@ export class BaseIRIResolver {
     } catch (err) {
       throw new Error(
         `BaseIRIResolver.resolve: cannot resolve ${JSON.stringify(ref)} against ${JSON.stringify(base)}: ${err instanceof Error ? err.message : String(err)}`,
-        { cause: err instanceof Error ? err : undefined },
+        { cause: err },
       );
     }
   }
