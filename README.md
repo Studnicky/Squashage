@@ -7,6 +7,8 @@
 
 Graph reconstitution pipeline. Feed it structured JSON records. It classifies each one, reconstitutes the lot into a deterministic RDF graph, and squashes the result into a single file you can actually serve.
 
+**Upstream:** [Ripperoni](https://github.com/Studnicky/Ripperoni) produces the JSON records Squashage consumes. Pair them to go from raw web pages to structured RDF.
+
 **[Documentation](https://studnicky.github.io/Squashage/)** · **[Architecture](https://studnicky.github.io/Squashage/architecture)** · **[Classifier engines](https://studnicky.github.io/Squashage/classification-engines)** · **[Demo](https://studnicky.github.io/Squashage/examples/aonprd/aonprd.html)** · **[Releases](https://github.com/Studnicky/Squashage/releases)**
 
 ---

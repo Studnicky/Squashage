@@ -1,0 +1,62 @@
+name: Changelog Check
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+
+jobs:
+  changelog-check:
+    if: github.actor != 'dependabot[bot]'
+    name: Verify Changelog
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate changelog
+        run: |
+          VERSION=$(node -p "require('./package.json').version" 2>/dev/null || echo "")
+          TARGET_BRANCH="${{ github.base_ref }}"
+
+          if [ -z "$VERSION" ]; then
+            echo "Warning: Could not read version from package.json"
+            exit 0
+          fi
+
+          if [ ! -f "CHANGELOG.md" ]; then
+            echo "::error::CHANGELOG.md not found"
+            exit 1
+          fi
+
+          echo "Target branch: $TARGET_BRANCH"
+          echo "Package version: $VERSION"
+
+          if [ "$TARGET_BRANCH" = "main" ] || [ "$TARGET_BRANCH" = "master" ]; then
+            if grep -qE "^## \[${VERSION}\]" CHANGELOG.md; then
+              echo "CHANGELOG.md has entry for version ${VERSION}"
+            else
+              echo "::error::CHANGELOG.md missing entry for version ${VERSION}"
+              echo ""
+              echo "For releases to main, CHANGELOG.md must have:"
+              echo "  ## [${VERSION}] - YYYY-MM-DD"
+              exit 1
+            fi
+          else
+            if grep -qE "^## \[Unreleased\]" CHANGELOG.md; then
+              UNRELEASED_CONTENT=$(sed -n '/^## \[Unreleased\]/,/^## \[/p' CHANGELOG.md | grep -cE "^### (Added|Changed|Fixed|Removed|Deprecated|Security)" || true)
+              if [ "$UNRELEASED_CONTENT" -gt 0 ]; then
+                echo "CHANGELOG.md has [Unreleased] section with content"
+              else
+                echo "::error::CHANGELOG.md [Unreleased] section is empty"
+                echo ""
+                echo "Add your changes under [Unreleased] with subsections:"
+                echo "  ### Added / ### Changed / ### Fixed"
+                exit 1
+              fi
+            else
+              echo "::error::CHANGELOG.md missing [Unreleased] section"
+              exit 1
+            fi
+          fi
+
+    timeout-minutes: 5

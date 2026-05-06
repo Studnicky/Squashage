@@ -38,7 +38,7 @@ const sidebar = [
 export default defineConfig({
   appearance: themeConfig.appearance,
   base: '/Squashage/',
-  description: 'Graph reconstitution pipeline — classifies structured JSON records into a deterministic RDF graph and renders it as TriG, JSON-LD, or an interactive HTML view.',
+  description: 'Graph reconstitution pipeline — squashes JSON records into deterministic RDF graphs. Consumes output from Ripperoni or other JSON sources.',
   srcDir: '.',
   srcExclude: ['plans/**', 'plans/*.md'],
   head: [

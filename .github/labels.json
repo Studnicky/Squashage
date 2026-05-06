@@ -1,0 +1,13 @@
+[
+  { "name": "bug", "color": "d73a4a", "description": "Bug report" },
+  { "name": "enhancement", "color": "a3e635", "description": "New feature or improvement" },
+  { "name": "documentation", "color": "0075ca", "description": "Documentation changes" },
+  { "name": "breaking-change", "color": "e11d48", "description": "Breaking API change - requires major version bump" },
+  { "name": "automated", "color": "6b7280", "description": "Automation-generated PR or issue" },
+  { "name": "dependencies", "color": "1d4ed8", "description": "Dependency updates" },
+  { "name": "security", "color": "7c3aed", "description": "Security-related issue or fix" },
+  { "name": "ci", "color": "0369a1", "description": "CI/CD workflow changes" },
+  { "name": "stale", "color": "d4d4d4", "description": "Inactive issue/PR" },
+  { "name": "pinned", "color": "8b5cf6", "description": "Issue/PR pinned - won't go stale" },
+  { "name": "work-in-progress", "color": "c084fc", "description": "PR is still in progress" }
+]

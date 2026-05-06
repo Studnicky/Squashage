@@ -1,3 +1,51 @@
+# Line ending normalization
+# All text files use LF line endings (Unix-style)
+* text=auto eol=lf
+
+# Explicitly mark common file types as text with LF
+*.ts text eol=lf
+*.tsx text eol=lf
+*.js text eol=lf
+*.jsx text eol=lf
+*.mjs text eol=lf
+*.cjs text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.html text eol=lf
+*.css text eol=lf
+*.scss text eol=lf
+*.less text eol=lf
+*.sh text eol=lf
+*.bash text eol=lf
+
+# Binary files (do not normalize)
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.webp binary
+*.svg binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
+*.zip binary
+*.tar binary
+*.gz binary
+*.pdf binary
+
+# Exclude from npm package export
+.vscode/ export-ignore
+tests/ export-ignore
+coverage/ export-ignore
+*.test.ts export-ignore
+.gitignore export-ignore
+.gitattributes export-ignore
+.github/ export-ignore
+
 # Linguist hints — these are demo/build artefacts, not authored project source.
 # Excluding them keeps GitHub's language breakdown reflecting the TypeScript
 # library, not the size of the embedded WebGL viewer or its baked corpus data.

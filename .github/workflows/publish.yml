@@ -1,0 +1,146 @@
+name: Publish Package
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  validate:
+    name: Validate Before Publish
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          cache: npm
+          node-version: '24'
+
+      - name: Install dependencies
+        run: npm ci --include=dev --include=optional
+
+      - name: Build
+        run: npm run build
+
+      - name: Type check
+        run: npm run type-check
+
+      - name: Lint
+        run: npx eslint .
+
+      - name: Run tests
+        run: npm test
+
+    timeout-minutes: 15
+
+  publish:
+    needs: validate
+    if: ${{ vars.NPM_PUBLISH_ENABLED == 'true' }}
+    outputs:
+      published: ${{ steps.publish-package.outputs.published }}
+      version: ${{ steps.check-version.outputs.version }}
+    permissions:
+      contents: read
+      id-token: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          cache: npm
+          node-version: '24'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies
+        run: npm ci --include=dev --include=optional
+
+      - name: Build
+        run: npm run build
+
+      - name: Validate changelog has version entry
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          if [ -f CHANGELOG.md ] && ! grep -qE "^## \[?${VERSION}\]?" CHANGELOG.md; then
+            echo "::error::CHANGELOG.md does not contain entry for version ${VERSION}"
+            exit 1
+          fi
+
+      - name: Check if version already published
+        id: check-version
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          PKG_NAME=$(node -p "require('./package.json').name")
+          PKG_VERSION=$(node -p "require('./package.json').version")
+          echo "version=${PKG_VERSION}" >> $GITHUB_OUTPUT
+
+          if npm view "${PKG_NAME}@${PKG_VERSION}" version 2>/dev/null; then
+            echo "Version ${PKG_VERSION} already published, skipping"
+            echo "already_published=true" >> $GITHUB_OUTPUT
+          else
+            echo "Version ${PKG_VERSION} not found, will publish"
+            echo "already_published=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Publish to npm
+        id: publish-package
+        if: steps.check-version.outputs.already_published == 'false'
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          npm publish --provenance --access public
+          echo "published=true" >> $GITHUB_OUTPUT
+
+    timeout-minutes: 15
+
+  release:
+    if: needs.publish.outputs.published == 'true'
+    needs: publish
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check if release exists
+        id: check-release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="v${{ needs.publish.outputs.version }}"
+          if gh release view "$VERSION" &>/dev/null; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Extract changelog notes
+        if: steps.check-release.outputs.exists == 'false'
+        run: |
+          VERSION="${{ needs.publish.outputs.version }}"
+          NOTES=""
+          if [ -f CHANGELOG.md ]; then
+            NOTES=$(awk -v ver="$VERSION" '
+              /^## \[?'"$VERSION"'\]?/ { found=1; next }
+              found && /^## / { exit }
+              found { print }
+            ' CHANGELOG.md | sed '/^$/N;/^\n$/d')
+          fi
+          if [ -z "$NOTES" ]; then
+            NOTES="Release v${VERSION}"
+          fi
+          echo "$NOTES" > release_notes.md
+
+      - name: Create GitHub Release
+        if: steps.check-release.outputs.exists == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="v${{ needs.publish.outputs.version }}"
+          gh release create "$VERSION" \
+            --title "$VERSION" \
+            --notes-file release_notes.md \
+            --verify-tag=false
+
+    timeout-minutes: 15

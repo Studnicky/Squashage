@@ -7,8 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `.github/dependabot.yml`: canonical dependabot configuration with npm + github-actions update groups. NPM updates split into eslint-ecosystem (major + minor + patch) and minor-and-patch (all others).
+- `.github/labels.json`: GitHub label definitions (bug, enhancement, documentation, breaking-change, automated, dependencies, security, ci, stale, pinned, work-in-progress).
+- `.github/workflows/changelog-check.yml`: validates CHANGELOG.md has entries for [Unreleased] on feature PRs or versioned entries for release PRs.
+- `.github/workflows/license-check.yml`: security audit of dependency licenses, blocks GPL/AGPL/LGPL/UNLICENSED.
+- `.github/workflows/security.yml`: npm audit + artifact upload (production + dev scopes).
+- `.github/workflows/stale.yml`: auto-marks inactive issues / PRs after 30/14 days respectively.
+- `.github/workflows/publish.yml`: publish to npm on main branch push (gated by NPM_PUBLISH_ENABLED, off by default). Validates changelog, checks version uniqueness, publishes with provenance, creates GitHub release.
+- Cross-link to Ripperoni upstream in README and package.json description.
+
 ### Changed
 
+- `.gitattributes`: line-ending normalization (LF) + binary file markers from json-tology canonical pattern. Preserved linguist hints for demo/build artifacts.
+- `package.json` description: "squashes classified JSON records into deterministic RDF" (from classifies → reconstitutes).
+- `docs/.vitepress/config.ts` description: simplified tagline, explicit RDF format list (Turtle, TriG, JSON-LD, N-Triples, N-Quads).
+- GitHub repo description: "Graph reconstitution pipeline — squashes classified JSON records into deterministic RDF graph sausage."
 - `.gitattributes`: demo HTML wrapper, baked JSON-LD payload, per-graph chunk JSON, and the inlined sigma+graphology vendor bundle marked `linguist-vendored` / `linguist-generated` so GitHub's language detector reflects the TypeScript library, not the size of the embedded WebGL viewer or its corpus data.
 
 ## [0.2.0] - 2026-05-05
