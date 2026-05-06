@@ -61,7 +61,7 @@
     "@types/rdfjs__dataset": "^2.0.7",
     "esbuild": "^0.28.0",
     "eslint": "^10.3.0",
-    "globals": "^15.0.0",
+    "globals": "^17.6.0",
     "graphology": "^0.26.0",
     "graphology-layout-forceatlas2": "^0.10.1",
     "graphology-types": "^0.24.8",
