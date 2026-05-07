@@ -19,6 +19,7 @@ const sidebar = [
       { link: '/usage/url-pattern-classifier',           text: 'URL-pattern classifier' },
       { link: '/usage/property-fingerprint-classifier', text: 'Property-fingerprint classifier' },
       { link: '/usage/winknlp-entities',                text: 'winkNLP entities classifier' },
+      { link: '/usage/entity-link',                     text: 'Entity-link enrichment' },
       { link: '/usage/taxonomic-narrowing',             text: 'Taxonomic narrowing' },
       { link: '/usage/ontology',                text: 'Ontology (json-tology)' },
       { link: '/usage/output',             text: 'Output' },

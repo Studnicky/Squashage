@@ -249,6 +249,41 @@ const TARGET_SCHEMA = {
         },
       },
     },
+    enrichment: {
+      type: 'object',
+      additionalProperties: false,
+      properties: {
+        entityLink: {
+          type: 'object',
+          additionalProperties: false,
+          required: ['engine', 'edgeIri', 'linkAgainst'],
+          properties: {
+            engine: {
+              type: 'string',
+              enum: ['winknlp'] as const,
+            },
+            fields: {
+              type:  'array',
+              items: { type: 'string', minLength: 1 },
+            },
+            edgeIri: {
+              type:      'string',
+              minLength: 1,
+            },
+            linkAgainst: {
+              type:     'array',
+              minItems: 1,
+              items:    { type: 'string', minLength: 1 },
+            },
+            minConfidence: {
+              type:    'number',
+              minimum: 0,
+              maximum: 1,
+            },
+          },
+        },
+      },
+    },
     quarantine:     { type: 'object' },
     concurrency:    { type: 'integer', minimum: 1, default: 1 },
   },
@@ -326,6 +361,8 @@ export interface TargetConfigInterface {
   readonly ontology?: Readonly<Record<string, unknown>> | undefined;
   /** Classification cascade configuration (passed through to classifier). */
   readonly classification?: Readonly<Record<string, unknown>> | undefined;
+  /** Enrichment configuration (passed through to enrichment tasks). */
+  readonly enrichment?: Readonly<Record<string, unknown>> | undefined;
   /** Quarantine bucket configuration (passed through to QuarantineWriter). */
   readonly quarantine?: Readonly<Record<string, unknown>> | undefined;
   /** Maximum concurrent pipeline executions (default 1). */
@@ -465,6 +502,25 @@ function crossValidateTarget(target: string, targetConfig: TargetConfigInterface
       `present in the pipeline to pick the winning class.`,
       { metadata: { target, distinctProposers: [...distinctProposers] } },
     );
+  }
+
+  // Validate enrich:entity-link task requirements.
+  if (pipeline.includes('enrich:entity-link')) {
+    const enrichment = targetConfig.enrichment as Record<string, unknown> | undefined;
+    const entityLink = enrichment?.['entityLink'] as Record<string, unknown> | undefined;
+    if (entityLink === undefined || entityLink === null) {
+      throw SquashageConfigError.create(
+        `Pipeline lists "enrich:entity-link" but enrichment.entityLink is missing`,
+        { metadata: { target, task: 'enrich:entity-link' } },
+      );
+    }
+    const engine = entityLink['engine'];
+    if (engine !== 'winknlp') {
+      throw SquashageConfigError.create(
+        `enrichment.entityLink.engine must be "winknlp"; got "${String(engine)}"`,
+        { metadata: { target, engine } },
+      );
+    }
   }
 
   // Enforce jsonldContext is only set when output format resolves to jsonld.

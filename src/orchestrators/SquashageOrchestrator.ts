@@ -61,6 +61,8 @@ import { QuarantineWriter }        from '../quarantine/QuarantineWriter.js';
 import { Logger }                  from '../modules/logger/logger.js';
 import { JsonTologyOntology }      from '../ontology/JsonTologyOntology.js';
 import type { JsonTologySchemaInputInterface } from '../ontology/JsonTologyOntology.js';
+import { EntityLinkTask }          from '../tasks/entityLink.js';
+import type { EntityLinkConfigInterface } from '../tasks/entityLink.js';
 
 const logger = Logger.forComponent('SquashageOrchestrator');
 
@@ -236,11 +238,17 @@ export class SquashageOrchestrator {
     //           PrefixResolver.resolve() can peek at the first record's path.
     //           See Step 7b below.
 
-    // Step 4 — Strip rdfjs:finalize and rdfjs:stream from per-record tasks; retain references.
-    const FINALIZE_NAME   = 'rdfjs:finalize';
-    const STREAM_NAME     = 'rdfjs:stream';
-    const perRecordNames  = targetConfig.pipeline.filter(
-      name => name !== FINALIZE_NAME && name !== STREAM_NAME,
+    // Step 4 — Strip end-of-run tasks (rdfjs:finalize, rdfjs:stream, enrich:entity-link) from per-record tasks; retain references.
+    //
+    // These are end-of-run tasks invoked by the orchestrator once after the
+    // per-record batch settles, not inside the per-record pipeline loop.
+    // enrich:entity-link runs BEFORE rdfjs:finalize so it can contribute quads
+    // to the dataset before serialization.
+    const FINALIZE_NAME    = 'rdfjs:finalize';
+    const STREAM_NAME      = 'rdfjs:stream';
+    const ENTITY_LINK_NAME = 'enrich:entity-link';
+    const perRecordNames   = targetConfig.pipeline.filter(
+      name => name !== FINALIZE_NAME && name !== STREAM_NAME && name !== ENTITY_LINK_NAME,
     );
 
     // Step 5 — Build a per-run TaskRegistry and register classifier task instances.
@@ -300,6 +308,18 @@ export class SquashageOrchestrator {
       }
 
       logger.info('run', 'Classifier tasks registered', { target, tasks: Object.keys(classifierInstances) });
+    }
+
+    // Register enrich:entity-link when configured and listed in the pipeline.
+    const pipelineSet = new Set(targetConfig.pipeline);
+    if (pipelineSet.has('enrich:entity-link')) {
+      const enrichment = targetConfig.enrichment as Record<string, unknown> | undefined;
+      const entityLinkCfg = enrichment?.['entityLink'] as EntityLinkConfigInterface | undefined;
+      if (entityLinkCfg !== undefined) {
+        const entityLinkTask = EntityLinkTask.create(entityLinkCfg);
+        registry.register('enrich:entity-link', entityLinkTask.execute);
+        logger.info('run', 'enrich:entity-link task registered', { target });
+      }
     }
 
     // Look up all per-record tasks eagerly; classifier tasks come from the per-run registry,
@@ -415,10 +435,13 @@ export class SquashageOrchestrator {
       failed:    failed.length,
     });
 
-    // Step 10 — Invoke finalize task once with a synthetic state carrying ctx.
-    const finalizeState: PipelineStateInterface = {
+    // Step 10 — Invoke end-of-run tasks once with a synthetic state carrying ctx.
+    //
+    // Order: enrich:entity-link (enrichment) -> rdfjs:finalize (serialization).
+    // Both receive the same synthetic state.
+    const endOfRunState: PipelineStateInterface = {
       targetId:        target,
-      source:          { target, path: '__finalize__' },
+      source:          { target, path: '__end-of-run__' },
       input:           {},
       classification:  null,
       classifications: [],
@@ -426,9 +449,22 @@ export class SquashageOrchestrator {
       context:         ctx,
     };
 
+    // Invoke enrich:entity-link when it was listed in the pipeline and is registered.
+    if (targetConfig.pipeline.includes(ENTITY_LINK_NAME)) {
+      const entityLinkTask = registry.has(ENTITY_LINK_NAME)
+        ? registry.get(ENTITY_LINK_NAME)
+        : undefined;
+
+      if (entityLinkTask !== undefined) {
+        logger.debug('enrich', 'Invoking enrich:entity-link', { target });
+        await entityLinkTask(async (): Promise<void> => { /* no-op next */ }, endOfRunState);
+        logger.info('enrich', 'enrich:entity-link completed', { target });
+      }
+    }
+
     logger.debug('finalize', `Invoking ${activeFinalizeTaskName}`, { target });
 
-    await activeFinalizeTask(async (): Promise<void> => { /* no-op next */ }, finalizeState);
+    await activeFinalizeTask(async (): Promise<void> => { /* no-op next */ }, endOfRunState);
 
     logger.info('finalize', `${activeFinalizeTaskName} completed`, { target });
 
