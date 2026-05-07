@@ -23,5 +23,6 @@
 
 import './jsonRead.js';
 import './rdfjsFinalize.js';
+import './rdfjsStream.js';
 import './ontologyEmit.js';
 import './provenanceEmit.js';

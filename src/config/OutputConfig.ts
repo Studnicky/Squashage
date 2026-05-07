@@ -54,6 +54,17 @@ export const OUTPUT_SCHEMA = {
       },
     },
     dryRun: { type: 'boolean', default: false },
+    encoding: {
+      type: 'string',
+      enum: ['atomic', 'stream'] as const,
+      default: 'atomic',
+      description: 'Output write strategy. "atomic" (default) collects all quads in memory and writes a single file atomically. "stream" opens a file handle immediately and writes each quad as it arrives, eliminating OOM risk on large datasets.',
+    },
+    dropInMemory: {
+      type: 'boolean',
+      default: false,
+      description: 'When encoding=stream, drop quads from the in-memory dataset after streaming write. Saves memory but downstream tasks (provenance, ontology:emit) must not depend on dataset scans.',
+    },
     jsonldContext: {
       oneOf: [
         { type: 'string' },
@@ -101,6 +112,28 @@ export const OUTPUT_SCHEMA = {
           canonicalize: { const: false },
           validate:     { not: {} },
         },
+      },
+    },
+    {
+      // encoding:stream + canonicalize:true is forbidden
+      if:   { required: ['encoding'], properties: { encoding: { const: 'stream' } } },
+      then: {
+        properties: {
+          canonicalize: { const: false },
+        },
+      },
+    },
+    {
+      // encoding:stream + format:jsonld is forbidden
+      if: {
+        required: ['encoding', 'format'],
+        properties: {
+          encoding: { const: 'stream' },
+          format:   { const: 'jsonld' },
+        },
+      },
+      then: {
+        not: {},
       },
     },
   ],

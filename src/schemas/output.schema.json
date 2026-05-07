@@ -4,31 +4,64 @@
   "title": "Squashage Output Config",
   "type": "object",
   "additionalProperties": false,
-  "required": ["kind", "path"],
+  "required": [
+    "kind",
+    "path"
+  ],
   "properties": {
-    "kind":        { "type": "string", "const": "file" },
-    "path":        { "type": "string", "minLength": 1 },
-    "format":      {
+    "kind": {
       "type": "string",
-      "enum": ["turtle", "trig", "ntriples", "nquads", "jsonld"],
+      "const": "file"
+    },
+    "path": {
+      "type": "string",
+      "minLength": 1
+    },
+    "format": {
+      "type": "string",
+      "enum": [
+        "turtle",
+        "trig",
+        "ntriples",
+        "nquads",
+        "jsonld"
+      ],
       "description": "RDF/XML and N3 output are deferred to v1.x — the AJV schema rejects them in v0.x."
     },
-    "mode":        { "type": "string", "enum": ["dataset", "stream"], "default": "dataset" },
-    "prefixes":    {
-      "type": "object",
-      "additionalProperties": { "type": "string", "format": "uri" }
+    "mode": {
+      "type": "string",
+      "enum": [
+        "dataset",
+        "stream"
+      ],
+      "default": "dataset"
     },
-    "baseIRI":     { "type": "string", "format": "uri" },
-    "graph":       {
+    "prefixes": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string",
+        "format": "uri"
+      }
+    },
+    "baseIRI": {
+      "type": "string",
+      "format": "uri"
+    },
+    "graph": {
       "type": "string",
       "format": "uri",
       "description": "Collapse all quads to this named graph at write time. Required when target emits named graphs and `format` is triple-only (turtle, ntriples)."
     },
-    "canonicalize": { "type": "boolean", "default": false },
-    "validate":    {
+    "canonicalize": {
+      "type": "boolean",
+      "default": false
+    },
+    "validate": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["shapes"],
+      "required": [
+        "shapes"
+      ],
       "properties": {
         "shapes": {
           "type": "string",
@@ -36,11 +69,32 @@
         }
       }
     },
-    "dryRun":      { "type": "boolean", "default": false },
+    "dryRun": {
+      "type": "boolean",
+      "default": false
+    },
+    "encoding": {
+      "type": "string",
+      "enum": [
+        "atomic",
+        "stream"
+      ],
+      "default": "atomic",
+      "description": "Output write strategy. 'atomic' (default) collects all quads in memory and writes a single file atomically. 'stream' opens a file handle immediately and writes each quad as it arrives, eliminating OOM risk on large datasets."
+    },
+    "dropInMemory": {
+      "type": "boolean",
+      "default": false,
+      "description": "When encoding=stream, drop quads from the in-memory dataset after streaming write. Saves memory but downstream tasks (provenance, ontology:emit) must not depend on dataset scans."
+    },
     "jsonldContext": {
       "oneOf": [
-        { "type": "string" },
-        { "type": "object" }
+        {
+          "type": "string"
+        },
+        {
+          "type": "object"
+        }
       ],
       "description": "Compaction context for JSON-LD output. Path string (resolved against config dir), inline object, or omit/'auto' to let squashage build one from the quad set + ctx.prefixes. Rejected by cross-validation when format is not jsonld."
     },
@@ -62,14 +116,27 @@
           "type": "array",
           "items": {
             "type": "string",
-            "enum": ["classifier", "confidence", "reasons", "timestamp"]
+            "enum": [
+              "classifier",
+              "confidence",
+              "reasons",
+              "timestamp"
+            ]
           },
           "description": "Metadata categories to include in provenance output.",
-          "default": ["classifier", "confidence", "reasons", "timestamp"]
+          "default": [
+            "classifier",
+            "confidence",
+            "reasons",
+            "timestamp"
+          ]
         },
         "encoding": {
           "type": "string",
-          "enum": ["named-graph", "rdf-star"],
+          "enum": [
+            "named-graph",
+            "rdf-star"
+          ],
           "default": "named-graph",
           "description": "Provenance encoding strategy. 'named-graph' (default) emits PROV-O quads into a sidecar named graph. 'rdf-star' emits quoted-triple-subject quads where the rdf:type assertion for each record is the subject of provenance metadata."
         }
@@ -78,12 +145,60 @@
   },
   "allOf": [
     {
-      "if":   { "properties": { "mode": { "const": "stream" } } },
+      "if": {
+        "properties": {
+          "mode": {
+            "const": "stream"
+          }
+        }
+      },
       "then": {
         "properties": {
-          "canonicalize": { "const": false },
-          "validate":     { "not": {} }
+          "canonicalize": {
+            "const": false
+          },
+          "validate": {
+            "not": {}
+          }
         }
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "encoding"
+        ],
+        "properties": {
+          "encoding": {
+            "const": "stream"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "canonicalize": {
+            "const": false
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "encoding",
+          "format"
+        ],
+        "properties": {
+          "encoding": {
+            "const": "stream"
+          },
+          "format": {
+            "const": "jsonld"
+          }
+        }
+      },
+      "then": {
+        "not": {}
       }
     }
   ]

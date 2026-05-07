@@ -36,8 +36,9 @@
 import { readdir, stat, readFile } from 'node:fs/promises';
 import { join, extname, dirname, resolve as resolvePath } from 'node:path';
 
-// Bootstrap built-in task registrations (json:read, rdfjs:finalize).
+// Bootstrap built-in task registrations (json:read, rdfjs:finalize, rdfjs:stream).
 import '../tasks/index.js';
+import { openStreamingOutput } from '../tasks/rdfjsStream.js';
 
 import type { SquashageConfigInterface, TargetConfigInterface } from '../config/SquashageConfig.js';
 import type { OutputConfigInterface }      from '../config/OutputConfig.js';
@@ -235,9 +236,12 @@ export class SquashageOrchestrator {
     //           PrefixResolver.resolve() can peek at the first record's path.
     //           See Step 7b below.
 
-    // Step 4 — Strip rdfjs:finalize from per-record tasks; retain a reference.
+    // Step 4 — Strip rdfjs:finalize and rdfjs:stream from per-record tasks; retain references.
     const FINALIZE_NAME   = 'rdfjs:finalize';
-    const perRecordNames  = targetConfig.pipeline.filter(name => name !== FINALIZE_NAME);
+    const STREAM_NAME     = 'rdfjs:stream';
+    const perRecordNames  = targetConfig.pipeline.filter(
+      name => name !== FINALIZE_NAME && name !== STREAM_NAME,
+    );
 
     // Step 5 — Build a per-run TaskRegistry and register classifier task instances.
     const registry = new TaskRegistry();
@@ -306,12 +310,19 @@ export class SquashageOrchestrator {
       }
       return TaskRegistry.get(name);
     });
-    const finalizeTask = TaskRegistry.get(FINALIZE_NAME);
+
+    // Resolve the finalize task based on output.encoding.
+    const isStreamingOutput = (outputConfig as Record<string, unknown>)['encoding'] === 'stream';
+    const activeFinalizeTask = isStreamingOutput
+      ? TaskRegistry.get(STREAM_NAME)
+      : TaskRegistry.get(FINALIZE_NAME);
+    const activeFinalizeTaskName = isStreamingOutput ? STREAM_NAME : FINALIZE_NAME;
 
     logger.debug('run', 'Pipeline tasks resolved', {
       target,
       perRecord: perRecordNames,
-      finalize:  FINALIZE_NAME,
+      finalize:  activeFinalizeTaskName,
+      streaming: isStreamingOutput,
     });
 
     // Step 6 — Build per-record Pipeline.
@@ -355,6 +366,15 @@ export class SquashageOrchestrator {
       vocabularyBase: prefixes.vocabulary.base,
       prefixSource:   prefixes.source,
     });
+
+    // Step 8b — Open streaming output before building per-record states.
+    // IMPORTANT: must run BEFORE Step 8 so that the dataset proxy installed by
+    // openStreamingOutput is visible to the spread in Step 8.
+    if (isStreamingOutput) {
+      logger.debug('run', 'Opening streaming output before per-record dispatch', { target });
+      await openStreamingOutput(ctx);
+      logger.info('run', 'Streaming output opened', { target, path: outputConfig.path });
+    }
 
     // Step 8 — Build one state per record with per-record context augmentation.
     const states = locators.map(({ recordPath, recordLine }) => {
@@ -406,11 +426,11 @@ export class SquashageOrchestrator {
       context:         ctx,
     };
 
-    logger.debug('finalize', 'Invoking rdfjs:finalize', { target });
+    logger.debug('finalize', `Invoking ${activeFinalizeTaskName}`, { target });
 
-    await finalizeTask(async (): Promise<void> => { /* no-op next */ }, finalizeState);
+    await activeFinalizeTask(async (): Promise<void> => { /* no-op next */ }, finalizeState);
 
-    logger.info('finalize', 'rdfjs:finalize completed', { target });
+    logger.info('finalize', `${activeFinalizeTaskName} completed`, { target });
 
     // Step 11 — Compute RunResultInterface.
     const qw         = QuarantineWriter.forRun(outDir, target);

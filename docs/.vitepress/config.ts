@@ -22,6 +22,7 @@ const sidebar = [
       { link: '/usage/taxonomic-narrowing',             text: 'Taxonomic narrowing' },
       { link: '/usage/ontology',                text: 'Ontology (json-tology)' },
       { link: '/usage/output',             text: 'Output' },
+      { link: '/usage/streaming-output',    text: 'Streaming output' },
       { link: '/usage/provenance',         text: 'Provenance (PROV-O sidecar)' },
       { link: '/usage/viz',                text: 'Viz' },
       { link: '/usage/plugins',            text: 'Plugins' },

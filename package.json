@@ -39,7 +39,8 @@
     "viz:refresh-vendor": "node scripts/refresh-viz-vendor.js",
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",
-    "docs:preview": "vitepress preview docs"
+    "docs:preview": "vitepress preview docs",
+    "test:perf": "node --import tsx --test 'tests/perf/**/*.test.ts'"
   },
   "dependencies": {
     "@rdfjs/data-model": "^2.1.1",
