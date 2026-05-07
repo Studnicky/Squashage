@@ -217,6 +217,36 @@ const TARGET_SCHEMA = {
             priority:         { type: 'integer', minimum: 0 },
           },
         },
+        winknlpEntities: {
+          type: 'object',
+          additionalProperties: false,
+          required: ['patterns'],
+          properties: {
+            patterns: {
+              type: 'array',
+              minItems: 1,
+              items: {
+                type: 'object',
+                additionalProperties: false,
+                required: ['name', 'patterns', 'className'],
+                properties: {
+                  name:      { type: 'string', minLength: 1 },
+                  patterns:  {
+                    type:     'array',
+                    minItems: 1,
+                    items:    { type: 'string', minLength: 1 },
+                  },
+                  className: { type: 'string', minLength: 1 },
+                  priority:  { type: 'integer', minimum: 0 },
+                },
+              },
+            },
+            fields: {
+              type:  'array',
+              items: { type: 'string', minLength: 1 },
+            },
+          },
+        },
       },
     },
     quarantine:     { type: 'object' },
@@ -348,6 +378,7 @@ const CLASS_PROPOSERS = new Set<string>([
   'classify:shacl-shape',
   'classify:url-pattern',
   'classify:property-fingerprint',
+  'classify:winknlp-entities',
 ]);
 
 /**
@@ -367,6 +398,7 @@ const CLASSIFY_TASK_CONFIG_KEYS: Readonly<Record<string, string>> = {
   'classify:taxonomic-narrowing':   'taxonomicNarrowing',
   'classify:url-pattern':           'urlPattern',
   'classify:property-fingerprint':  'propertyFingerprint',
+  'classify:winknlp-entities':      'winknlpEntities',
 };
 
 /**

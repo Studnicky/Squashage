@@ -44,6 +44,8 @@ import { UrlPatternClassifier }                            from './tasks/UrlPatt
 import type { UrlPatternConfigInterface }                  from './tasks/UrlPatternClassifier.js';
 import { PropertyFingerprintClassifier }                   from './tasks/PropertyFingerprintClassifier.js';
 import type { PropertyFingerprintConfigInterface }         from './tasks/PropertyFingerprintClassifier.js';
+import { WinknlpEntitiesClassifier }                       from './tasks/WinknlpEntitiesClassifier.js';
+import type { WinknlpEntitiesConfigInterface }             from './tasks/WinknlpEntitiesClassifier.js';
 import { OutputConfigError }                       from '../errors/OutputConfigError.js';
 import { Logger }                                  from '../modules/logger/logger.js';
 
@@ -163,6 +165,12 @@ export interface ClassificationConfigInterface {
    * one proposal per fingerprint that meets `minMatchScore`.
    */
   readonly propertyFingerprint?: PropertyFingerprintConfigInterface | undefined;
+  /**
+   * Config for `classify:winknlp-entities`. Runs deterministic pattern-based
+   * NER on configured prose fields via winkNLP custom entities; emits one
+   * proposal per matched pattern per field.
+   */
+  readonly winknlpEntities?: WinknlpEntitiesConfigInterface | undefined;
 }
 
 /**
@@ -200,6 +208,8 @@ export interface ClassifierInstancesInterface {
   readonly 'classify:url-pattern'?: UrlPatternClassifier | undefined;
   /** Instantiated `classify:property-fingerprint` task, when `config.propertyFingerprint` is present. */
   readonly 'classify:property-fingerprint'?: PropertyFingerprintClassifier | undefined;
+  /** Instantiated `classify:winknlp-entities` task, when `config.winknlpEntities` is present. */
+  readonly 'classify:winknlp-entities'?: WinknlpEntitiesClassifier | undefined;
 }
 
 // ── ClassificationFactory ─────────────────────────────────────────────────────
@@ -404,6 +414,16 @@ export class ClassificationFactory {
         config.propertyFingerprint,
         schemasBase,
       );
+    }
+
+    // ── classify:winknlp-entities ──────────────────────────────────────────
+    if (config.winknlpEntities !== undefined) {
+      logger.debug('build', 'Instantiating WinknlpEntitiesClassifier', {
+        targetId,
+        patternCount: config.winknlpEntities.patterns.length,
+        fields:       config.winknlpEntities.fields ?? ['description'],
+      });
+      result['classify:winknlp-entities'] = WinknlpEntitiesClassifier.create(config.winknlpEntities);
     }
 
     // ── classify:conflict ──────────────────────────────────────────────────

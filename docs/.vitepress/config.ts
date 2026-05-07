@@ -18,6 +18,7 @@ const sidebar = [
       { link: '/usage/shacl-shape-classifier',  text: 'SHACL-shape classifier' },
       { link: '/usage/url-pattern-classifier',           text: 'URL-pattern classifier' },
       { link: '/usage/property-fingerprint-classifier', text: 'Property-fingerprint classifier' },
+      { link: '/usage/winknlp-entities',                text: 'winkNLP entities classifier' },
       { link: '/usage/taxonomic-narrowing',             text: 'Taxonomic narrowing' },
       { link: '/usage/ontology',                text: 'Ontology (json-tology)' },
       { link: '/usage/output',             text: 'Output' },

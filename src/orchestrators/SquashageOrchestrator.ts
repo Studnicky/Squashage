@@ -291,6 +291,9 @@ export class SquashageOrchestrator {
       if (pipelineSet.has('classify:property-fingerprint') && classifierInstances['classify:property-fingerprint'] !== undefined) {
         registry.register('classify:property-fingerprint', classifierInstances['classify:property-fingerprint'].execute);
       }
+      if (pipelineSet.has('classify:winknlp-entities') && classifierInstances['classify:winknlp-entities'] !== undefined) {
+        registry.register('classify:winknlp-entities', classifierInstances['classify:winknlp-entities'].execute);
+      }
 
       logger.info('run', 'Classifier tasks registered', { target, tasks: Object.keys(classifierInstances) });
     }
