@@ -64,9 +64,9 @@ export const CLAMP_RULES: Readonly<Record<string, ClampRulesInterface>> = Object
  *
  * @example
  * ```ts
- * const safe = ConfigClamp.apply({ batchSize: 999, rateLimitMs: -1 }, 'bulbapedia');
- * // [warn] ConfigClamp — bulbapedia.batchSize: 999 → 50 (MediaWiki hard limit is 50)
- * // [warn] ConfigClamp — bulbapedia.rateLimitMs: -1 → 0 (minimum gap between requests)
+ * const safe = ConfigClamp.apply({ batchSize: 999, rateLimitMs: -1 }, 'aonprd');
+ * // [warn] ConfigClamp — aonprd.batchSize: 999 → 50 (MediaWiki hard limit is 50)
+ * // [warn] ConfigClamp — aonprd.rateLimitMs: -1 → 0 (minimum gap between requests)
  * ```
  *
  * @category Configuration

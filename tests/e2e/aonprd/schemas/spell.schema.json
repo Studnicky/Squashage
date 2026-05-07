@@ -1,0 +1,19 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://squashage.dev/schemas/aonprd/spell",
+  "title": "Spell",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["_type"],
+  "properties": {
+    "_type": { "type": "string", "const": "spell" },
+    "url": { "type": "string", "format": "uri" },
+    "name": { "type": "string" },
+    "level": { "type": "integer" },
+    "rarity": { "type": "string" },
+    "traits": { "type": "array", "items": { "type": "string" } },
+    "traditions": { "type": "array", "items": { "type": "string" } },
+    "action_cost": { "type": ["string", "null"] },
+    "description_text": { "type": "string" }
+  }
+}

@@ -1,8 +1,0 @@
-{
-  "_type": "ripperoni_component",
-  "name": "TaskRegistry",
-  "kind": "Core",
-  "since": "2.0.0",
-  "description": "Global static registry mapping task names to pipeline task functions, loaded dynamically from plugin files.",
-  "source": "src/registry/TaskRegistry.ts"
-}

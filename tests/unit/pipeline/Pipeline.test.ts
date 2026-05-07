@@ -53,3 +53,59 @@ describe('Pipeline', () => {
     await assert.rejects(p.execute({ log: [] }), /boom/);
   });
 });
+
+import { TaskRegistry } from '../../../src/registry/TaskRegistry.js';
+import { ExternalSchemaError } from '../../../src/errors/ExternalSchemaError.js';
+
+describe('Pipeline — per-run registry', () => {
+  it('addTaskByName resolves a task that exists ONLY on the custom registry, not on the static default', async () => {
+    const registry = new TaskRegistry();
+    const log: string[] = [];
+    const privateTask = async (next: () => Promise<void>, state: State): Promise<void> => {
+      state.log.push('private');
+      await next();
+    };
+
+    // Register the task on the custom instance only — NOT on the static default.
+    registry.register('private:task', privateTask);
+    assert.equal(TaskRegistry.has('private:task'), false, 'Static default must not see private:task');
+
+    // Build a Pipeline backed by the custom registry.
+    const p = new Pipeline<State>({ name: 'isolated' }, registry);
+    p.addTaskByName('private:task');
+
+    const state: State = { log };
+    await p.execute(state);
+
+    assert.deepEqual(state.log, ['private']);
+  });
+
+  it('addTaskByName falls back to the static default when no registry is supplied', async () => {
+    const noop = async (next: () => Promise<void>, state: State): Promise<void> => {
+      state.log.push('static');
+      await next();
+    };
+    TaskRegistry.register('static:task', noop);
+
+    try {
+      const p = new Pipeline<State>({ name: 'no-registry' });
+      p.addTaskByName('static:task');
+
+      const state: State = { log: [] };
+      await p.execute(state);
+
+      assert.deepEqual(state.log, ['static']);
+    } finally {
+      TaskRegistry.reset();
+    }
+  });
+
+  it('addTaskByName throws ExternalSchemaError for unknown name on custom registry', () => {
+    const registry = new TaskRegistry();
+    const p = new Pipeline<State>({}, registry);
+    assert.throws(
+      () => p.addTaskByName('does:not:exist'),
+      (err: unknown) => err instanceof ExternalSchemaError,
+    );
+  });
+});

@@ -7,11 +7,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [2.3.0] - 2026-05-05
+### Added
+
+- **Phase 10: rdfjs:stream streaming output task.** New built-in pipeline task `rdfjs:stream` eliminates OOM on large datasets (Veekun-scale 486K learnsets) by writing quads to disk as they arrive rather than accumulating them in RAM before writing atomically. The orchestrator opens a streaming file handle once before per-record dispatch and wraps `ctx.dataset` with a write-through proxy: each `dataset.add(quad)` call serializes the quad immediately to the output file. Quads are optionally dropped from the in-memory dataset via `dropInMemory: true` to bound RSS growth. Config fields added to `OutputConfigInterface`: `encoding: atomic | stream` (default `atomic`, preserving all prior behaviour) and `dropInMemory: boolean` (default `false`). Config-load errors thrown when `encoding: stream` is combined with `canonicalize: true` or `format: jsonld` (both require the full graph). Compatible formats for streaming: `ntriples`, `nquads`, `turtle` (line-oriented), `trig` (line-oriented). `rdfjs:finalize` is unchanged and remains the default. Documentation page `docs/usage/streaming-output.md` added with problem framing, format compatibility matrix, state machine, `dropInMemory` tradeoffs, and worked Veekun example.
+- **v0.6.0-alpha.3 Phase 9: winkNLP entity-link enrichment.** New end-of-run pipeline task `enrich:entity-link` (`EntityLinkTask`) densifies the RDF graph by scanning configured prose predicates on every typed instance and emitting `<subject> <edgeIri> <target>` quads for any span that case-fold-matches a known instance label. The task is an end-of-run enrichment phase: the orchestrator strips `enrich:entity-link` from the per-record pipeline and invokes it once after all per-record squash tasks have settled, so the entity index is built from the fully-populated dataset. Index construction is O(n) over dataset quads; per-subject span extraction uses winkNLP tokenization with a 1-5 token sliding window; lookup is O(1) via a frozen `Map<string, string>`. No new IRIs are invented: edge targets must already exist as typed instances in the dataset. Self-links and duplicate edges per subject are suppressed. Configurable via `targets.<id>.enrichment.entityLink` (`engine: "winknlp"`, `fields`, `edgeIri`, `linkAgainst`, `minConfidence`). Config schema extended with `enrichment.entityLink` block; AJV cross-validation enforces `engine: "winknlp"` and rejects missing `enrichment.entityLink` when `enrich:entity-link` is in the pipeline. Orchestrator strips the task name from per-record names, builds and registers the stateful `EntityLinkTask` instance, then invokes it post-batch before finalize. Documentation page `docs/usage/entity-link.md` added; sidebar entry added to `docs/.vitepress/config.ts`.
+
+- **v0.5.0-beta.2 Phase 7: RDF-star reification.** Extends `output:provenance` with an optional `encoding: "rdf-star"` mode. When enabled, provenance metadata is attached directly to the winning `rdf:type` assertion using quoted triples (`<< subject rdf:type class >> prov:wasGeneratedBy ...`) rather than a sidecar named graph. Default is `encoding: "named-graph"`, preserving all Phase 6 behaviour unchanged. New `RdfStar` utility class exposes `quoteQuad()` and `isSupported()` helpers. `Serializer.serialize` extended with an `n3FormatOverride` option to request RDF-star-capable formats (`application/trig-star`, `text/turtle-star`, `application/n-quads-star`). Documentation extended with an `## RDF-star encoding` section in `docs/usage/provenance.md` covering when to use each encoding, config examples, sample TriG-star output, and trade-off table. Note: n3.js v2.0.3 serializes quoted triples as `<<( )>>` (with inner parentheses); the parser does not round-trip that syntax in v2.0.3.
+- **v0.6.0-alpha.2 Phase 8: winkNLP content-based classifier.** New `classify:winknlp-entities` pipeline task (`WinknlpEntitiesClassifier`) runs deterministic pattern-based NER on configured prose fields (`description`, `summary`, `rules_text`, etc.) via winkNLP custom entities. The winkNLP model (`wink-eng-lite-web-model`, ~5 MB, ships from npm) and all configured custom-entity patterns are compiled once at orchestrator startup via `learnCustomEntities`; no model load or pattern compilation occurs on the hot per-record path. For each matched pattern, one proposal is emitted with `source: 'classify:winknlp-entities'`, `reasons: ['winknlp:pattern=<name>', 'winknlp:matched=<snippet>', 'winknlp:field=<field>']`, and a configurable `priority` (default 28). Invalid patterns fail fast at startup with `OutputConfigError` naming the offending pattern. Config schema extended with `classification.winknlpEntities` (`patterns[]`, `fields`). `CLASS_PROPOSERS` and `CLASSIFY_TASK_CONFIG_KEYS` updated; `ClassificationFactory` and orchestrator wiring added. New npm dependencies: `wink-nlp`, `wink-eng-lite-web-model`. Documentation page `docs/usage/winknlp-entities.md` added.: v0.6.0-alpha.2 -- winkNLP content-based classifier (Phase 8))
+
+- **v0.5.0-beta.1 Phase 6: sidecar provenance reification.** New built-in pipeline task `output:provenance` emits PROV-O metadata quads into a dedicated sidecar named graph for each processed record. Controlled by `targets.<id>.output.provenance` config block (`enabled`, `graph`, `include`). Default-off; existing configs and e2e behaviour are unaffected. Four metadata categories are emitted when enabled: `prov:wasGeneratedBy` (winning classifier engine), `prov:value` (confidence decimal), `prov:atTime` (frozen run-start timestamp -- deterministic across replays), and `prov:reason` (comma-joined evidence reasons). The run-start timestamp is frozen once at orchestrator context construction and stored as `ctx.runStartTime`, ensuring two replays of the same input produce byte-identical provenance graphs. `PROV` namespace builder added to `src/rdf/Vocab.ts`; `prov` prefix added to `STANDARD_PREFIXES`. `PipelineContextInterface` extended with optional `runStartTime?: string`. Documentation page `docs/usage/provenance.md` added with problem framing, state machine, full config examples across all four `include` flavours, edge cases, and SPARQL query examples.
+
+
+
+- json-tology integration scaffold under `targets.<id>.ontology.engine: "json-tology"`. New `JsonTologyOntology` class wraps json-tology's JsonTology + OntologyBuilder, exposing `classMap()`, `tbox()`, `shacl()`, `toQuads()` for downstream classification and emission.
+- New pipeline task `ontology:emit` writes auto-derived OWL TBox + SHACL shapes to configured paths when the json-tology engine is active.
+- `state.context.jt` (optional) gives plugins access to the typed ABox projection (`jt.toQuads(schemaId, instance)`) for opt-in adoption.
+- New `classify:shacl-shape` classifier task (`ShaclShapeClassifier`). Validates each record's property-projected ABox against loaded SHACL NodeShapes using `rdf-validate-shacl` and emits one proposal per conforming shape. Configurable via `classification.shaclShape.shapesFrom` (`"ontology"` for json-tology-derived shapes or a Turtle file path) and `classification.shaclShape.priority` (default 45, sits between schema classifier at 30 and ontology classifier at 50). Config schema updated; cross-validation and `classify:shacl-shape` task registration added to orchestrator.
+- Documentation page `docs/usage/shacl-shape-classifier.md` covering problem framing, state machine, full config worked examples (ontology and file-path modes), and edge cases.
+- New `classify:taxonomic-narrowing` classifier task (`TaxonomicNarrowingClassifier`). Runs after all class-proposing classifiers but before `classify:conflict`. Collapses supertype proposals when a more-specific subtype is also present using the OWL `subClassOf` transitive closure derived from the configured TBox. TBox source is `"ontology"` (reads from `state.context.jt.tbox()`) or a Turtle/N-Quads file path. Emits a `__narrowing_applied__` audit-trail sentinel filtered by `ConflictResolver`. Config schema, cross-validation, `ClassificationFactory` registration, and orchestrator wiring updated. Documentation page `docs/usage/taxonomic-narrowing.md` added.
+- New `classify:url-pattern` classifier task (`UrlPatternClassifier`). Evaluates pre-compiled regular expressions against the record's `_source.url` (squashage-enriched) or top-level `url` (raw scrape fallback) and emits one proposal per matching pattern. Regexes are compiled once at construction time via `UrlPatternClassifier.create(config)`; invalid regex source strings fail fast at startup with `OutputConfigError` naming the zero-based pattern index. Multiple patterns can match a single URL, producing multiple proposals for the ConflictResolver to resolve. Default priority 35 places URL-pattern proposals as corroborating evidence below structural/schema classifiers. Config schema extended with `classification.urlPattern.patterns[]` (`className`, `match`, `priority`); `CLASS_PROPOSERS` and `CLASSIFY_TASK_CONFIG_KEYS` updated; `ClassificationFactory` and orchestrator wiring added. Documentation page `docs/usage/url-pattern-classifier.md` added.
+- New `classify:property-fingerprint` classifier task (`PropertyFingerprintClassifier`). Computes Jaccard similarity between each record's top-level property key set and pre-loaded class fingerprints from a JSON file. Fingerprints are loaded once at construction via `PropertyFingerprintClassifier.create(config, configDir)` and pre-computed into `Set<string>` for O(1) intersection on the hot per-record path. Each fingerprint whose similarity meets or exceeds `minMatchScore` (default 0.85) emits one proposal with reasons `fingerprint.score=<N.NN>` and `fingerprint.shared=<count>`. Multiple fingerprints may match a single record. Default priority 32 sits alongside `classify:rules` in the proposer tier. Config schema extended with `classification.propertyFingerprint` (`fingerprintsFrom`, `minMatchScore`, `priority`); `CLASS_PROPOSERS` and `CLASSIFY_TASK_CONFIG_KEYS` updated; `ClassificationFactory` and orchestrator wiring added. New offline trainer script `scripts/build-fingerprints.ts` derives fingerprints from a labelled corpus directory (`<className>-<rest>.json` filename convention) by computing the union of top-level keys per class; exposed as `npm run viz:fingerprints`. Documentation page `docs/usage/property-fingerprint-classifier.md` added.
+
+## [0.4.0] - 2026-05-06
+
+### Changed
+
+- Em-dashes (`—`) replaced with plain punctuation (`: ` for list/definition items, `; ` for clause joins, `, ` mid-sentence) across `README.md`, `docs/**/*.md`, `package.json`, and `docs/.vitepress/config.ts`. 142 occurrences total. CHANGELOG history left untouched.
 
 ### Added
 
-- Docs site favicon: VitePress `head` block now declares the salami logo as the page icon, parallel to Squashage.
+- Mechanism-depth expansions across user-facing docs (architecture, pipeline, classification-engines, classifier-cascade, configuration, output, plugins, viz) following the yamete-fidelity bar: problem framing, state machines, determinism contract, edge cases. Also fixed outdated cytoscape references in `docs/usage/viz.md` to reflect the sigma + graphology engine since v0.2.0.
+
+### Changed
+
+- GitHub Actions baseline: `actions/checkout` 4 → 6 across all workflow files.
+
+## [0.3.0] - 2026-05-06
 
 ### Changed
 
@@ -23,194 +54,124 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `typescript-eslint` 8.59.0 → 8.59.2 (minor-and-patch group)
   - `eslint-ecosystem` group: 2 patch updates
 - GitHub Actions baseline:
-  - `actions/setup-node` 4 → 6
+  - `actions/deploy-pages` 4 → 5
+  - `actions/github-script` 7 → 9
+  - `actions/upload-artifact` 4 → 7
 
 
-### Added
-
-- Docs site favicon — VitePress `head` block now includes `<link rel="icon" href="/Ripperoni/ripperoni.png">`. Tab icon now matches the navbar logo, parallel to Squashage's setup.
-
-## [2.2.2] - 2026-05-06
-
-### Fixed
-
-- VitePress `base` and all internal `/PathRipper/...` URL references corrected to `/Ripperoni/`. The deployed docs site at https://studnicky.github.io/Ripperoni/ was 404-ing every asset because the build still pointed at the pre-rename path. README clone URL, walk-through `User-Agent` example, edit-this-page link, and the live-docs e2e test target all updated to the canonical Ripperoni URL.
-
-## [2.2.1] - 2026-05-06
+## [0.2.1] - 2026-05-06
 
 ### Added
 
-- CI + dependabot alignment with json-tology canonical pattern: `changelog-check.yml`, `license-check.yml`, `security.yml`, `stale.yml`, and `publish.yml` (npm publish disabled by default via `vars.NPM_PUBLISH_ENABLED`). Dependabot auto-update config for dependencies, npm, and GitHub Actions.
-- Cross-reference in `README.md` and package description linking to Squashage for RDF graph reconstitution.
+- `.github/dependabot.yml`: canonical dependabot configuration with npm + github-actions update groups. NPM updates split into eslint-ecosystem (major + minor + patch) and minor-and-patch (all others).
+- `.github/labels.json`: GitHub label definitions (bug, enhancement, documentation, breaking-change, automated, dependencies, security, ci, stale, pinned, work-in-progress).
+- `.github/workflows/changelog-check.yml`: validates CHANGELOG.md has entries for [Unreleased] on feature PRs or versioned entries for release PRs.
+- `.github/workflows/license-check.yml`: security audit of dependency licenses, blocks GPL/AGPL/LGPL/UNLICENSED.
+- `.github/workflows/security.yml`: npm audit + artifact upload (production + dev scopes).
+- `.github/workflows/stale.yml`: auto-marks inactive issues / PRs after 30/14 days respectively.
+- `.github/workflows/publish.yml`: publish to npm on main branch push (gated by NPM_PUBLISH_ENABLED, off by default). Validates changelog, checks version uniqueness, publishes with provenance, creates GitHub release.
+- Cross-link to Ripperoni upstream in README and package.json description.
 
 ### Changed
 
-- `.gitattributes`: merged json-tology's line-ending and export-ignore rules; preserved Ripperoni's linguist vendoring hints for test fixtures.
-- Package description: now emphasizes ingestion → RDF pipeline with Squashage.
-- VitePress `config.ts` description field updated to reflect Squashage integration.
-- `.gitattributes`: scraped AON HTML test fixtures (`tests/{e2e,unit}/plugins/fixtures/**/*.html`) marked `linguist-vendored=true` so GitHub's language detector reports the repo as the TypeScript ingestion engine it is, not majority-HTML.
+- `.gitattributes`: line-ending normalization (LF) + binary file markers from json-tology canonical pattern. Preserved linguist hints for demo/build artifacts.
+- `package.json` description: "squashes classified JSON records into deterministic RDF" (from classifies → reconstitutes).
+- `docs/.vitepress/config.ts` description: simplified tagline, explicit RDF format list (Turtle, TriG, JSON-LD, N-Triples, N-Quads).
+- GitHub repo description: "Graph reconstitution pipeline — squashes classified JSON records into deterministic RDF graph sausage."
+- `.gitattributes`: demo HTML wrapper, baked JSON-LD payload, per-graph chunk JSON, and the inlined sigma+graphology vendor bundle marked `linguist-vendored` / `linguist-generated` so GitHub's language detector reflects the TypeScript library, not the size of the embedded WebGL viewer or its corpus data.
 
-## [2.2.0] - 2026-05-05
+## [0.2.0] - 2026-05-05
 
 ### Added
 
-- VitePress documentation site at `docs/` (modeled on the json-tology template). New navbar logo, salami-red accent palette, dark mode default. Per-concept Usage section: cache, configuration, crawler, mediawiki, pipeline, plugins, scrapers. Walk-through page using the Pathfinder/aonprd target.
-- `docs/index.md` uses `layout: doc` so the sidebar is visible on the home page.
-- `.github/workflows/pages.yml`: GitHub Pages deploy via `docs:build`.
+- `JsonLdGraph.fromJsonLd` (async): expands compacted JSON-LD via `jsonld.expand` before walking, so `@type: @id` CURIE-string references produce edges. Fixes missing edges in the aonprd demo.
+- `src/viz/ChunkBuilder.ts`: build-time partitioner — runs ForceAtlas2 per named graph (canonical `inferSettings`), normalises positions onto a tile grid, bakes node sizes (`degree/3`, capped 2-20), bakes a 16-color categorical palette per chunk, writes `index.json` + `chunks/<slug>.json` with positions / sizes / colors frozen.
+- `src/viz/SigmaGraphRenderer.ts`: small HTML wrapper (~170 KB) embedding the vendored sigma + graphology bundle. Init script fetches `index.json` then progressively merges chunks into a graphology Graph in ascending node-count order; sigma renders incrementally via WebGL. Hover/select reducers hue-shift the focus node + neighbours toward the rose accent (size unchanged) and hide non-incident edges; labels render with a 4-px dark halo for readability against any cluster color.
+- `scripts/bundle-sigma.mjs`: produces `src/viz/vendor/sigmaBundle.ts` (sigma + graphology IIFE bundle, ~155 KB minified) via esbuild.
+- `docs/examples/aonprd.md`: VitePress page embedding the chunked demo via iframe.
+- `docs/usage.md`: end-to-end walk-through against the Pathfinder/aonprd fixture.
+- `docs/index.md` switched from `layout: home` to `layout: doc` so the sidebar is visible on the home page.
+- Sidebar "Demo" and "Walk-through" entries in `docs/.vitepress/config.ts`.
+- `@types/jsonld` stub extended with `expand()` method declaration.
 
 ### Changed
 
-- `crawl:list-targets` no longer requires `--paths` for html targets — listing-only operations on html-typed targets now run without the flag.
+- **Visualisation engine replaced**: cytoscape + cytoscape-fcose (canvas, single 18 MB inlined HTML, runtime layout) → sigma 3 + graphology + graphology-layout-forceatlas2 (WebGL, multi-file chunked artifacts, layout baked at build time). Cold load on the full AON corpus (13 089 nodes / 40 078 edges) goes from "never finishes" to <5 s even in hidden tabs; vendor bundle 760 KB → 155 KB; HTML wrapper 18 MB → ~170 KB.
+- `viz` CLI command emits a directory (`<basename>/<basename>.html`, `<basename>/index.json`, `<basename>/chunks/*.json`) instead of a single inline-everything HTML file. New `--iterations <n>` flag for ForceAtlas2 override.
+- Streaming kicks off via `setTimeout` rather than `requestAnimationFrame` so it fires regardless of tab visibility (rAF callbacks are throttled / never fire in hidden Chrome tabs).
+- All Bulbapedia/Torreya/Pokémon vocabulary references replaced with Pathfinder/aonprd vocabulary throughout source TSDoc examples, unit-test fixture class names, integration-test records, documentation prose, and config snippets. The canonical example is now the aonprd Pathfinder fixture.
+- `squashage.config.torreya.example.json` deleted.
+- `scripts/create-type-stubs.js`: `@types/jsonld` stub updated with `expand()` declaration.
 
 ### Removed
 
-- `docs/plans/` and `docs/roadmap.html` — replaced by the VitePress site.
+- `src/viz/GraphRenderer.ts`, `src/viz/vendor/cytoscapeBundle.ts`, `src/viz/vendor/cytoscapeFcoseBundle.ts`, `scripts/refresh-viz-vendor.js`, `tests/unit/viz/GraphRenderer.test.ts`.
+- `cytoscape` and `cytoscape-fcose` devDependencies; replaced with `sigma`, `graphology`, `graphology-layout-forceatlas2`, `graphology-types`, `esbuild`.
 
-## [2.1.0] - 2026-05-01
+## [0.1.0-beta.1] - 2026-05-04
+
+The Squashage v0.x branch — graph reconstitution pipeline that consumes structured JSON records, classifies each record through a deterministic cascade, projects matched records into RDF/JS quads, and emits a single serialized RDF file (or interactive HTML graph). 662 unit tests + 22 integration tests + 43 e2e tests, all gates green. Branch ready for the v0.x npm release.
 
 ### Added
-- `ConcurrentPipeline<TState>` — bounded-concurrency batch executor; wraps a shared `Pipeline` with a semaphore, fans N states through it simultaneously; shared cache and scraper instances flow through `state.context` naturally
-- `concurrency` config field on both `targets.<id>` and `mediawiki.<id>` (integer 1–32, default 1)
-- 6 unit tests for `ConcurrentPipeline` covering: full execution, failure isolation, semaphore ceiling, sequential mode, empty input, and cross-execution state isolation
+
+**Project bootstrap**
+- Squashage workspace bootstrapped; package identity set to `squashage`; config examples created as `squashage.config*.example.json`.
+- Squashage icon at `docs/assets/squashage.png`.
+
+**v0.x runtime — file output and OSS RDF stack** (plan 13)
+- **RDF wrapper layer** under `src/rdf/`: `Formats`, `DataFactory`, `TermGuards`, `Namespaces` (+ `IRIUtils`, `BaseIRIResolver`), `Vocab` (RDF/RDFS/OWL/XSD/SHACL + `STANDARD_PREFIXES`), `Dataset`, `Parser` (n3 + jsonld dispatcher), `Serializer` (n3.Writer + jsonld.fromRDF dispatcher), `Canonicalize` (rdf-canonize RDFC-1.0), `SyntaxValidator` (parse round-trip), `GraphBuilder` (vendored from `semantics/rdf-builder`, trimmed for v0.x).
+- **SHACL wrapper** at `src/shacl/ShaclGate.ts` over `rdf-validate-shacl` (uses the validator's bundled defaultEnv — no factory option).
+- **Output layer** under `src/output/`: `OutputInterface`, `OutputReport`, `FormatResolver`, `FileOutput` with atomic write (tmp + fsync + rename), pre-write SHACL hook with `validation.report.{txt,ttl}` quarantine emission, optional canonicalization, `output.graph` collapse for triple-only formats, `dryRun` mode.
+- **Quarantine** at `src/quarantine/QuarantineWriter.ts`: four buckets (`unknown`, `conflicts`, `projection`, `output`) with SHA-1 record IDs, `summary()` and `exitCodeFor()` helpers.
+- **Config + schemas** under `src/config/` and `src/schemas/`: AJV-validated `SquashageConfig.loadFromFile`, JSON Schemas for `output`, `target`, `predicate`, root config, with `OutputConfigInterface` derived via `json-schema-to-ts`. Cross-validation enforces classification-task ↔ config-block presence.
+- **Built-in tasks** under `src/tasks/`: `json:read` (file / JSONL), `rdfjs:finalize` (orchestrator-invoked drain-then-finalize), `index.ts` side-effect bootstrap.
+- **Orchestrator** at `src/orchestrators/SquashageOrchestrator.ts`: builds a fresh per-run `TaskRegistry`, walks the input source recursively, drives `ConcurrentPipeline.executeAll`, strips `rdfjs:finalize` from the per-record queue and invokes it once after the final batch settles, returns `RunResultInterface`.
+- **CLI** at `src/cli/cli.ts`: `build`, `classify`, `inspect`, `viz` subcommands; `--out`, `--format`, `--in`, `--dry-run`, `--title` overrides; `buildCli()` factory + ESM `isMain` guard for test friendliness.
+- **Application code is firewalled** from the underlying OSS packages — enforced by ESLint `no-restricted-imports`. Plugins, finalize, orchestrator, classifier all import from `src/rdf/*` and `src/shacl/*` only.
+- v0.x publishing posture: ships against permissive open-source RDF libraries (`@rdfjs/types`, `@rdfjs/data-model`, `@rdfjs/dataset`, `@rdfjs/namespace`, `n3`, `jsonld`, `rdf-canonize`, `rdf-validate-shacl`). v1.x will swap wrapper bodies to the unpublished `@semantics/*` workspace without touching application code; RDF/XML and N3 output formats return at v1.x.
+
+**Deterministic classifier cascade**
+- Six idiomatic task classes the user opts into via `targets[].pipeline`. Each instantiated per-target with its frozen, AJV-validated config at run startup; per-record execution does no I/O and no allocations beyond the proposal array.
+  - **`classify:source`** (`SourceClassifier`): emits a `__source__` marker proposal from the record's `_source` block.
+  - **`classify:structural`** (`StructuralClassifier`): predicate-based structural gate.
+  - **`classify:rules`** (`RulesClassifier`): predicate-based decision table over normalized facts.
+  - **`classify:schema`** (`SchemaClassifier` + `AjvClassifier` engine): per-class JSON Schema validation via pre-compiled AJV validators.
+  - **`classify:ontology`** (`OntologyClassifier`): validates proposed classNames against a known IRI map.
+  - **`classify:conflict`** (`ConflictResolver`): picks winner by `priority` desc, then `className` lex asc; quarantines on tie or unknown per `onConflict`/`onUnknown` policy.
+- **Closed-vocabulary `Predicate` engine** (`src/classification/predicates/`): purely deterministic predicate language. Closed operator set — `equals`, `notEquals`, `in`, `notIn`, `exists`, `missing`, `type`, `regex` (must be anchored), `length`, `range`, plus `all`/`any`/`not` composition. Paths are RFC 6901 JSON Pointers. Compiled at startup (RegExp pre-built, path segments pre-split, AST tagged-union). AJV schema at `src/schemas/predicate.schema.json` validates raw config against the closed vocab.
+- **`ClassificationFactory.build`** consumes the target's `classification` config block, compiles raw predicates, reads + AJV-compiles schema files, and returns the six classifier instances keyed by task name. All file I/O happens here at startup, never per-record.
+- **AJV cross-validation** in `SquashageConfig`: walks each target's `pipeline:` and asserts the matching `classification.<key>` config sub-block exists and is non-empty. Enforces that `classify:conflict` is required when ≥2 distinct class-proposing classifiers (`structural`, `rules`, `schema`) are listed.
+- **Per-run `TaskRegistry`**: `Pipeline` constructor accepts an optional `registry?: TaskRegistry`. The static surface is preserved as a back-compat delegating wrapper around a module-private default. The orchestrator constructs a fresh `TaskRegistry` per run, seeds built-ins, registers per-target classifier instances, and threads the instance into `Pipeline`.
+
+**Deterministic prefix derivation + auto JSON-LD context**
+- **`PrefixResolver`** (`src/classification/PrefixResolver.ts`): resolves `(instances, graphs, vocabulary)` prefix-base pairs from `targets[].ontology.prefixes` if present, otherwise derives from `_source.url` host (with TLD + trivial-label filtering) and the target name. Returns `{ source: 'config' | 'derived' | 'fallback' }` for evidence/logging. Result lives on `PipelineContextInterface.prefixes`.
+- **`JsonldContext.build`** (`src/rdf/JsonldContext.ts`): walks the produced quad set + `ctx.prefixes` and emits a deterministic compaction `@context`. Infers `@type: @id` for predicates whose objects are always NamedNodes, typed-literal `@type` (e.g. `xsd:integer`) when datatype is consistent across all observations, and `@container: @set` when at least one subject has ≥2 distinct values for a predicate (per-graph counting). Term collisions across vocabularies stay fully-qualified — no aliasing.
+- **`output.jsonldContext` config field**: optional path-string or inline-object override for the auto-built context. AJV cross-validation rejects it when format is not `jsonld`. Default is auto-build; `'auto'` sentinel is explicit synonym.
+
+**Cytoscape graph renderer + `viz` CLI + Pathfinder demo**
+- **`src/viz/JsonLdGraph.ts`**: pure JSON-LD → `VizPayloadInterface` (nodes, edges, graphs, prefixes) adapter. No DOM, no library imports.
+- **`src/viz/GraphRenderer.ts`**: emits a self-contained HTML document string with the vendored cytoscape bundle, the payload as JSON, and a sidebar (details, graph legend, node list grouped by class). Class-derived node colors, graph-derived edge colors, click handlers wired.
+- **`src/viz/vendor/cytoscapeBundle.ts`**: vendored cytoscape 3.33.3 as a TypeScript `string` constant (backticks and backslashes pre-escaped by `scripts/refresh-viz-vendor.js`). Cytoscape is a `devDependency` only; runtime production code never imports it.
+- **`squashage viz --in <jsonld> --out <html> --title <string>`** CLI subcommand that runs the adapter + renderer.
+- **`docs/examples/aonprd/{aonprd.jsonld,aonprd.html}`** — checked-in offline demo (open `aonprd.html` in any browser). Regenerable via `npm run viz:demo`.
+
+**Tests**
+- 662 unit tests across `src/{rdf,shacl,output,quarantine,config,tasks,orchestrators,cli,classification,viz,registry,pipeline,types,errors}/`.
+- 22 integration tests covering the full pipeline (`tests/integration/build-trig.test.ts`, `tests/integration/build-classify-cascade.test.ts`).
+- 43 e2e tests at `tests/e2e/aonprd.test.ts` against 12 Pathfinder fixtures (feat / spell / monster / action / equipment + 3 quarantine triggers). The e2e config has **zero hardcoded IRIs** — the package derives all prefixes from `_source.url` and the target name, proving the `PrefixResolver` + auto-context pipeline works end-to-end. Explicit assertions only; no snapshots.
+
+**Documentation**
+- Plan 13 (`docs/plans/13-file-output-and-semantics-integration.md`) — full implementation record: orchestrator-driven `rdfjs:finalize`, AJV schemas, code standards, deterministic classifier menu, file inventory with importer-evidence-based deletion plan.
+- Plan 15 (`docs/plans/15-graph-viz.md`) — viz architecture and refresh workflow.
+- README, architecture, classification-engines, plans/README, plans/00-current-state — synced to shipped reality (no "should be" / "currently being defined" preamble; format support split v0.x vs v1.x).
 
 ### Changed
-- `ScrapeOrchestrator.runPipeline` uses `ConcurrentPipeline` — one shared Pipeline instance per batch, N pages processed in parallel when `concurrency > 1`
-- Roadmap updated: task registry, checkpoint/resume, config validation, and concurrent pipeline moved to shipped section
-
-## [2.0.4] - 2026-05-01
+- Package identity set to `squashage`.
+- Output contract clarified: RDF/JS is the build's *internal* canonical product; the configured `output` is a single serialized RDF file (turtle/trig/ntriples/nquads/jsonld in v0.x; rdfxml/n3 deferred to v1.x). Graph-store loading is out of scope.
+- Code standards: lint, tsc, AJV, hooks, CI, conventional commits, changelog gate, TSDoc density, logger discipline, module conventions.
 
 ### Removed
-- `docs/roadmap.html`: companion tools section (mobile-app extractor, console ROM data ingester) — removed entirely, never planned
-- All references purged from git history via `git filter-repo`
+- `squashage.config.example.json` added as config example.
+- `docs/assets/squashage.png` added as the package icon.
+- Scraper layer wholesale: `src/scrapers/`, `src/crawlers/`, `src/orchestrators/ScrapeOrchestrator.ts`, `src/modules/cache/`, `src/modules/http/`, related types and tests, all `docs/*.html`, root-level `scrapers/*.js`, `errors/*.js` stray compiled artifacts, `examples/{docs-scraper,wiki-docs}/`. Orphan deps dropped: `bottleneck`, `cheerio`, `domhandler`, `wtf_wikipedia`.
 
-## [2.0.3] - 2026-05-01
-
-### Fixed
-- RateLimiter tests rewritten with 300ms delay and perSecond(5) — resilient to OS scheduler variance on loaded machines (eliminates repeated flaky failures)
-
-## [2.0.2] - 2026-04-30
-
-### Changed
-- All "Torus" references replaced with **TORUS** *(Topological Orchestration Runtime for Unified Streaming)* — described as an upcoming streaming DAG orchestration tool currently under development
-- Docs color palette rebuilt from pixel-accurate extraction of the ripperoni icon: `--meat` `#f05870`, `--meat-deep` `#c82840`, `--fat` `#f6d1cf`, `--blue` `#2090e0`, `--blue-deep` `#103050`, `--ink` `#2e0104`
-- Background surfaces, borders, code blocks, and Mermaid diagrams all updated to the extracted palette
-- Foreground text warm-shifted to echo the fat marbling tone (`#ede0df`)
-
-## [2.0.1] - 2026-04-30
-
-### Fixed
-- `perSecond(n)` timing test floor lowered from 95ms to 85ms (±15ms tolerance, consistent with earlier `withDelay` fix)
-- Color theme declared once in `sidebar.css` — removed three duplicate `:root` blocks and two stale orange accent values (`#ff7c42`) from `architecture.html` and `roadmap.html`
-- Mermaid diagram stroke colors updated to match crimson theme
-- Favicon and `<meta name="description">` added to architecture and roadmap pages
-
-## [2.0.0] - 2026-04-30
-
-### Added
-- Ripperoni icon (`docs/assets/ripperoni.png`) — a semi-cartoon salami being sliced, because the project is a web ingestion engine and this is the branding it deserves
-- Favicon and `<link rel="icon">` on all docs pages
-- CI, docs, node, and version badges in README
-- README links updated to point at the live GitHub Pages docs
-- Sidebar "View on GitHub" button; Releases and Issues links in sidebar page nav
-- `workflow_dispatch` on pages.yml for manual deploys
-
-### Changed
-- Docs accent color updated from orange to crimson-red (`#c8284a`) to match the icon palette
-- Sidebar tagline: "Web ingestion engine. It slices. You eat."
-- Intro copy rewritten with slicer/ingestion branding
-- `tasks` field corrected to `pipeline` throughout docs and README (breaking rename from beta)
-- MediaWiki feature card updated: native fetch, three scrape modes
-- Footer updated: Node 24+, correct version, full link set
-- Node requirement updated from 20+ to 24+ everywhere
-
-### Fixed
-- `docs-html` e2e test: spurious `TaskRegistry.reset()` call cleared the plugin registered in `before()`, causing `docs:parse` not found on every run
-
-## [2.0.0-beta.5] - 2026-04-30
-
-### Fixed
-- GitHub Pages deployment: enable the Pages site via API and add `workflow_dispatch` trigger so deployments can be manually re-run
-
-## [2.0.0-beta.4] - 2026-04-30
-
-### Changed
-- E2E tests no longer require `RIPPER_E2E=1` or `RIPPER_E2E_FULL=1` environment variables — tests run when you run `npm run test:e2e`, full stop
-
-## [2.0.0-beta.3] - 2026-04-30
-
-### Fixed
-- RateLimiter unit test timing tolerance widened from ±5ms to ±15ms to prevent spurious failures on loaded CI runners
-
-## [2.0.0-beta.2] - 2026-04-30
-
-### Added
-- **Docs-as-fixtures**: `docs/architecture.html` enriched with `data-component` attributes and `.summary` paragraphs — the documentation page is simultaneously the HTML scraper fixture
-- **Wiki fixture server**: self-contained `node:http` server at `tests/e2e/fixtures/wiki/server.ts` serves the same 5 core-component pages as MediaWiki API responses (no network required)
-- **`wiki-docs` e2e test**: scrapes the local fixture server via MediaWiki mode, runs `wiki-docs:parse` pipeline, asserts `_type: 'ripperoni_component'` on all 5 pages, writes outputs to `examples/wiki-docs/output/`
-- **`docs-html` e2e test** (gated on `RIPPER_E2E=1`): scrapes `https://studnicky.github.io/PathRipper/architecture.html`, asserts ≥3 `docs_section` outputs
-- **`examples/docs-scraper/plugin.ts`**: extracts `section[data-component]` headings and summaries from HTML docs pages
-- **`examples/wiki-docs/plugin.ts`**: parses `{{RipperoniComponent}}` wikitext template, extracts `name`, `kind`, `since`, `description`, `source`
-- **GitHub Pages deployment** (`pages.yml`): deploys `docs/` to `https://studnicky.github.io/PathRipper/` on every push to master
-
-## [2.0.0-beta.1] - 2026-04-30
-
-Complete TypeScript v2 rewrite of [PathRipper](https://github.com/Studnicky/PathRipper) (2019).
-Ripperoni is a target-neutral, configuration-driven web scraper with a plugin-driven
-extraction pipeline. Plugin source files ship separately as examples in v1.
-
-### Added
-
-**Core engine**
-- `Pipeline` — typed async middleware chain; tasks receive `(next, state)` and chain with `next()`
-- `HtmlScraper` — native `fetch` + cheerio; no JSDOM or browser engine
-- `MediaWikiScraper` — direct MediaWiki JSON API; three-mode enumeration (single category / `categories[]` array / full-site `allpages`)
-- `WikitextParser` — `wtf_wikipedia` wrapper with `infoboxField`/`infoboxNumber` typed accessors
-- `LinkLister` — recursive link crawler with separated `#visited`/`#collected` sets; supports `startUrls[]`, `maxPages`, `jitterMs`
-- `TaskRegistry` — plugin loader; registers task functions by name, loads plugins via dynamic import
-- `PipelineState` — typed state bridge between scrapers and pipeline tasks
-- `ScrapeOrchestrator` — coordinates scrape runs; resume/retry via `failures.json`; redirect resolution via `redirects=1` API param
-- `ScraperCache` — sharded, content-addressed pointer cache with `read-write`/`read-only`/`write-only`/`off` modes and TTL/LRU eviction
-- `ConfigClamp` — validates and clamps all numeric config values to valid ranges with `warn`-level logging per violation
-- `BaseError` + named error hierarchy — ported from `@noocodec/cogitator`: `HttpError`, `RipperConfigError`, `MappingError`, `ExternalSchemaError`; all errors carry `code`, `retryable`, `cause`, `metadata`
-
-**Configuration**
-- AJV-validated JSON config (`ripperoni.config.json`) with full `json-schema-to-ts` derived types
-- All parameters configurable with documented defaults: `rateLimitMs`, `jitterMs`, `batchSize`, `allPagesLimit`, `maxRetries`, `retryBaseDelayMs`, `retryMaxDelayMs`
-- `litany.json` project standards config
-
-**CLI**
-- `ripperoni scrape` — unified command; detects `html`/`mediawiki` mode from config
-- `ripperoni crawl` — collects target URLs via `LinkLister`; `--starts`, `--jitter`, `--max`
-- `ripperoni scrape-html` / `ripperoni scrape-wiki` — explicit mode commands
-
-**Developer experience**
-- Native git hooks (`hooks/pre-commit`, `hooks/pre-push`); installed via `scripts/install-hooks.sh`
-- Matrix CI: Node 22/24 × ubuntu/macos; typecheck, lint, unit tests, build, audit
-- CHANGELOG gate on every PR
-- 90 unit tests (framework core); `node:test` native runner, `tsx`, no jest/vitest; target-specific plugin tests live in `tests/e2e/` alongside their plugin source
-- Legacy PathRipper AONPRD e2e preserved at `tests/e2e/` (`npm run test:e2e`; never runs in CI)
-- `scripts/enginseer.sh` — local wrapper for `@noocodec/enginseer` analytical tools
-
-### Changed
-- Package renamed `ripperoni` (was `pathripper`); bin `ripperoni`
-- All source rewritten in TypeScript strict mode; ESM/NodeNext
-- Config renamed `ripperoni.config.json`; `tasks` field renamed `pipeline`
-- `startUrl` (singular) → `startUrls` (array) on crawler config
-- mwn upgraded to `^3.0.2` (clears transitive axios CVE chain)
-- Default MediaWiki rate limit raised to 2000 ms + 500 ms jitter (was 1000/250); prevents 503s on Bulbapedia-scale scrapes
-
-### Security
-- `npm audit --omit=dev` exits 0; all production dependency advisories resolved
-
-[Unreleased]: https://github.com/Studnicky/PathRipper/compare/v2.1.0...HEAD
-[2.1.0]: https://github.com/Studnicky/PathRipper/compare/v2.0.4...v2.1.0
-[2.0.4]: https://github.com/Studnicky/PathRipper/compare/v2.0.3...v2.0.4
-[2.0.3]: https://github.com/Studnicky/PathRipper/compare/v2.0.2...v2.0.3
-[2.0.2]: https://github.com/Studnicky/PathRipper/compare/v2.0.1...v2.0.2
-[2.0.1]: https://github.com/Studnicky/PathRipper/compare/v2.0.0...v2.0.1
-[2.0.0]: https://github.com/Studnicky/PathRipper/compare/v2.0.0-beta.5...v2.0.0
-[2.0.0-beta.5]: https://github.com/Studnicky/PathRipper/compare/v2.0.0-beta.4...v2.0.0-beta.5
-[2.0.0-beta.4]: https://github.com/Studnicky/PathRipper/compare/v2.0.0-beta.3...v2.0.0-beta.4
-[2.0.0-beta.3]: https://github.com/Studnicky/PathRipper/compare/v2.0.0-beta.2...v2.0.0-beta.3
-[2.0.0-beta.2]: https://github.com/Studnicky/PathRipper/compare/v2.0.0-beta.1...v2.0.0-beta.2
-[2.0.0-beta.1]: https://github.com/Studnicky/PathRipper/releases/tag/v2.0.0-beta.1

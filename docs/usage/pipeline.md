@@ -5,146 +5,169 @@ title: Pipeline
 
 # Pipeline
 
-The pipeline is a typed async middleware queue. Tasks receive `(next, state)`. Call `next()` to hand off; skip it to terminate the chain early.
+The pipeline is an ordered async middleware queue. Each task receives `(next, state)` and calls `next()` to hand off to the next task. That's the whole mechanism.
 
 ```ts
-type TaskFnType<TState> = (next: () => Promise<void>, state: TState) => Promise<void>
+type TaskFnInterface<TState> = (next: () => Promise<void>, state: TState) => Promise<void>
 ```
 
-`TState` extends `Record<string, unknown>`. Tasks mutate state directly — the same reference flows through the whole chain.
+`TState` extends `Record<string, unknown>`. Tasks mutate state directly; the same object reference flows through the entire chain.
+
+## Pipeline vs ConcurrentPipeline
+
+Two classes:
+
+- `Pipeline`: runs one record at a time, in order.
+- `ConcurrentPipeline`: runs batches of records concurrently, bounded by `concurrency` from the target config.
+
+The orchestrator picks which one based on `targets[].concurrency`. Default is `1`, which gives sequential `Pipeline` behavior.
+
+**Why batching matters**: A single `Pipeline` executes the full task chain once per record. When `concurrency > 1`, `ConcurrentPipeline` fans the record list across multiple concurrent `pipeline.execute()` calls sharing the same task queue, using a semaphore to cap live executions. This keeps memory footprint bounded while parallelizing I/O-heavy tasks (schema validation, file reads, external lookups). Set `concurrency: 4` to run 4 records through the same pipeline at once; set it to `1` for sequential behavior identical to looping.
+
+**Shared state across concurrent runs**: The underlying `Pipeline` instance is read-only during execution; each concurrent `execute()` call gets its own state closure. However, if you wire a shared HTTP cache, logger, or materialized schema into `context`, all concurrent records see the same instance. This is intentional: caches need to be shared to deduplicate work. Your config responsibility is ensuring any shared resource is thread-safe.
 
 ## TaskRegistry
 
-Tasks are registered by name and resolved at pipeline build time.
+Tasks are registered by name and resolved at pipeline build time. Two modes:
+
+**Static (global default)**: call `TaskRegistry.register('name', fn)` at module load time. The orchestrator picks them up automatically.
+
+**Instance (per-run isolation)**: `new TaskRegistry()` gives an isolated map. Pass it to `new Pipeline(config, registry)`. Tasks registered on the instance don't bleed into other concurrent runs.
 
 ```ts
-import { TaskRegistry } from 'ripperoni/registry/TaskRegistry';
+import { TaskRegistry } from 'squashage/registry/TaskRegistry';
 
-// Self-registration at import time (the standard pattern)
-TaskRegistry.register('mywiki:parse', async (next, state) => {
-  // ... extract data from state.input.html or state.input.wikitext ...
-  state.output = { /* your record */ };
+// Global registration; plugins self-register at import time
+TaskRegistry.register('aonprd:squash', async (next, state) => {
+  // ... emit quads ...
   await next();
 });
 ```
 
-Built-in tasks (`html:fetch`, `json:write`) are pre-registered. Plugin tasks register themselves when loaded.
+Plugin files are loaded dynamically via `TaskRegistry.load('./path/to/plugin.js')`. The plugin module's top-level side effect (the `TaskRegistry.register` call) fires on import.
 
-Load a plugin file dynamically:
+## state.context
 
-```ts
-await TaskRegistry.load('./plugins/mywiki.js');
-```
-
-The module's top-level `TaskRegistry.register(...)` calls fire on import.
-
-## State shape
+`state.context` is `PipelineContextInterface`; populated by the orchestrator before tasks run. It carries everything a task needs to emit quads:
 
 ```ts
-interface PipelineStateInterface {
-  targetId: string;              // target or mediawiki block name
-  source:   InputSourceInterface;
-  input:    Record<string, unknown>;  // populated by html:fetch / wiki scraper
-  output:   Record<string, unknown> | null;  // populated by your parse task
-  // ... plus any extra keys tasks attach
+interface PipelineContextInterface {
+  target:   string;           // target name from config
+  outDir:   string;           // base output directory
+  config:   Record<string, unknown>;  // the full target config object
+  factory:  DataFactory;      // RDF/JS term factory (namedNode, literal, quad, ...)
+  dataset:  DatasetCore;      // canonical dataset; every plugin writes quads here
+  builder:  GraphBuilder;     // convenience quad-builder with prefix/IRI helpers
+  graphs:   Record<string, NamedNode>;  // named-graph IRIs by lane key
+  iri:      NamespaceBuilder; // Proxy; ctx.iri.MyClass → NamedNode for vocabulary IRI
+  output:   OutputConfigInterface;  // resolved output config
+  prefixes: PrefixResolutionInterface;  // instances/graphs/vocabulary base IRIs
 }
 ```
 
-`state.input.html` — raw HTML string, set by `html:fetch`.
-`state.input.wikitext` — raw wikitext string, set by wiki fetch.
-`state.input.url` — the URL fetched.
+### `state.context.prefixes`
 
-`state.output` — set by your parse task. `json:write` serializes this to disk.
+`PrefixResolver` derives instance, graph, and vocabulary base IRIs from `_source.url`. You don't hardcode a domain; the pipeline computes it:
 
-Tasks can attach extra keys using the `Record<string, unknown>` index signature. This is how tasks pass data to each other without coupling to canonical fields.
+```ts
+{
+  instances:  { prefix: 'sq-i:', base: 'https://squashage.dev/instance/aonprd/' },
+  graphs:     { prefix: 'sq-g:', base: 'https://squashage.dev/graph/aonprd/' },
+  vocabulary: { prefix: 'sq-v:', base: 'https://squashage.dev/vocabulary/aonprd#' }
+}
+```
+
+**Resolution flow**: Given `_source.url = 'https://2e.aonprd.com/Feats.aspx?ID=750'`, the resolver applies a priority cascade: (1) check user override in `targets[].ontology.prefixes`; (2) derive from the URL hostname (here, `2e.aonprd.com` becomes the instances base and target name is slugified into `aonprd`); (3) fall back to synthetic `https://squashage.dev/` bases if derivation fails. The same `(_source.url, config)` pair always produces the same prefix resolution; deterministic and reproducible across runs.
+
+### `state.context.builder`
+
+`GraphBuilder` wraps the factory and dataset with helpers for common quad patterns. Use it instead of raw `factory.quad(...)` calls when you want prefix-aware IRI construction. It validates IRIs at emit time and raises on malformed quads before they land in the dataset.
+
+**Rationale**: Mismatched named nodes, invalid literal datatypes, or malformed IRIs are caught immediately at the call site, not silently accepted then discovered during serialization. Factory methods are low-level and permissive; builders enforce correctness.
+
+### `state.context.iri`
+
+`NamespaceBuilder` is a Proxy. Accessing `ctx.iri.MyClass` returns a `NamedNode` for `<vocabulary-base>MyClass`. Accessing `ctx.iri['my-predicate']` returns `<vocabulary-base>my-predicate`. No string concatenation at call sites.
+
+**Why**: Direct IRI construction via string concatenation is error-prone (missing slash, typos in predicate names, inconsistent casing). The Proxy ensures all vocabulary IRIs are minted from the same base, validated at construction time. This prevents invalid IRIs from being emitted.
+
+## PipelineStateInterface
+
+The full state shape:
+
+```ts
+interface PipelineStateInterface extends Record<string, unknown> {
+  readonly targetId:       string;           // target name
+  readonly source:         InputSourceInterface;     // _source metadata
+  readonly input:          Record<string, unknown>;  // parsed JSON record
+  classification:          ClassificationEvidenceInterface | null;  // set by classify:conflict
+  classifications:         ClassificationProposalInterface[];       // accumulates across classify:* tasks
+  output:                  Record<string, unknown> | null;          // set by squash:* tasks
+  context?:                PipelineContextInterface;                // set by orchestrator
+}
+```
+
+Tasks can attach extra keys; the `Record<string, unknown>` index signature allows it. Use this for inter-task communication that doesn't belong on the canonical fields.
 
 ## Built-in tasks
 
 | Name | What it does |
 |------|-------------|
-| `html:fetch` | Rate-limited fetch with retry + backoff. Reads from cache on hits. Sets `state.input.html`. |
-| `json:write` | Writes `state.output` to `<basePath>/<target>/<slug>.json`. |
+| `json:read` | Reads one JSON file, populates `state.input` and `state.source`. |
+| `classify:source` | Emits `__source__` marker proposal from `_source`. |
+| `classify:structural` | Runs closed-vocab predicate rules, emits class proposals. |
+| `classify:rules` | Runs decision-table rules, emits class proposals. |
+| `classify:schema` | Runs per-class AJV validators, emits class proposals. |
+| `classify:ontology` | Validates proposals against ontology class map. |
+| `classify:conflict` | Picks winning class; quarantines ties and unknowns. |
+| `rdfjs:finalize` | Serializes dataset to file; runs canonicalization and SHACL validation. |
 
-## The parse task pattern
+## Custom task; minimal example
 
-Your plugin's task is the only domain-specific code you write. It receives `state.input.html` (or `state.input.wikitext` for wiki targets) and sets `state.output`:
+Registers a squasher plugin that emits one quad per record:
 
 ```ts
-import type { CheerioAPI } from 'cheerio';
-import * as cheerio from 'cheerio';
+import { TaskRegistry } from 'squashage/registry/TaskRegistry';
+import type { PipelineStateInterface } from 'squashage/types/PipelineState';
 
-TaskRegistry.register('mysite:parse', async (next, state) => {
-  const html = state.input['html'] as string;
-  const url  = state.input['url'] as string;
-  const $    = cheerio.load(html);
+TaskRegistry.register('myproject:squash', async (next, state: PipelineStateInterface) => {
+  const ctx = state.context;
+  if (ctx === undefined || state.classification === null) {
+    await next();
+    return;
+  }
 
-  state.output = {
-    _type:  'article',
-    url,
-    title:  $('h1').first().text().trim(),
-    body:   $('#content').text().trim(),
-    _source: { target: state.targetId, url, plugin: 'mysite:parse' },
-  };
+  const { factory, dataset, prefixes } = ctx;
+
+  // Build subject IRI from source URL
+  const urlPath = new URL(state.input['url'] as string).pathname.slice(1);
+  const subject  = factory.namedNode(`${prefixes.instances.base}${urlPath}`);
+  const graph    = factory.namedNode(`${prefixes.graphs.base}${state.classification.type}`);
+  const RDF_TYPE = factory.namedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type');
+  const classIri = factory.namedNode(`${prefixes.vocabulary.base}${state.classification.type}`);
+
+  // Emit rdf:type quad
+  dataset.add(factory.quad(subject, RDF_TYPE, classIri, graph));
 
   await next();
 });
 ```
 
-No HTTP in the plugin. No file I/O in the plugin. The pipeline handles both. Your plugin just reads the HTML and writes a record.
+Put this in a file that your config references under `plugins[]`. It self-registers when the orchestrator loads the module.
 
-## Ordering
+## Ordering constraints
 
-```
-html:fetch  →  mysite:parse  →  json:write
-```
+The pipeline array must be consistent with which tasks exist:
 
-`html:fetch` must come first. `json:write` must come last. Your parse task goes in between.
+- `json:read` goes first; everything else reads `state.input`.
+- `classify:conflict` must come after all class-proposing tasks (`classify:structural`, `classify:rules`, `classify:schema`).
+- `rdfjs:finalize` goes last; it writes the file.
+- Your `squash:*` task goes after `classify:conflict` and before `rdfjs:finalize`.
 
-For wiki targets, the orchestrator handles the fetch — your task receives a pre-populated `state.input` and sets `state.output`. The write task is always added last by the orchestrator.
-
-## ScrapeOrchestrator
-
-You don't build the pipeline directly — the `ScrapeOrchestrator` builds it per page from the target config. It:
-
-1. Resolves the target's `pipeline` array against the registry.
-2. Optionally prepends the fetch task.
-3. Appends the write task.
-4. Calls `pipeline.execute(state)` for each page URL or wiki page.
-
-If you want to run a pipeline directly in code (tests, scripts):
-
-```ts
-import { Pipeline } from 'ripperoni/pipeline/Pipeline';
-import { PipelineState } from 'ripperoni/registry/PipelineState';
-
-const pipeline = new Pipeline<PipelineStateInterface>({ name: 'mysite' });
-pipeline.addTaskByName('mysite:parse');
-pipeline.addTask(async (next, state) => { console.log(state.output); await next(); });
-
-await pipeline.execute(PipelineState.fromHtmlPage('mysite', url, html));
-```
-
-## The _type discriminator convention
-
-Put a `_type` field on every output record. Downstream tools use it for classification. The `_source` block makes records traceable back to their origin:
-
-```ts
-state.output = {
-  _type:   'spell',              // discriminator
-  url,
-  name,
-  level,
-  _source: {
-    target: state.targetId,
-    url,
-    plugin: 'mywiki:parse',
-  },
-};
-```
+The config loader cross-validates this at startup and rejects invalid orderings.
 
 ## Related
 
-- [Configuration](./configuration) — pipeline declaration in config
-- [Scrapers](./scrapers) — what html:fetch hands your plugin
-- [MediaWiki](./mediawiki) — wiki-specific state shape
-- [Plugins](./plugins) — full plugin authoring guide
+- [Configuration](./configuration); how to declare a pipeline in config
+- [Classifier cascade](./classifier-cascade); what the classify:* tasks do
+- [Plugins](./plugins); how to write a squasher plugin

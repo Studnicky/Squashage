@@ -1,8 +1,0 @@
-{
-  "_type": "ripperoni_component",
-  "name": "LinkLister",
-  "kind": "Crawler",
-  "since": "2.0.0",
-  "description": "Recursive link crawler controlled by three regexes — domain, delimiter, target — that bound traversal scope and collect matching URLs.",
-  "source": "src/crawlers/LinkLister.ts"
-}

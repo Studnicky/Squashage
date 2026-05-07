@@ -1,8 +1,0 @@
-{
-  "_type": "ripperoni_component",
-  "name": "MediaWikiScraper",
-  "kind": "Scraper",
-  "since": "2.0.0",
-  "description": "Fetches wikitext from a MediaWiki action API using native fetch with pagination and batch support.",
-  "source": "src/scrapers/MediaWikiScraper.ts"
-}

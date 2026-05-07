@@ -1,0 +1,15 @@
+{
+  "_comment": "Full-corpus demo regeneration config. The input path is local-only — override via SQUASHAGE_DEMO_INPUT env var. Canonical command: SQUASHAGE_DEMO_INPUT=/path/to/ripper/output/aonprd/aonprd npm run viz:demo",
+  "input_path_placeholder": "<SQUASHAGE_DEMO_INPUT env var override — set to ripperoni aonprd scrape output dir>",
+  "canonical_command": "SQUASHAGE_DEMO_INPUT=/Users/studs/Workspace/ripper/output/aonprd/aonprd npm run viz:demo",
+  "source": {
+    "scraper":   "ripperoni",
+    "config":    "ripperoni.config.aonprd.json",
+    "site":      "https://2e.aonprd.com/",
+    "note":      "raw scrape output is gitignored — never committed"
+  },
+  "output": {
+    "jsonld": "docs/public/examples/aonprd/aonprd.jsonld",
+    "html":   "docs/public/examples/aonprd/aonprd.html"
+  }
+}

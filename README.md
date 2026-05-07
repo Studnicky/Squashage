@@ -1,17 +1,15 @@
-# Ripperoni
+# Squashage
 
-[![CI](https://github.com/Studnicky/PathRipper/actions/workflows/ci.yml/badge.svg)](https://github.com/Studnicky/PathRipper/actions/workflows/ci.yml)
-[![docs](https://img.shields.io/badge/docs-studnicky.github.io-c8284a)](https://studnicky.github.io/PathRipper/)
+[![CI](https://github.com/Studnicky/Squashage/actions/workflows/ci.yml/badge.svg)](https://github.com/Studnicky/Squashage/actions/workflows/ci.yml)
+[![docs](https://img.shields.io/badge/docs-studnicky.github.io-8b5fbf)](https://studnicky.github.io/Squashage/)
 [![node](https://img.shields.io/badge/node-%3E%3D24.0.0-brightgreen)](package.json)
-[![version](https://img.shields.io/badge/version-2.1.0-c8284a)](CHANGELOG.md)
+[![version](https://img.shields.io/badge/version-0.1.0--beta.1-8b5fbf)](CHANGELOG.md)
 
-Web ingestion engine. Point it at a wiki, a site, or a list of URLs. It slices through everything, one page at a time, and hands you the meat.
+Graph reconstitution pipeline. Feed it structured JSON records. It classifies each one, reconstitutes the lot into a deterministic RDF graph, and squashes the result into a single file you can actually serve.
 
-**Next step:** Ripperoni produces JSON records. Feed them into [Squashage](https://github.com/Studnicky/Squashage) to graph-squash them into deterministic RDF.
+**Upstream:** [Ripperoni](https://github.com/Studnicky/Ripperoni) produces the JSON records Squashage consumes. Pair them to go from raw web pages to structured RDF.
 
-Evolved from [PathRipper](https://github.com/Studnicky/PathRipper) (2019). HTTP machinery ported from TORUS (Topological Orchestration Runtime for Unified Streaming), an upcoming streaming DAG orchestration tool currently under development.
-
-**[Documentation](https://studnicky.github.io/PathRipper/)** · **[Architecture](https://studnicky.github.io/PathRipper/architecture)** · **[Roadmap](https://studnicky.github.io/PathRipper/roadmap)** · **[Releases](https://github.com/Studnicky/PathRipper/releases)**
+**[Documentation](https://studnicky.github.io/Squashage/)** · **[Architecture](https://studnicky.github.io/Squashage/architecture)** · **[Classifier engines](https://studnicky.github.io/Squashage/classification-engines)** · **[Demo](https://studnicky.github.io/Squashage/examples/aonprd/aonprd.html)** · **[Releases](https://github.com/Studnicky/Squashage/releases)**
 
 ---
 
@@ -23,6 +21,8 @@ Evolved from [PathRipper](https://github.com/Studnicky/PathRipper) (2019). HTTP 
 ## Install
 
 ```bash
+git clone https://github.com/Studnicky/Squashage.git
+cd Squashage
 npm install
 npm run build
 ```
@@ -30,114 +30,117 @@ npm run build
 ## Quickstart
 
 ```bash
-# Scrape a MediaWiki target — one category
-ripperoni scrape \
-  --target <your-wiki-target> \
-  --category "Example Category Name" \
-  --config ripperoni.config.json
+# Run the full Pathfinder/AONPRD demo (pipeline + cytoscape render)
+npm run viz:demo
 
-# Scrape all pages in a wiki (no --category = enumerate via allpages API)
-ripperoni scrape \
-  --target <your-wiki-target> \
-  --config ripperoni.config.json
+# Build from a config
+squashage build \
+  --target aonprd \
+  --config squashage.config.json \
+  --in ./output/aonprd
 
-# Scrape HTML pages
-ripperoni scrape \
-  --target <your-html-target> \
-  --paths "/page/1" "/page/2" \
-  --config ripperoni.config.json
+# Override output path/format for a one-off run
+squashage build --target aonprd --out ./graphs/aonprd.jsonld
 
-# Crawl a site for links matching a pattern
-ripperoni crawl \
-  --starts "https://example.com/index" \
-  --domain "example\.com" \
-  --target "\?id=" \
-  --delimiter "category"
+# Render any squashage JSON-LD output as an offline HTML graph
+squashage viz --in ./graphs/aonprd.jsonld --out aonprd.html --title "My Graph"
 ```
 
-Copy `ripperoni.config.example.json` to `ripperoni.config.json` and edit. The unprefixed file is gitignored — it holds your real targets.
+Copy `squashage.config.example.json` to `squashage.config.json` and edit. The unprefixed file is gitignored.
 
 ## Scripts
 
 ```bash
-npm run build       # compile TypeScript + plugins
-npm run typecheck   # tsc --noEmit
-npm run lint        # eslint src/
-npm run check       # typecheck + lint + unit tests
-npm run docs:build  # build VitePress docs
-npm run test:e2e    # local e2e against live targets (not run by CI)
+npm run build         # compile TypeScript
+npm run typecheck     # tsc --noEmit
+npm run lint          # eslint src/
+npm run check         # typecheck + lint + unit tests
+npm run docs:build    # build VitePress docs
+npm run viz:demo      # rebuild the Pathfinder/AONPRD demo
 ```
 
-## Config
+## Goals
 
-All scraper targets live in `ripperoni.config.json` (the project itself names no targets):
+- Consume structured JSON input records from one file, a directory tree, or JSONL.
+- Classify each input record into an ontology type with deterministic evidence.
+- Normalize source-specific records into stable graph entities.
+- Project records into RDF/JS quads using a thin wrapper over `@rdfjs/*`, `n3`, `jsonld`.
+- Serialize the canonical dataset to a single RDF file per build run
+  (v0.x: Turtle, TriG, N-Triples, N-Quads, JSON-LD; v1.x adds RDF/XML and N3).
+- Run a deterministic, declaratively configured classifier cascade.
 
-```json
+## Non-Goals
+
+- Squashage does not scrape web pages.
+- Squashage does not run probabilistic models in the build path.
+- Squashage does not load graph stores. Hand the file to your loader of choice.
+- Squashage does not fan out across multiple outputs. One build, one file.
+
+## Config Sketch
+
+```jsonc
 {
-  "output": { "basePath": "./output" },
-  "mediawiki": {
-    "<your-wiki-target>": {
-      "apiUrl":      "https://wiki.example/w/api.php",
-      "rateLimitMs": 1000,
-      "categories":  ["Category A", "Category B"],
-      "pipeline":    ["./plugins/your-target/parse.task.js"]
-    }
-  },
   "targets": {
-    "<your-html-target>": {
-      "baseUrl":  "https://example.com",
-      "rateLimitMs": 500,
-      "tasks":    ["./plugins/your-target/parse.task.js"]
+    "aonprd": {
+      "input": "./output/aonprd",
+      "pipeline": [
+        "json:read",
+        "classify:source",
+        "classify:structural",
+        "classify:rules",
+        "classify:ontology",
+        "classify:conflict",
+        "aonprd:squash",
+        "rdfjs:finalize"
+      ],
+      "output": {
+        "kind": "file",
+        "path": "./graphs/aonprd.jsonld"
+      }
     }
   }
 }
 ```
 
-`categories` is optional — omit it to scrape every article in the wiki via the allpages API. `tasks` points at user-written parse plugins that run through the pipeline before each page is written.
-
-The config is validated on load against the internal JSON Schema; malformed files fail fast with a precise field-path error message.
-
-See the [config reference](https://studnicky.github.io/PathRipper/getting-started) for the full reference.
+See the [full config reference](https://studnicky.github.io/Squashage/plans/13-file-output-and-semantics-integration) for all options.
 
 ## Plugins
 
-Parse plugins are `.js` files you write and point at from the config. Each plugin registers a task under the name `<targetId>:parse`:
+Custom squash tasks register themselves with `TaskRegistry`:
 
-```js
-// plugins/my-target/parse.task.js
-import { TaskRegistry } from 'ripperoni/registry/TaskRegistry';
+```ts
+import { TaskRegistry } from 'squashage/registry/TaskRegistry';
 
-TaskRegistry.register('my-target:parse', async (next, state) => {
-  const wikitext = state.page.wikitext;
-  // parse and set structured output
-  state.output = { title: state.page.title, /* ... */ };
+TaskRegistry.register('aonprd:squash', async (next, state) => {
+  if (state.classification?.type !== 'feat') { await next(); return; }
+
+  const ctx      = state.context!;
+  const prefixes = ctx.prefixes;
+  const subject  = ctx.factory.namedNode(
+    `${prefixes.instances.base}${String(state.input['url'] ?? 'unknown')}`
+  );
+  ctx.dataset.add(ctx.factory.quad(
+    subject,
+    ctx.factory.namedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type'),
+    ctx.factory.namedNode(`${prefixes.vocabulary.base}Feat`),
+    ctx.factory.namedNode(`${prefixes.graphs.base}feat`),
+  ));
   await next();
 });
 ```
 
-Build plugins from TypeScript source with `npm run build:plugins` (requires `tsconfig.plugins.json`).
+## Demo
 
-## Programmatic
+Open [`docs/public/examples/aonprd/aonprd.html`](docs/public/examples/aonprd/aonprd.html) in
+any browser to see the package's JSON-LD output rendered as an interactive graph.
+Nodes are coloured by RDF class, edges show object-property links, and clicking
+a node reveals its properties in the sidebar. The file runs entirely offline ,
+no network access, no Node.js, no `node_modules` required at display time.
 
-```typescript
-import { Pipeline } from 'ripperoni/Pipeline';
-import { MediaWikiScraper } from 'ripperoni/MediaWikiScraper';
-import { WikitextParser } from 'ripperoni/WikitextParser';
+To rebuild the demo from the fixture data:
 
-const scraper = await MediaWikiScraper.create({
-  apiUrl:      'https://wiki.example/w/api.php',
-  rateLimitMs: 1000,
-});
-
-const pages = await scraper.scrapeCategory('Example Category Name');
-
-const pipeline = new Pipeline({ name: 'my-job' });
-pipeline.addTask(async (next, state) => {
-  state.output = WikitextParser.parse(state.page.title, state.page.wikitext ?? '');
-  await next();
-});
-
-await pipeline.execute({ targetId: 'my-target', page: pages[0], output: null });
+```bash
+npm run viz:demo
 ```
 
 ## License

@@ -1,8 +1,0 @@
-{
-  "_type": "ripperoni_component",
-  "name": "HtmlScraper",
-  "kind": "Scraper",
-  "since": "2.0.0",
-  "description": "Fetches and parses HTML pages using native fetch and cheerio with rate limiting and retry support.",
-  "source": "src/scrapers/HtmlScraper.ts"
-}

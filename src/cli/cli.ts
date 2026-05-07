@@ -1,150 +1,317 @@
-import { Command } from 'commander';
+/**
+ * @fileoverview Squashage CLI — `build`, `classify`, and `inspect` subcommands.
+ *
+ * @remarks
+ * Exports a {@link buildCli} factory that constructs a configured Commander
+ * {@link Command} tree. The production entry-point calls
+ * `buildCli().parseAsync(process.argv)` at the bottom of this module.
+ *
+ * **Subcommands**:
+ * - `build` — wires {@link SquashageOrchestrator.run} and prints the
+ *   {@link RunResultInterface} summary to stdout. Exits with `result.exitCode`.
+ * - `classify` — v0.x stub; prints a not-implemented message and exits 0.
+ *   Commander option definitions are intact so `--help` surface is correct.
+ * - `inspect` — v0.x stub; same treatment.
+ *
+ * **Exit codes**:
+ * - `0` — clean run (or stub subcommand).
+ * - `1` — known configuration/output error ({@link OutputConfigError},
+ *   {@link SquashageConfigError}, {@link FileOutputError},
+ *   {@link ExternalSchemaError}).
+ * - `2` — unexpected crash (any other thrown value).
+ *
+ * **`--out` / `--format` / `--dry-run`** are applied as CLI overrides that take
+ * precedence over the values in `output.path` / `output.format` / `output.dryRun`
+ * from the target config (§ "CLI Override" in plan 13).
+ *
+ * @module cli/cli
+ * @category CLI
+ * @since 0.1.0
+ */
+
+import { Command }      from 'commander';
 import { readFileSync } from 'node:fs';
-import { mkdtempSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { resolve, dirname, join } from 'node:path';
 
-import { RipperConfig } from '../config/RipperConfig.js';
-import { LinkLister } from '../crawlers/LinkLister.js';
-import { Logger } from '../modules/logger/logger.js';
-import { ScrapeOrchestrator } from '../orchestrators/ScrapeOrchestrator.js';
-import { ScraperCache } from '../modules/cache/ScraperCache.js';
+// Bootstrap built-in task registrations once before any pipeline is assembled.
+import '../tasks/index.js';
 
-const pkg = JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf-8')) as { version: string };
+import { SquashageConfig }       from '../config/SquashageConfig.js';
+import { SquashageOrchestrator } from '../orchestrators/SquashageOrchestrator.js';
+import type { RunResultInterface } from '../orchestrators/SquashageOrchestrator.js';
+import { OutputConfigError }     from '../errors/OutputConfigError.js';
+import { SquashageConfigError }  from '../errors/SquashageConfigError.js';
+import { FileOutputError }       from '../errors/FileOutputError.js';
+import { ExternalSchemaError }   from '../errors/ExternalSchemaError.js';
+import { readFile, writeFile }   from 'node:fs/promises';
+import { resolve, basename, dirname as pathDirname, join } from 'node:path';
+import { JsonLdGraph }           from '../viz/JsonLdGraph.js';
+import { ChunkBuilder }          from '../viz/ChunkBuilder.js';
+import { SigmaGraphRenderer }    from '../viz/SigmaGraphRenderer.js';
 
-const DEFAULT_CONFIG_PATH   = './ripperoni.config.json';
-const DEFAULT_RATE_LIMIT_MS = '200';
-const DEFAULT_JITTER_MS     = '0';
-const DECIMAL_RADIX         = 10;
-const RATE_OPTION_PATTERN   = '0..';
+// ---------------------------------------------------------------------------
+// Package metadata
+// ---------------------------------------------------------------------------
 
-const program = new Command();
+const pkg = JSON.parse(
+  readFileSync(new URL('../../package.json', import.meta.url), 'utf-8'),
+) as { version: string };
 
-program
-  .name('ripperoni')
-  .description('Configurable web scraper — HTML, MediaWiki, and link crawler.')
-  .version(pkg.version);
+const DEFAULT_CONFIG_PATH = './squashage.config.json';
 
-program
-  .command('scrape')
-  .description('Scrape a configured target — detects html or mediawiki mode from config')
-  .requiredOption('--target <name>', 'Target name from config (checked in targets then mediawiki)')
-  .option('--paths <paths...>', 'Paths to scrape (html mode)')
-  .option('--category <name>', 'Category to scrape (mediawiki mode)')
-  .option('--resume-failures', 'Re-scrape pages listed in the failures.json from the last run')
-  .option('--config <path>', 'Config file path', DEFAULT_CONFIG_PATH)
-  .option('--out <dir>', 'Output directory override')
-  .action(async (opts: { target: string; paths?: string[]; category?: string; resumeFailures?: boolean; config: string; out?: string }): Promise<void> => {
-    const config    = await RipperConfig.load(opts.config);
-    const configDir = dirname(resolve(opts.config));
-    const outDir    = opts.out ?? config.output.basePath;
-    const log       = Logger.forComponent('cli');
+// ---------------------------------------------------------------------------
+// Error classification
+// ---------------------------------------------------------------------------
 
-    const htmlTarget = config.targets?.[opts.target];
-    const wikiTarget = config.mediawiki?.[opts.target];
+/** Known error types that map to exit code `1` (user-fixable config / I/O errors). */
+const KNOWN_ERROR_TYPES = [
+  OutputConfigError,
+  SquashageConfigError,
+  FileOutputError,
+  ExternalSchemaError,
+] as const;
 
-    if (htmlTarget !== undefined) {
-      const pipeline = (htmlTarget as Record<string, unknown>)['pipeline'];
-      const hasCrawler = Array.isArray(pipeline) && (pipeline as string[]).includes('crawl:list-targets');
-      if (!opts.paths?.length && !hasCrawler) { log.error('scrape', '--paths required for html targets (or add crawl:list-targets to the pipeline)'); process.exit(1); }
-      await ScrapeOrchestrator.scrapeHtml({ target: opts.target, paths: opts.paths ?? [], outDir, configDir, config });
-      return;
-    }
-    if (wikiTarget !== undefined) {
-      await ScrapeOrchestrator.scrapeWiki({
-        target:         opts.target,
-        category:       opts.category,
-        outDir,
-        configDir,
-        config,
-        resumeFailures: opts.resumeFailures,
-      });
-      return;
-    }
-    log.error('scrape', `Unknown target: ${opts.target}`);
-    process.exit(1);
-  });
+/**
+ * Returns the exit code for a caught error.
+ *
+ * @remarks
+ * Known squashage error classes ({@link OutputConfigError},
+ * {@link SquashageConfigError}, {@link FileOutputError},
+ * {@link ExternalSchemaError}) map to exit code `1`.
+ * Any other thrown value maps to exit code `2` (unexpected crash).
+ *
+ * @param err - The caught error value.
+ * @returns `1` for known errors; `2` for unexpected crashes.
+ */
+function exitCodeFor(err: unknown): 1 | 2 {
+  for (const KnownType of KNOWN_ERROR_TYPES) {
+    if (err instanceof KnownType) return 1;
+  }
+  return 2;
+}
 
-program
-  .command('scrape-html')
-  .description('Scrape HTML pages from a configured target')
-  .requiredOption('--target <name>', 'Target name from config')
-  .requiredOption('--paths <paths...>', 'Paths to scrape (relative to baseUrl)')
-  .option('--config <path>', 'Config file path', DEFAULT_CONFIG_PATH)
-  .option('--out <dir>', 'Output directory override')
-  .action(async (opts: { target: string; paths: string[]; config: string; out?: string }): Promise<void> => {
-    const config    = await RipperConfig.load(opts.config);
-    const configDir = dirname(resolve(opts.config));
-    const outDir    = opts.out ?? config.output.basePath;
-    const log       = Logger.forComponent('cli');
+// ---------------------------------------------------------------------------
+// Result formatter
+// ---------------------------------------------------------------------------
 
-    if (config.targets?.[opts.target] === undefined) {
-      log.error('scrape-html', `Unknown target: ${opts.target}`);
-      process.exit(1);
-    }
+/**
+ * Formats a {@link RunResultInterface} as a human-readable summary string.
+ *
+ * @param result - The run result returned by {@link SquashageOrchestrator.run}.
+ * @returns A multi-line summary string suitable for stdout.
+ */
+function formatResult(result: RunResultInterface): string {
+  const q = result.quarantine;
+  return [
+    `target:      ${result.target}`,
+    `records:     ${result.recordCount}`,
+    `succeeded:   ${result.succeeded}`,
+    `failed:      ${result.failed}`,
+    `quarantine:  unknown=${q.unknown} conflicts=${q.conflicts} projection=${q.projection} output=${q.output}`,
+    `output:      ${result.outputPath}`,
+    `exitCode:    ${result.exitCode}`,
+  ].join('\n');
+}
 
-    await ScrapeOrchestrator.scrapeHtml({ target: opts.target, paths: opts.paths, outDir, configDir, config });
-  });
+// ---------------------------------------------------------------------------
+// CLI factory
+// ---------------------------------------------------------------------------
 
-program
-  .command('scrape-wiki')
-  .description('Scrape MediaWiki category pages')
-  .requiredOption('--target <name>', 'MediaWiki target name from config')
-  .option('--category <name>', 'Category to scrape (omit to use config categories or scrape all pages)')
-  .option('--resume-failures', 'Re-scrape pages listed in the failures.json from the last run')
-  .option('--config <path>', 'Config file path', DEFAULT_CONFIG_PATH)
-  .option('--out <dir>', 'Output directory override')
-  .action(async (opts: { target: string; category?: string; resumeFailures?: boolean; config: string; out?: string }): Promise<void> => {
-    const config    = await RipperConfig.load(opts.config);
-    const configDir = dirname(resolve(opts.config));
-    const outDir    = opts.out ?? config.output.basePath;
-    const log       = Logger.forComponent('cli');
+/**
+ * Constructs and returns a configured Commander {@link Command} tree for the
+ * squashage CLI.
+ *
+ * @remarks
+ * Exported as a factory so tests can instantiate a fresh {@link Command} tree
+ * without triggering `process.argv` parsing or side-effecting `process.exit`
+ * calls. The production entry-point at the bottom of this module calls
+ * `buildCli().parseAsync(process.argv)` and propagates the exit code via a
+ * module-scoped carrier variable ({@link _exitCode}).
+ *
+ * @returns A new Commander {@link Command} configured with `build`,
+ *   `classify`, and `inspect` subcommands.
+ *
+ * @example
+ * ```ts
+ * const cli = buildCli();
+ * await cli.parseAsync(['node', 'squashage', 'build', '--target', 'foo', '--config', './sq.json']);
+ * ```
+ *
+ * @category CLI
+ * @since 0.1.0
+ */
+export function buildCli(): Command {
+  const program = new Command();
 
-    if (config.mediawiki?.[opts.target] === undefined) {
-      log.error('scrape-wiki', `Unknown mediawiki target: ${opts.target}`);
-      process.exit(1);
-    }
+  program
+    .name('squashage')
+    .description('Graph reconstitution pipeline — classify, project, and serialize structured JSON records to RDF.')
+    .version(pkg.version);
 
-    await ScrapeOrchestrator.scrapeWiki({
-      target:         opts.target,
-      category:       opts.category,
-      outDir,
-      configDir,
-      config,
-      resumeFailures: opts.resumeFailures,
+  // -------------------------------------------------------------------------
+  // build
+  // -------------------------------------------------------------------------
+
+  program
+    .command('build')
+    .description('Run the full graph reconstitution pipeline for a target')
+    .requiredOption('--target <name>', 'Target name from config')
+    .option('--config <path>', 'Config file path', DEFAULT_CONFIG_PATH)
+    .option('--in <path>', 'Input directory or file path override')
+    .option('--out <path>', 'Output file path override (wins over config output.path)')
+    .option('--format <fmt>', 'Output format override (turtle|trig|ntriples|nquads|jsonld)')
+    .option('--dry-run', 'Compute report without writing output file')
+    .action(async (opts: {
+      target:  string;
+      config:  string;
+      in?:     string;
+      out?:    string;
+      format?: string;
+      dryRun?: boolean;
+    }): Promise<void> => {
+      let result: RunResultInterface;
+      try {
+        const config = SquashageConfig.loadFromFile(opts.config);
+        result = await SquashageOrchestrator.run(config, opts.target, {
+          outOverride:    opts.out,
+          formatOverride: opts.format,
+          dryRun:         opts.dryRun,
+          inputOverride:  opts.in,
+        });
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        process.stderr.write(message + '\n');
+        _exitCode = exitCodeFor(err);
+        return;
+      }
+
+      process.stdout.write(formatResult(result) + '\n');
+      _exitCode = result.exitCode;
     });
-  });
 
-program
-  .command('crawl')
-  .description('Crawl links matching a pattern and collect target URLs')
-  .requiredOption('--starts <urls...>', 'Starting URLs (one or more)')
-  .requiredOption('--domain <regex>', 'Domain regex to stay within')
-  .requiredOption('--target <regex>', 'Target URL pattern to collect')
-  .requiredOption('--delimiter <regex>', 'Traversal pattern (pages to follow)')
-  .option('--rate <ms>',   'Rate limit in ms between requests', DEFAULT_RATE_LIMIT_MS)
-  .option('--jitter <ms>', `Random jitter (${RATE_OPTION_PATTERN}N ms) added to each request`, DEFAULT_JITTER_MS)
-  .option('--max <n>',     'Maximum target URLs to collect (cap)')
-  .action(async (opts: { starts: string[]; domain: string; target: string; delimiter: string; rate: string; jitter: string; max?: string }): Promise<void> => {
-    const log   = Logger.forComponent('cli');
-    const max   = opts.max !== undefined ? parseInt(opts.max, DECIMAL_RADIX) : undefined;
-    // Ad-hoc CLI crawl: ephemeral cache in tmp; not shared with any scraper run.
-    const cacheDir = mkdtempSync(join(tmpdir(), 'ripperoni-crawl-'));
-    const cache    = ScraperCache.create({ dir: cacheDir, mode: 'off' });
-    const list = await LinkLister.create({
-      domain:      new RegExp(opts.domain),
-      target:      new RegExp(opts.target),
-      delimiter:   new RegExp(opts.delimiter),
-      rateLimitMs: parseInt(opts.rate, DECIMAL_RADIX),
-      jitterMs:    parseInt(opts.jitter, DECIMAL_RADIX),
-      ...(max !== undefined ? { maxPages: max } : {}),
-      cache,
-    }).buildList(opts.starts);
+  // -------------------------------------------------------------------------
+  // classify  (v0.x stub — option definitions kept for correct --help output)
+  // -------------------------------------------------------------------------
 
-    for (const link of list) log.info('crawl', link);
-  });
+  program
+    .command('classify')
+    .description('Run the classification cascade on a target without projecting')
+    .requiredOption('--target <name>', 'Target name from config')
+    .option('--config <path>', 'Config file path', DEFAULT_CONFIG_PATH)
+    .option('--in <path>', 'Input directory or file path override')
+    .action((_opts: { target: string; config: string; in?: string }): void => {
+      process.stdout.write(
+        'classify subcommand not implemented in v0.x — coming with the classifier cascade lane\n',
+      );
+      _exitCode = 0;
+    });
 
-program.parseAsync(process.argv).catch((err: unknown): never => {
-  process.stderr.write(String(err) + '\n');
-  process.exit(1);
-});
+  // -------------------------------------------------------------------------
+  // inspect  (v0.x stub — option definitions kept for correct --help output)
+  // -------------------------------------------------------------------------
+
+  program
+    .command('inspect')
+    .description('Inspect a single input JSON record through the classification cascade')
+    .requiredOption('--file <path>', 'Path to a JSON record to inspect')
+    .option('--config <path>', 'Config file path', DEFAULT_CONFIG_PATH)
+    .action((_opts: { file: string; config?: string }): void => {
+      process.stdout.write(
+        'inspect subcommand not implemented in v0.x — coming with the classifier cascade lane\n',
+      );
+      _exitCode = 0;
+    });
+
+
+  // -------------------------------------------------------------------------
+  // viz  — render a squashage JSON-LD file as a standalone HTML graph
+  // -------------------------------------------------------------------------
+
+  program
+    .command('viz')
+    .description('Render a squashage JSON-LD as a chunked interactive graph (sigma + WebGL)')
+    .requiredOption('--in <path>', 'Path to a squashage-produced JSON-LD file')
+    .option('--out <dir>', 'Output directory (default: <basename>/ next to --in)')
+    .option('--title <string>', 'HTML page title (default: Squashage — <basename>)')
+    .option('--iterations <n>', 'ForceAtlas2 iterations (default: 800 for >5k nodes, else 400)')
+    .action(async (opts: { in: string; out?: string; title?: string; iterations?: string }): Promise<void> => {
+      const inPath = resolve(opts.in);
+      const inBase = basename(inPath, '.jsonld');
+      const outDir = opts.out !== undefined
+        ? resolve(opts.out)
+        : join(pathDirname(inPath), inBase);
+      const title  = opts.title ?? `Squashage — ${inBase}`;
+
+      let doc: unknown;
+      try {
+        const raw = await readFile(inPath, 'utf-8');
+        doc = JSON.parse(raw);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        process.stderr.write(`viz: cannot read/parse ${inPath}: ${msg}\n`);
+        _exitCode = 1;
+        return;
+      }
+
+      const payload            = await JsonLdGraph.fromJsonLd(doc);
+      const explicitIterations = opts.iterations !== undefined ? Number(opts.iterations) : NaN;
+      const iterations         = Number.isFinite(explicitIterations) && explicitIterations > 0
+        ? explicitIterations
+        : (payload.nodes.length > 5000 ? 800 : 400);
+
+      try {
+        const manifest = await ChunkBuilder.build(payload, { outDir, iterations });
+        const html     = SigmaGraphRenderer.render({ title, indexUrl: './index.json' });
+        await writeFile(join(outDir, `${inBase}.html`), html, 'utf-8');
+        process.stdout.write(`viz: wrote ${manifest.length.toString()} chunks + index.json + HTML wrapper to ${outDir}\n`);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        process.stderr.write(`viz: cannot write to ${outDir}: ${msg}\n`);
+        _exitCode = 1;
+        return;
+      }
+
+      _exitCode = 0;
+    });
+
+  return program;
+}
+
+// ---------------------------------------------------------------------------
+// Exit-code carrier (module-scoped, test-harness-friendly)
+// ---------------------------------------------------------------------------
+
+/**
+ * Shared exit-code carrier updated inside command actions.
+ *
+ * @remarks
+ * Actions write to this variable rather than calling `process.exit` directly.
+ * The production entry-point calls `process.exit(_exitCode)` after `parseAsync`
+ * settles. This keeps the code testable — tests instantiate {@link buildCli}
+ * and inspect option parsing without spawning a subprocess or triggering exits.
+ *
+ * @internal
+ */
+let _exitCode: 0 | 1 | 2 = 0;
+
+// ---------------------------------------------------------------------------
+// Production entry-point
+// ---------------------------------------------------------------------------
+
+// Guard the production entry-point so that tests importing this module do not
+// trigger argv parsing. The specifier comparison is the standard ESM idiom for
+// detecting the main module in Node.js.
+const isMain = process.argv[1] !== undefined &&
+  import.meta.url === new URL(`file://${process.argv[1]}`).href;
+
+if (isMain) {
+  buildCli()
+    .parseAsync(process.argv)
+    .then((): void => {
+      if (_exitCode !== 0) process.exit(_exitCode);
+    })
+    .catch((err: unknown): never => {
+      const message = err instanceof Error ? err.message : String(err);
+      process.stderr.write(message + '\n');
+      process.exit(exitCodeFor(err));
+    });
+}

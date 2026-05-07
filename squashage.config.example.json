@@ -1,0 +1,67 @@
+{
+  "input": {
+    "basePath": "./output",
+    "format": "json"
+  },
+  "targets": {
+    "your-target": {
+      "input": "./output/your-target",
+      "concurrency": 4,
+      "pipeline": [
+        "json:read",
+        "classify:source",
+        "classify:structural",
+        "classify:rules",
+        "classify:ontology",
+        "classify:conflict",
+        "your-target:squash",
+        "rdfjs:finalize"
+      ],
+      "graphs": {
+        "default": "https://example.com/graph/default"
+      },
+      "classification": {
+        "source": true,
+        "structural": [
+          {
+            "className": "YourClass",
+            "priority": 10,
+            "predicate": { "path": "/_type", "equals": "your-type" },
+            "reasons": ["_type=your-type (structural)"]
+          }
+        ],
+        "rules": [
+          {
+            "className": "YourClass",
+            "priority": 20,
+            "predicate": {
+              "all": [
+                { "path": "/_type", "equals": "your-type" },
+                { "path": "/id", "exists": true }
+              ]
+            },
+            "reasons": ["_type=your-type", "id present"]
+          }
+        ],
+        "ontology": {
+          "classes": {
+            "YourClass": "https://example.com/class/YourClass"
+          }
+        },
+        "conflict": {
+          "onConflict": "quarantine",
+          "onUnknown": "quarantine",
+          "evidence": true
+        }
+      },
+      "quarantine": {
+        "dir": "./graphs/quarantine/your-target"
+      },
+      "output": {
+        "kind": "file",
+        "path": "./graphs/your-target.trig",
+        "mode": "dataset"
+      }
+    }
+  }
+}

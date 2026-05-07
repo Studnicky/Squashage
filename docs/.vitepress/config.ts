@@ -12,45 +12,59 @@ const sidebar = [
   {
     text: 'Usage',
     items: [
-      { link: '/usage/configuration', text: 'Configuration' },
-      { link: '/usage/pipeline',      text: 'Pipeline' },
-      { link: '/usage/scrapers',      text: 'Scrapers' },
-      { link: '/usage/mediawiki',     text: 'MediaWiki' },
-      { link: '/usage/crawler',       text: 'Crawler' },
-      { link: '/usage/cache',         text: 'Cache' },
-      { link: '/usage/plugins',       text: 'Plugins' },
+      { link: '/usage/configuration',      text: 'Configuration' },
+      { link: '/usage/pipeline',           text: 'Pipeline' },
+      { link: '/usage/classifier-cascade',      text: 'Classifier cascade' },
+      { link: '/usage/shacl-shape-classifier',  text: 'SHACL-shape classifier' },
+      { link: '/usage/url-pattern-classifier',           text: 'URL-pattern classifier' },
+      { link: '/usage/property-fingerprint-classifier', text: 'Property-fingerprint classifier' },
+      { link: '/usage/winknlp-entities',                text: 'winkNLP entities classifier' },
+      { link: '/usage/entity-link',                     text: 'Entity-link enrichment' },
+      { link: '/usage/taxonomic-narrowing',             text: 'Taxonomic narrowing' },
+      { link: '/usage/ontology',                text: 'Ontology (json-tology)' },
+      { link: '/usage/output',             text: 'Output' },
+      { link: '/usage/streaming-output',    text: 'Streaming output' },
+      { link: '/usage/provenance',         text: 'Provenance (PROV-O sidecar)' },
+      { link: '/usage/viz',                text: 'Viz' },
+      { link: '/usage/plugins',            text: 'Plugins' },
     ]
   },
   {
     text: 'Reference',
     items: [
-      { link: '/architecture', text: 'Architecture' },
-      { link: '/roadmap',      text: 'Roadmap' },
+      { link: '/architecture',           text: 'Architecture' },
+      { link: '/classification-engines', text: 'Classifier engines (deep dive)' },
+    ]
+  },
+  {
+    text: 'Demo',
+    items: [
+      { link: '/examples/aonprd', text: 'Pathfinder/AONPRD graph' }
     ]
   },
 ];
 
 export default defineConfig({
   appearance: themeConfig.appearance,
-  base: '/Ripperoni/',
-  description: 'Web ingestion engine — slices wikis, sites, and URL lists into JSON records. Feed them into Squashage for graph reconstitution.',
-  head: [
-    ['link', { rel: 'icon', type: 'image/png', href: '/Ripperoni/ripperoni.png' }],
-  ],
+  base: '/Squashage/',
+  description: 'Graph reconstitution pipeline; squashes JSON records into deterministic RDF graphs. Consumes output from Ripperoni or other JSON sources.',
   srcDir: '.',
   srcExclude: ['plans/**', 'plans/*.md'],
+  head: [
+    ['link', { rel: 'icon', type: 'image/png', href: '/Squashage/squashage.png' }],
+  ],
   themeConfig: {
     ...themeConfig,
-    logo: '/ripperoni.png',
-    siteTitle: 'Ripperoni',
+    logo: '/squashage.png',
+    siteTitle: 'Squashage',
     nav: [
       { text: 'Home', link: '/' },
       { text: 'Walk-through', link: '/walk-through' },
-      { text: 'Architecture', link: '/architecture' },
-      { text: 'GitHub', link: 'https://github.com/Studnicky/Ripperoni' }
+      { text: 'Demo', link: '/examples/aonprd' },
+      { text: 'GitHub', link: 'https://github.com/Studnicky/Squashage' }
     ],
     sidebar,
-    socialLinks: [{ icon: 'github', link: 'https://github.com/Studnicky/Ripperoni' }]
+    socialLinks: [{ icon: 'github', link: 'https://github.com/Studnicky/Squashage' }]
   },
-  title: 'Ripperoni'
+  title: 'Squashage'
 });

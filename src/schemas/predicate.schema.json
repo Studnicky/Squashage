@@ -1,0 +1,169 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://squashage.dev/schemas/predicate.json",
+  "title": "Squashage Predicate",
+  "description": "Closed-vocabulary deterministic predicate for the Squashage classification cascade. Consumed by classification.rules[] and classification.structural[] config blocks.",
+  "$defs": {
+    "lengthConstraint": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "gte": { "type": "number" },
+        "lte": { "type": "number" },
+        "eq":  { "type": "number" }
+      }
+    },
+    "rangeConstraint": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "gte": { "type": "number" },
+        "lte": { "type": "number" },
+        "gt":  { "type": "number" },
+        "lt":  { "type": "number" }
+      }
+    },
+    "predicate": {
+      "oneOf": [
+        {
+          "title": "equals",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["path", "equals"],
+          "properties": {
+            "path":   { "type": "string", "minLength": 1, "pattern": "^/" },
+            "equals": {}
+          }
+        },
+        {
+          "title": "notEquals",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["path", "notEquals"],
+          "properties": {
+            "path":      { "type": "string", "minLength": 1, "pattern": "^/" },
+            "notEquals": {}
+          }
+        },
+        {
+          "title": "in",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["path", "in"],
+          "properties": {
+            "path": { "type": "string", "minLength": 1, "pattern": "^/" },
+            "in":   { "type": "array" }
+          }
+        },
+        {
+          "title": "notIn",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["path", "notIn"],
+          "properties": {
+            "path":  { "type": "string", "minLength": 1, "pattern": "^/" },
+            "notIn": { "type": "array" }
+          }
+        },
+        {
+          "title": "exists",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["path", "exists"],
+          "properties": {
+            "path":   { "type": "string", "minLength": 1, "pattern": "^/" },
+            "exists": { "type": "boolean", "const": true }
+          }
+        },
+        {
+          "title": "missing",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["path", "missing"],
+          "properties": {
+            "path":    { "type": "string", "minLength": 1, "pattern": "^/" },
+            "missing": { "type": "boolean", "const": true }
+          }
+        },
+        {
+          "title": "type",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["path", "type"],
+          "properties": {
+            "path": { "type": "string", "minLength": 1, "pattern": "^/" },
+            "type": { "type": "string", "enum": ["string", "number", "boolean", "object", "array", "null"] }
+          }
+        },
+        {
+          "title": "regex",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["path", "regex"],
+          "properties": {
+            "path":  { "type": "string", "minLength": 1, "pattern": "^/" },
+            "regex": {
+              "type": "string",
+              "description": "Must be anchored: start with ^ and end with $. No flags supported.",
+              "pattern": "^\\^.*\\$$"
+            }
+          }
+        },
+        {
+          "title": "length",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["path", "length"],
+          "properties": {
+            "path":   { "type": "string", "minLength": 1, "pattern": "^/" },
+            "length": { "$ref": "#/$defs/lengthConstraint" }
+          }
+        },
+        {
+          "title": "range",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["path", "range"],
+          "properties": {
+            "path":  { "type": "string", "minLength": 1, "pattern": "^/" },
+            "range": { "$ref": "#/$defs/rangeConstraint" }
+          }
+        },
+        {
+          "title": "all",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["all"],
+          "properties": {
+            "all": {
+              "type": "array",
+              "items": { "$ref": "#/$defs/predicate" }
+            }
+          }
+        },
+        {
+          "title": "any",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["any"],
+          "properties": {
+            "any": {
+              "type": "array",
+              "items": { "$ref": "#/$defs/predicate" }
+            }
+          }
+        },
+        {
+          "title": "not",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["not"],
+          "properties": {
+            "not": { "$ref": "#/$defs/predicate" }
+          }
+        }
+      ]
+    }
+  },
+  "$ref": "#/$defs/predicate"
+}

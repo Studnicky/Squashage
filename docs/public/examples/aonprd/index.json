@@ -1,0 +1,130 @@
+{
+  "chunks": [
+    {
+      "id": "https://squashage.dev/graph/aonprd/background",
+      "label": "aonprdg:background",
+      "slug": "aonprdg-background",
+      "file": "chunks/aonprdg-background.json",
+      "nodeCount": 7,
+      "edgeCount": 14,
+      "color": "#4dd0e1"
+    },
+    {
+      "id": "https://squashage.dev/graph/aonprd/armor",
+      "label": "aonprdg:armor",
+      "slug": "aonprdg-armor",
+      "file": "chunks/aonprdg-armor.json",
+      "nodeCount": 27,
+      "edgeCount": 34,
+      "color": "#ffb13c"
+    },
+    {
+      "id": "https://squashage.dev/graph/aonprd/class",
+      "label": "aonprdg:class",
+      "slug": "aonprdg-class",
+      "file": "chunks/aonprdg-class.json",
+      "nodeCount": 71,
+      "edgeCount": 136,
+      "color": "#81c784"
+    },
+    {
+      "id": "https://squashage.dev/graph/aonprd/condition",
+      "label": "aonprdg:condition",
+      "slug": "aonprdg-condition",
+      "file": "chunks/aonprdg-condition.json",
+      "nodeCount": 98,
+      "edgeCount": 98,
+      "color": "#ffd54f"
+    },
+    {
+      "id": "https://squashage.dev/graph/aonprd/ancestry",
+      "label": "aonprdg:ancestry",
+      "slug": "aonprdg-ancestry",
+      "file": "chunks/aonprdg-ancestry.json",
+      "nodeCount": 177,
+      "edgeCount": 345,
+      "color": "#e94560"
+    },
+    {
+      "id": "https://squashage.dev/graph/aonprd/equipment",
+      "label": "aonprdg:equipment",
+      "slug": "aonprdg-equipment",
+      "file": "chunks/aonprdg-equipment.json",
+      "nodeCount": 191,
+      "edgeCount": 404,
+      "color": "#ba68c8"
+    },
+    {
+      "id": "https://squashage.dev/graph/aonprd/hazard",
+      "label": "aonprdg:hazard",
+      "slug": "aonprdg-hazard",
+      "file": "chunks/aonprdg-hazard.json",
+      "nodeCount": 438,
+      "edgeCount": 1659,
+      "color": "#aed581"
+    },
+    {
+      "id": "https://squashage.dev/graph/aonprd/weapon",
+      "label": "aonprdg:weapon",
+      "slug": "aonprdg-weapon",
+      "file": "chunks/aonprdg-weapon.json",
+      "nodeCount": 450,
+      "edgeCount": 1562,
+      "color": "#a1887f"
+    },
+    {
+      "id": "https://squashage.dev/graph/aonprd/action",
+      "label": "aonprdg:action",
+      "slug": "aonprdg-action",
+      "file": "chunks/aonprdg-action.json",
+      "nodeCount": 478,
+      "edgeCount": 1045,
+      "color": "#c09fef"
+    },
+    {
+      "id": "https://squashage.dev/graph/aonprd/trait",
+      "label": "aonprdg:trait",
+      "slug": "aonprdg-trait",
+      "file": "chunks/aonprdg-trait.json",
+      "nodeCount": 707,
+      "edgeCount": 707,
+      "color": "#ffb74d"
+    },
+    {
+      "id": "https://squashage.dev/graph/aonprd/spell",
+      "label": "aonprdg:spell",
+      "slug": "aonprdg-spell",
+      "file": "chunks/aonprdg-spell.json",
+      "nodeCount": 1014,
+      "edgeCount": 6539,
+      "color": "#7986cb"
+    },
+    {
+      "id": "https://squashage.dev/graph/aonprd/feat",
+      "label": "aonprdg:feat",
+      "slug": "aonprdg-feat",
+      "file": "chunks/aonprdg-feat.json",
+      "nodeCount": 1163,
+      "edgeCount": 3565,
+      "color": "#ff8a65"
+    },
+    {
+      "id": "https://squashage.dev/graph/aonprd/monster",
+      "label": "aonprdg:monster",
+      "slug": "aonprdg-monster",
+      "file": "chunks/aonprdg-monster.json",
+      "nodeCount": 3724,
+      "edgeCount": 11531,
+      "color": "#f06292"
+    },
+    {
+      "id": "https://squashage.dev/graph/aonprd/generic",
+      "label": "aonprdg:generic",
+      "slug": "aonprdg-generic",
+      "file": "chunks/aonprdg-generic.json",
+      "nodeCount": 4544,
+      "edgeCount": 12439,
+      "color": "#90caf9"
+    }
+  ]
+}

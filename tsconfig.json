@@ -3,7 +3,9 @@
     "target": "ES2023",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
-    "lib": ["ES2023"],
+    "lib": [
+      "ES2023"
+    ],
     "strict": true,
     "exactOptionalPropertyTypes": true,
     "noUncheckedIndexedAccess": true,
@@ -19,5 +21,8 @@
     "outDir": "dist",
     "rootDir": "src"
   },
-  "include": ["src/**/*.ts"]
+  "include": [
+    "src/**/*.ts",
+    "src/**/*-shim.d.ts"
+  ]
 }

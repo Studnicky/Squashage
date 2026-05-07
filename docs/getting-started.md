@@ -1,91 +1,56 @@
 # Getting Started
 
-Ripperoni is not on npm yet. Clone the repo, install, and build.
+Squashage is not on npm yet. Clone the repo, install, and build.
 
 ## Install
 
 ```bash
-git clone https://github.com/Studnicky/Ripperoni.git
-cd Ripperoni
+git clone https://github.com/Studnicky/Squashage.git
+cd Squashage
 npm install
 npm run build
 ```
 
-## Create a config
+## Run against the Pathfinder fixture
 
-Copy `ripperoni.config.example.json` to `ripperoni.config.json` and edit.
-The unprefixed file is gitignored — it holds your real targets.
-
-```json
-{
-  "output": { "basePath": "./output" },
-  "mediawiki": {
-    "<your-wiki-target>": {
-      "apiUrl":      "https://wiki.example/w/api.php",
-      "rateLimitMs": 1000,
-      "categories":  ["Category A", "Category B"],
-      "pipeline":    ["./plugins/your-target/parse.task.js"]
-    }
-  },
-  "targets": {
-    "<your-html-target>": {
-      "baseUrl":     "https://example.com",
-      "rateLimitMs": 500,
-      "pipeline":    ["./plugins/your-target/parse.task.js"]
-    }
-  }
-}
-```
-
-## Scrape a MediaWiki target
+The AONPRD fixture lives under `tests/e2e/aonprd/`. To run the full demo
+build (pipeline + cytoscape render):
 
 ```bash
-ripperoni scrape \
-  --target <your-wiki-target> \
-  --category "Example Category Name" \
-  --config ripperoni.config.json
+npm run viz:demo
 ```
 
-Omit `--category` to use the `categories` array from config, or to enumerate every article in the wiki via the allpages API. Writes one `.json` per page under `./output/<your-wiki-target>/`.
+This writes two files:
 
-## Crawl a site for links
+- `docs/examples/aonprd/aonprd.jsonld`: the raw JSON-LD output
+- `docs/examples/aonprd/aonprd.html`: the self-contained interactive graph
+
+Open `aonprd.html` in any browser. No network required.
+
+## Render any JSON-LD output
 
 ```bash
-ripperoni crawl \
-  --starts "https://example.com/index" \
-  --domain "example\.com" \
-  --target "\?id=" \
-  --delimiter "category" \
-  --rate 100
+squashage viz \
+  --in ./graphs/mybuild.jsonld \
+  --out mybuild.html \
+  --title "My Graph"
 ```
 
-## Scrape HTML pages
+## Run a build from config
 
 ```bash
-ripperoni scrape \
-  --target <your-html-target> \
-  --paths "/page/1" "/page/2" \
-  --config ripperoni.config.json
+squashage build \
+  --target aonprd \
+  --config squashage.config.json \
+  --in ./output/aonprd
 ```
 
-## Write a parse plugin
-
-Plugins are plain `.js` files loaded at runtime. Each plugin registers a task under `<targetId>:parse`:
-
-```js
-// plugins/my-target/parse.task.js
-import { TaskRegistry } from '../../dist/registry/TaskRegistry.js';
-
-TaskRegistry.register('my-target:parse', async (next, state) => {
-  state.output = {
-    title: state.page.title,
-    // ... your structured fields
-  };
-  await next();
-});
-```
+Copy `squashage.config.example.json` as a starting point. The unprefixed
+file is gitignored.
 
 ## Where to look next
 
-- [Architecture](./architecture) — pipeline, HTTP machinery, scrapers, source map
-- [Roadmap](./roadmap) — what shipped, what's planned
+- [Architecture](./architecture.md); pipeline phases, package boundaries, output contract
+- [Classifier engines](./classification-engines.md); the six task classes, the predicate language, what was considered and rejected
+- [Configuration](./usage/configuration); full config schema walkthrough
+- [Classifier engines](./classification-engines); the six task classes and the predicate language

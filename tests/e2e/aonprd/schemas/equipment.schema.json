@@ -1,0 +1,18 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://squashage.dev/schemas/aonprd/equipment",
+  "title": "Equipment",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["_type"],
+  "properties": {
+    "_type": { "type": "string", "const": "equipment" },
+    "url": { "type": "string", "format": "uri" },
+    "name": { "type": "string" },
+    "item_level": { "type": ["integer", "null"] },
+    "rarity": { "type": "string" },
+    "traits": { "type": "array", "items": { "type": "string" } },
+    "bulk": {},
+    "description_text": { "type": "string" }
+  }
+}

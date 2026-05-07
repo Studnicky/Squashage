@@ -1,15 +1,14 @@
 import type { FlattenResult } from '../types/Results.js';
 // Ported from @noocodec/cogitator/src/errors/BaseError.ts.
-// Stripped of redact/JsonObject machinery — ripperoni's errors don't (yet)
-// carry redaction schemas. Same shape, same protected constructor, same
-// code-derivation rule, same flatten()/serialize()/toJson() surface.
+// Stripped of redact/JsonObject machinery not needed here. Same shape, same
+// protected constructor, same code-derivation rule, same flatten()/serialize()/toJson() surface.
 
 import type { BaseErrorOptionsInterface, BaseErrorJsonType } from '../types/BaseError.js';
 
 export type { BaseErrorOptionsInterface, BaseErrorJsonType };
 
 /**
- * Base class for all ripperoni domain errors.
+ * Base class for all squashage domain errors.
  *
  * @remarks
  * Provides a structured `code`, optional `cause`, `metadata`, and `retryable` flag,
@@ -18,13 +17,13 @@ export type { BaseErrorOptionsInterface, BaseErrorJsonType };
  *
  * @example
  * ```ts
- * throw new RipperConfigError('Invalid config', { metadata: { path: './ripperoni.config.json' } });
- * const flat = error.flatten(); // [RipperConfigError, cause, ...]
+ * throw new SquashageConfigError('Invalid config', { metadata: { path: './squashage.config.json' } });
+ * const flat = error.flatten(); // [SquashageConfigError, cause, ...]
  * ```
  *
  * @category Errors
  * @since 2.0.0
- * @see {@link RipperConfigError}
+ * @see {@link SquashageConfigError}
  * @group Core
  */
 export class BaseError extends Error {
