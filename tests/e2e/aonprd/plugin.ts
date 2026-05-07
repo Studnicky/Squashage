@@ -341,10 +341,9 @@ function emitFeatQuads(
     }
   }
 
-  // Item 3: reified ActionCost bnode (deterministic ID from subject IRI)
+  // Item 3: reified ActionCost resource (skolemized IRI from subject + fragment)
   if (typeof input['action_cost'] === 'string') {
-    const costId   = `cost-${sanitizeLocal(subject.value)}`;
-    const costNode = factory.blankNode(costId);
+    const costNode = factory.namedNode(`${subject.value}#actionCost`);
     quads.push(factory.quad(subject, vocab(vocabBase, 'actionCost', factory), costNode, graphNode));
     quads.push(factory.quad(costNode, rdfType, vocab(vocabBase, 'ActionCost', factory), graphNode));
     quads.push(factory.quad(
@@ -605,15 +604,14 @@ function emitMonsterQuads(
     ));
   }
 
-  // Item 2: stat-block bnode reification (deterministic ID from subject IRI + field)
+  // Item 2: stat-block resource reification (skolemized IRI from subject + stat field)
   for (const statField of STAT_BLOCK_FIELDS) {
     const statVal = input[statField];
     if (statVal === null || statVal === undefined) continue;
     const numVal = typeof statVal === 'number' ? statVal : null;
     if (numVal === null) continue;
 
-    const statId   = `stat-${sanitizeLocal(subject.value)}-${statField}`;
-    const statNode = factory.blankNode(statId);
+    const statNode = factory.namedNode(`${subject.value}#stat-${statField}`);
     quads.push(factory.quad(subject, vocab(vocabBase, 'statBlock', factory), statNode, graphNode));
     quads.push(factory.quad(statNode, rdfType, vocab(vocabBase, 'StatBlock', factory), graphNode));
     quads.push(factory.quad(
@@ -707,10 +705,9 @@ function emitActionQuads(
     }
   }
 
-  // Item 3: reified ActionCost bnode (deterministic ID from subject IRI)
+  // Item 3: reified ActionCost resource (skolemized IRI from subject + fragment)
   if (typeof input['action_cost'] === 'string') {
-    const costId   = `cost-${sanitizeLocal(subject.value)}`;
-    const costNode = factory.blankNode(costId);
+    const costNode = factory.namedNode(`${subject.value}#actionCost`);
     quads.push(factory.quad(subject, vocab(vocabBase, 'actionCost', factory), costNode, graphNode));
     quads.push(factory.quad(costNode, rdfType, vocab(vocabBase, 'ActionCost', factory), graphNode));
     quads.push(factory.quad(

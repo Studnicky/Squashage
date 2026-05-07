@@ -401,17 +401,14 @@ describe('aonprd e2e — per-class predicate fidelity', () => {
     );
   });
 
-  it('Power Attack: aonprd:actionCost reified — ActionCost bnode with actionSymbol "two-actions"', () => {
+  it('Power Attack: aonprd:actionCost reified — ActionCost resource with actionSymbol "two-actions"', () => {
     const e = findEntity(entities, 'Feats.aspx?ID=750');
     assert.ok(e !== undefined, 'Power Attack entity must exist');
-    // actionCost points to a reified ActionCost bnode; resolve via @id reference
-    const costRef = e['aonprd:actionCost'];
-    const costId  = (costRef !== null && typeof costRef === 'object' && !Array.isArray(costRef))
-      ? asIri(costRef)
-      : undefined;
-    assert.ok(costId !== undefined, 'aonprd:actionCost must be a reference with @id');
+    // actionCost is a skolemized NamedNode IRI pointing to an ActionCost resource
+    const costId = asIri(e['aonprd:actionCost']);
+    assert.ok(costId !== undefined, 'aonprd:actionCost must be an IRI reference');
     const costEntity = entities.find(x => x['@id'] === costId);
-    assert.ok(costEntity !== undefined, `ActionCost entity must exist for bnode ${String(costId)}`);
+    assert.ok(costEntity !== undefined, `ActionCost resource must exist at ${String(costId)}`);
     assert.equal(
       asScalar(costEntity['aonprd:actionSymbol']),
       'two-actions',
@@ -474,17 +471,14 @@ describe('aonprd e2e — per-class predicate fidelity', () => {
     assert.equal(asScalar(e['aonprd:name']), 'Stride');
   });
 
-  it('Stride: aonprd:actionCost reified — ActionCost bnode with actionSymbol "one-action"', () => {
+  it('Stride: aonprd:actionCost reified — ActionCost resource with actionSymbol "one-action"', () => {
     const e = findEntity(entities, 'Actions.aspx?ID=88');
     assert.ok(e !== undefined, 'Stride entity must exist');
-    // actionCost points to a reified ActionCost bnode; resolve via @id reference
-    const costRef = e['aonprd:actionCost'];
-    const costId  = (costRef !== null && typeof costRef === 'object' && !Array.isArray(costRef))
-      ? asIri(costRef)
-      : undefined;
-    assert.ok(costId !== undefined, 'aonprd:actionCost must be a reference with @id');
+    // actionCost is a skolemized NamedNode IRI pointing to an ActionCost resource
+    const costId = asIri(e['aonprd:actionCost']);
+    assert.ok(costId !== undefined, 'aonprd:actionCost must be an IRI reference');
     const costEntity = entities.find(x => x['@id'] === costId);
-    assert.ok(costEntity !== undefined, `ActionCost entity must exist for bnode ${String(costId)}`);
+    assert.ok(costEntity !== undefined, `ActionCost resource must exist at ${String(costId)}`);
     assert.equal(
       asScalar(costEntity['aonprd:actionSymbol']),
       'one-action',
