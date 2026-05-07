@@ -64,7 +64,7 @@ export const OUTPUT_SCHEMA = {
     provenance: {
       type: 'object',
       additionalProperties: false,
-      description: 'PROV-O sidecar provenance graph configuration (Phase 6).',
+      description: 'PROV-O sidecar provenance graph configuration (Phase 6 and Phase 7).',
       properties: {
         enabled: {
           type: 'boolean',
@@ -83,6 +83,12 @@ export const OUTPUT_SCHEMA = {
           },
           description: 'Metadata categories to include in provenance output. Omit an item to suppress that metadata.',
           default: ['classifier', 'confidence', 'reasons', 'timestamp'],
+        },
+        encoding: {
+          type: 'string',
+          enum: ['named-graph', 'rdf-star'] as const,
+          default: 'named-graph',
+          description: 'Provenance encoding strategy. "named-graph" (default) emits PROV-O quads into a sidecar named graph. "rdf-star" emits quoted-triple-subject quads where the rdf:type assertion for each record is the subject of provenance metadata.',
         },
       },
     },

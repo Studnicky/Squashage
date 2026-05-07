@@ -53,6 +53,23 @@ const N3_FORMAT: Readonly<Record<Exclude<RDFFormat, 'jsonld'>, string>> = Object
   nquads:   'N-Quads',
 } as const);
 
+/**
+ * N3 Writer format strings for RDF-star-capable variants.
+ *
+ * @remarks
+ * These format strings activate n3.js's RDF-star serialization path, which
+ * encodes quoted triples using `<< ... >>` syntax. The keys mirror the
+ * canonical RDF-star MIME types returned by {@link RdfStar.isSupported}.
+ *
+ * Supported in n3 v2: `application/trig-star`, `text/turtle-star`,
+ * `application/n-quads-star`.
+ */
+const N3_STAR_FORMAT: Readonly<Record<string, string>> = Object.freeze({
+  'application/trig-star':   'application/trig-star',
+  'text/turtle-star':        'text/turtle-star',
+  'application/n-quads-star': 'application/n-quads-star',
+} as const);
+
 // ---------------------------------------------------------------------------
 // Public types
 // ---------------------------------------------------------------------------
@@ -93,6 +110,16 @@ export interface SerializeOptionsInterface {
    * When absent, the raw expanded form is returned.
    */
   jsonldContext?: JsonldContextDocInterface | undefined;
+  /**
+   * Override the n3.js format string directly, bypassing the {@link RDFFormat}
+   * enum lookup.  Use this to request RDF-star-capable variants such as
+   * `'application/trig-star'`, `'text/turtle-star'`, or
+   * `'application/n-quads-star'`.  When set, `format` is still used for the
+   * result's `format` field but the writer uses `n3FormatOverride` instead.
+   *
+   * @since 0.5.0
+   */
+  n3FormatOverride?: string | undefined;
 }
 
 /**
@@ -190,6 +217,18 @@ export class Serializer {
 
     if (format === 'jsonld') {
       return Serializer.serializeJsonLd(quads, options);
+    }
+
+    // When an RDF-star format override is requested, use it directly.
+    if (options.n3FormatOverride !== undefined) {
+      const starFormat = N3_STAR_FORMAT[options.n3FormatOverride];
+      if (starFormat === undefined) {
+        throw OutputConfigError.create(
+          `Unsupported n3FormatOverride: "${options.n3FormatOverride}"`,
+          { metadata: { format: options.n3FormatOverride } },
+        );
+      }
+      return Serializer.serializeN3(quads, options, starFormat, format);
     }
 
     const n3Format = N3_FORMAT[format as Exclude<RDFFormat, 'jsonld'>];

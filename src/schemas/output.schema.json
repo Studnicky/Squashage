@@ -43,6 +43,37 @@
         { "type": "object" }
       ],
       "description": "Compaction context for JSON-LD output. Path string (resolved against config dir), inline object, or omit/'auto' to let squashage build one from the quad set + ctx.prefixes. Rejected by cross-validation when format is not jsonld."
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "PROV-O sidecar provenance graph configuration (Phase 6 and Phase 7).",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "When true, provenance quads are emitted for each processed record."
+        },
+        "graph": {
+          "type": "string",
+          "description": "Named-graph IRI suffix (resolved against runBase) or a full IRI for the provenance graph."
+        },
+        "include": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["classifier", "confidence", "reasons", "timestamp"]
+          },
+          "description": "Metadata categories to include in provenance output.",
+          "default": ["classifier", "confidence", "reasons", "timestamp"]
+        },
+        "encoding": {
+          "type": "string",
+          "enum": ["named-graph", "rdf-star"],
+          "default": "named-graph",
+          "description": "Provenance encoding strategy. 'named-graph' (default) emits PROV-O quads into a sidecar named graph. 'rdf-star' emits quoted-triple-subject quads where the rdf:type assertion for each record is the subject of provenance metadata."
+        }
+      }
     }
   },
   "allOf": [
