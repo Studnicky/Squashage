@@ -176,6 +176,54 @@ export const SHACL: NamespaceBuilder = Namespaces.for('http://www.w3.org/ns/shac
  */
 export const PROV: NamespaceBuilder = Namespaces.for('http://www.w3.org/ns/prov#');
 
+/**
+ * Namespace builder for the SKOS (Simple Knowledge Organization System) vocabulary.
+ *
+ * @remarks
+ * Base IRI: `http://www.w3.org/2004/02/skos/core#`
+ *
+ * Common terms: `SKOS.Concept`, `SKOS.ConceptScheme`, `SKOS.broader`,
+ * `SKOS.narrower`, `SKOS.related`, `SKOS.prefLabel`, `SKOS.altLabel`,
+ * `SKOS.definition`, `SKOS.inScheme`, `SKOS.hasTopConcept`.
+ *
+ * @example
+ * ```ts
+ * import { SKOS } from './Vocab.js';
+ * SKOS.broader.value  // 'http://www.w3.org/2004/02/skos/core#broader'
+ * SKOS.Concept.value  // 'http://www.w3.org/2004/02/skos/core#Concept'
+ * ```
+ *
+ * @category RDF
+ * @since 0.5.0
+ * @see {@link https://www.w3.org/TR/skos-reference/ | SKOS Simple Knowledge Organization System Reference}
+ * @group Vocab
+ */
+export const SKOS: NamespaceBuilder = Namespaces.for('http://www.w3.org/2004/02/skos/core#');
+
+/**
+ * Namespace builder for the Dublin Core Terms vocabulary.
+ *
+ * @remarks
+ * Base IRI: `http://purl.org/dc/terms/`
+ *
+ * Common terms: `DCT.source`, `DCT.creator`, `DCT.title`, `DCT.description`,
+ * `DCT.subject`, `DCT.date`, `DCT.type`, `DCT.format`, `DCT.identifier`,
+ * `DCT.language`, `DCT.rights`, `DCT.license`.
+ *
+ * @example
+ * ```ts
+ * import { DCT } from './Vocab.js';
+ * DCT.source.value  // 'http://purl.org/dc/terms/source'
+ * DCT.creator.value // 'http://purl.org/dc/terms/creator'
+ * ```
+ *
+ * @category RDF
+ * @since 0.5.0
+ * @see {@link https://www.dublincore.org/specifications/dublin-core/dcmi-terms/ | DCMI Metadata Terms}
+ * @group Vocab
+ */
+export const DCT: NamespaceBuilder = Namespaces.for('http://purl.org/dc/terms/');
+
 // ---------------------------------------------------------------------------
 // STANDARD_PREFIXES
 // ---------------------------------------------------------------------------
@@ -219,11 +267,13 @@ export const PROV: NamespaceBuilder = Namespaces.for('http://www.w3.org/ns/prov#
  * @see {@link SHACL}
  * @group Vocab
  */
-export const STANDARD_PREFIXES: Readonly<Record<'rdf' | 'rdfs' | 'owl' | 'xsd' | 'sh' | 'prov', string>> = Object.freeze({
+export const STANDARD_PREFIXES: Readonly<Record<'rdf' | 'rdfs' | 'owl' | 'xsd' | 'sh' | 'prov' | 'skos' | 'dct', string>> = Object.freeze({
   rdf:  'http://www.w3.org/1999/02/22-rdf-syntax-ns#',
   rdfs: 'http://www.w3.org/2000/01/rdf-schema#',
   owl:  'http://www.w3.org/2002/07/owl#',
   xsd:  'http://www.w3.org/2001/XMLSchema#',
   sh:   'http://www.w3.org/ns/shacl#',
   prov: 'http://www.w3.org/ns/prov#',
+  skos: 'http://www.w3.org/2004/02/skos/core#',
+  dct:  'http://purl.org/dc/terms/',
 });

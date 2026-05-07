@@ -9,7 +9,7 @@
     "_type": { "type": "string", "const": "monster" },
     "url": { "type": "string", "format": "uri" },
     "name": { "type": "string" },
-    "level": { "type": "integer" },
+    "level": { "type": "integer", "minimum": -1, "maximum": 25 },
     "rarity": { "type": "string" },
     "traits": { "type": "array", "items": { "type": "string" } },
     "size": { "type": "string" },

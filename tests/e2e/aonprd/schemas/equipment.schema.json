@@ -9,7 +9,7 @@
     "_type": { "type": "string", "const": "equipment" },
     "url": { "type": "string", "format": "uri" },
     "name": { "type": "string" },
-    "item_level": { "type": ["integer", "null"] },
+    "item_level": { "type": ["integer", "null"], "minimum": 0, "maximum": 25 },
     "rarity": { "type": "string" },
     "traits": { "type": "array", "items": { "type": "string" } },
     "bulk": {},

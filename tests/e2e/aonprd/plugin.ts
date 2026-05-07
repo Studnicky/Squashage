@@ -7,12 +7,23 @@
  * `state.context.prefixes` and `state.context.factory`. No IRIs are hardcoded.
  *
  * Prefix derivation (all synthetic fallback — see PrefixResolver):
- * - `instances.base`  → `https://squashage.dev/instance/aonprd/`
- * - `graphs.base`     → `https://squashage.dev/graph/aonprd/`
- * - `vocabulary.base` → `https://squashage.dev/vocabulary/aonprd#`
+ * - `instances.base`  -> `https://squashage.dev/instance/aonprd/`
+ * - `graphs.base`     -> `https://squashage.dev/graph/aonprd/`
+ * - `vocabulary.base` -> `https://squashage.dev/vocabulary/aonprd#`
  *
  * Subject IRI: `instances.base + url-tail` where url-tail is derived from the
  * record's `_source.url` (parsed at task time from `state.input`).
+ *
+ * Pokemontology-style enrichment (v0.5.0):
+ * - Item 1:  rdfs:label "Name"@en on every emitter
+ * - Item 2:  Monster stat-block bnode reification (hp, ac, perception, ability scores)
+ * - Item 3:  Reified ActionCost resource (feat + action emitters)
+ * - Item 4:  Spell school as second-axis IRI
+ * - Item 5:  Feat hasPrerequisite + inverse isPrerequisiteFor
+ * - Item 6:  Trait skos:broader hierarchy (category field)
+ * - Item 7:  dct:source per-record provenance
+ * - Item 8:  Description literal (description_text field)
+ * - Item 9:  Monster size as IRI not literal
  *
  * @module tests/e2e/aonprd/plugin
  * @category TestFixture
@@ -28,9 +39,17 @@ import type { DataFactory, NamedNode, Quad } from '@rdfjs/types';
 // Well-known IRIs (static — standard vocabularies, not domain IRIs)
 // ---------------------------------------------------------------------------
 
-const RDF_TYPE_IRI = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type';
-const XSD_STRING_IRI = 'http://www.w3.org/2001/XMLSchema#string';
+const RDF_TYPE_IRI    = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type';
+const XSD_STRING_IRI  = 'http://www.w3.org/2001/XMLSchema#string';
 const XSD_INTEGER_IRI = 'http://www.w3.org/2001/XMLSchema#integer';
+const RDFS_LABEL_IRI  = 'http://www.w3.org/2000/01/rdf-schema#label';
+const SKOS_BROADER_IRI = 'http://www.w3.org/2004/02/skos/core#broader';
+const DCT_SOURCE_IRI  = 'http://purl.org/dc/terms/source';
+
+// Stat fields emitted as StatBlock bnodes in emitMonsterQuads.
+const STAT_BLOCK_FIELDS: ReadonlyArray<string> = [
+  'hp', 'ac', 'perception', 'str', 'dex', 'con', 'int', 'wis', 'cha',
+];
 
 // ---------------------------------------------------------------------------
 // Internal helpers
@@ -89,6 +108,19 @@ function sanitizeLocal(localName: string): string {
 }
 
 /**
+ * Slugifies a prerequisite name for use in a feat IRI.
+ *
+ * @param name - Prerequisite name string.
+ * @returns Slug suitable for use in an IRI local part.
+ */
+function slugify(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9\-]/g, '');
+}
+
+/**
  * Produces a NamedNode for a vocabulary term (predicate or class IRI).
  *
  * @param vocabularyBase - The vocabulary namespace base IRI.
@@ -124,6 +156,104 @@ function graph(graphBase: string, className: string, factory: DataFactory): Name
   return factory.namedNode(`${graphBase}${className}`);
 }
 
+/**
+ * Emits a `rdfs:label "name"@en` quad if the record has a `name` string field.
+ *
+ * Item 1 helper — called from every class-specific emitter.
+ *
+ * @param subject   - Subject NamedNode.
+ * @param input     - Parsed record.
+ * @param graphNode - Named graph NamedNode.
+ * @param factory   - RDF/JS data factory.
+ * @param quads     - Mutable output array.
+ */
+function pushRdfsLabel(
+  subject:   NamedNode,
+  input:     Readonly<Record<string, unknown>>,
+  graphNode: NamedNode,
+  factory:   DataFactory,
+  quads:     Quad[],
+): void {
+  if (typeof input['name'] === 'string') {
+    quads.push(factory.quad(
+      subject,
+      factory.namedNode(RDFS_LABEL_IRI),
+      factory.literal(input['name'], 'en'),
+      graphNode,
+    ));
+  }
+}
+
+/**
+ * Emits a `dct:source <url>` quad if the record has a `_source.url` field.
+ *
+ * Item 7 helper — called from every class-specific emitter.
+ *
+ * @param subject   - Subject NamedNode.
+ * @param input     - Parsed record.
+ * @param graphNode - Named graph NamedNode.
+ * @param factory   - RDF/JS data factory.
+ * @param quads     - Mutable output array.
+ */
+function pushDctSource(
+  subject:   NamedNode,
+  input:     Readonly<Record<string, unknown>>,
+  graphNode: NamedNode,
+  factory:   DataFactory,
+  quads:     Quad[],
+): void {
+  const source = input['_source'];
+  if (source !== null && typeof source === 'object' && !Array.isArray(source)) {
+    const url = (source as Record<string, unknown>)['url'];
+    if (typeof url === 'string' && url.length > 0) {
+      quads.push(factory.quad(
+        subject,
+        factory.namedNode(DCT_SOURCE_IRI),
+        factory.namedNode(url),
+        graphNode,
+      ));
+    }
+  }
+}
+
+/**
+ * Emits a `aonprd:description "..."^^xsd:string` quad if the record has
+ * a `description_text` (or `description`) string field.
+ *
+ * Item 8 helper — called from per-class emitters that have description fields.
+ *
+ * @param subject   - Subject NamedNode.
+ * @param input     - Parsed record.
+ * @param vocabBase - Vocabulary base IRI.
+ * @param graphNode - Named graph NamedNode.
+ * @param factory   - RDF/JS data factory.
+ * @param quads     - Mutable output array.
+ */
+function pushDescription(
+  subject:   NamedNode,
+  input:     Readonly<Record<string, unknown>>,
+  vocabBase: string,
+  graphNode: NamedNode,
+  factory:   DataFactory,
+  quads:     Quad[],
+): void {
+  const xsdString = factory.namedNode(XSD_STRING_IRI);
+  // Prefer description_text (AONPRD scrape convention), fall back to description.
+  const desc = typeof input['description_text'] === 'string'
+    ? input['description_text']
+    : typeof input['description'] === 'string'
+      ? input['description']
+      : null;
+  if (desc !== null) {
+    quads.push(factory.quad(
+      subject,
+      vocab(vocabBase, 'description', factory),
+      factory.literal(desc, xsdString),
+      graphNode,
+    ));
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Quad emitters per class
 // ---------------------------------------------------------------------------
@@ -132,26 +262,33 @@ function graph(graphBase: string, className: string, factory: DataFactory): Name
  * Emits quads for a classified feat record.
  *
  * Emits (all in graph `<graphs:feat>`):
- * - `<instances:tail>  rdf:type         <vocabulary:Feat>`
- * - `<instances:tail>  <vocabulary:name>  "name"^^xsd:string`
- * - `<instances:tail>  <vocabulary:level>  level^^xsd:integer`
- * - `<instances:tail>  <vocabulary:rarity>  <vocabulary:Rarity-rarity>`
- * - `<instances:tail>  <vocabulary:trait>  <vocabulary:Trait-traitX>` (per trait)
- * - `<instances:tail>  <vocabulary:actionCost>  "action_cost"^^xsd:string` (when present)
+ * - `<instances:tail>  rdf:type                     <vocabulary:Feat>`
+ * - `<instances:tail>  rdfs:label                   "name"@en`
+ * - `<instances:tail>  <vocabulary:name>             "name"^^xsd:string`
+ * - `<instances:tail>  <vocabulary:level>            level^^xsd:integer`
+ * - `<instances:tail>  <vocabulary:rarity>           <vocabulary:Rarity-rarity>`
+ * - `<instances:tail>  <vocabulary:trait>            <vocabulary:Trait-traitX>` (per trait)
+ * - `<instances:tail>  <vocabulary:actionCost>       _:costNode` (reified ActionCost bnode)
+ * - `<instances:tail>  <vocabulary:hasPrerequisite>  <instances:feat-slug>` (per prereq)
+ * - `<instances:slug>  <vocabulary:isPrerequisiteFor> <instances:tail>` (inverse)
+ * - `<instances:tail>  <vocabulary:description>      "..."^^xsd:string`
+ * - `<instances:tail>  dct:source                   <sourceUrl>`
  *
- * @param subject  - Subject NamedNode.
- * @param input    - Parsed record.
- * @param vocabBase - Vocabulary base IRI.
- * @param graphNode - Named graph NamedNode.
- * @param factory  - RDF/JS data factory.
+ * @param subject      - Subject NamedNode.
+ * @param input        - Parsed record.
+ * @param vocabBase    - Vocabulary base IRI.
+ * @param instanceBase - Instance base IRI.
+ * @param graphNode    - Named graph NamedNode.
+ * @param factory      - RDF/JS data factory.
  * @returns Array of quads.
  */
 function emitFeatQuads(
-  subject:   NamedNode,
-  input:     Readonly<Record<string, unknown>>,
-  vocabBase: string,
-  graphNode: NamedNode,
-  factory:   DataFactory,
+  subject:      NamedNode,
+  input:        Readonly<Record<string, unknown>>,
+  vocabBase:    string,
+  instanceBase: string,
+  graphNode:    NamedNode,
+  factory:      DataFactory,
 ): Quad[] {
   const quads: Quad[] = [];
   const rdfType    = factory.namedNode(RDF_TYPE_IRI);
@@ -159,6 +296,9 @@ function emitFeatQuads(
   const xsdInteger = factory.namedNode(XSD_INTEGER_IRI);
 
   quads.push(factory.quad(subject, rdfType, vocab(vocabBase, 'Feat', factory), graphNode));
+
+  // Item 1: rdfs:label
+  pushRdfsLabel(subject, input, graphNode, factory, quads);
 
   if (typeof input['name'] === 'string') {
     quads.push(factory.quad(
@@ -201,14 +341,63 @@ function emitFeatQuads(
     }
   }
 
+  // Item 3: reified ActionCost bnode (deterministic ID from subject IRI)
   if (typeof input['action_cost'] === 'string') {
+    const costId   = `cost-${sanitizeLocal(subject.value)}`;
+    const costNode = factory.blankNode(costId);
+    quads.push(factory.quad(subject, vocab(vocabBase, 'actionCost', factory), costNode, graphNode));
+    quads.push(factory.quad(costNode, rdfType, vocab(vocabBase, 'ActionCost', factory), graphNode));
     quads.push(factory.quad(
-      subject,
-      vocab(vocabBase, 'actionCost', factory),
+      costNode,
+      vocab(vocabBase, 'actionSymbol', factory),
       factory.literal(input['action_cost'], xsdString),
       graphNode,
     ));
   }
+
+  // Item 5: hasPrerequisite + inverse isPrerequisiteFor
+  const prereqLinks = input['prerequisites_links'];
+  if (Array.isArray(prereqLinks) && prereqLinks.length > 0) {
+    // Structured links from ripperoni (preferred when present)
+    for (const link of prereqLinks) {
+      if (link !== null && typeof link === 'object' && !Array.isArray(link)) {
+        const linkObj = link as Record<string, unknown>;
+        const href = typeof linkObj['href'] === 'string' ? linkObj['href'] : null;
+        const linkName = typeof linkObj['name'] === 'string' ? linkObj['name'] : null;
+        if (href !== null) {
+          const prereqNode = factory.namedNode(href);
+          quads.push(factory.quad(subject, vocab(vocabBase, 'hasPrerequisite', factory), prereqNode, graphNode));
+          quads.push(factory.quad(prereqNode, vocab(vocabBase, 'isPrerequisiteFor', factory), subject, graphNode));
+        } else if (linkName !== null) {
+          const prereqIri = factory.namedNode(`${instanceBase}feat-${slugify(linkName)}`);
+          quads.push(factory.quad(subject, vocab(vocabBase, 'hasPrerequisite', factory), prereqIri, graphNode));
+          quads.push(factory.quad(prereqIri, vocab(vocabBase, 'isPrerequisiteFor', factory), subject, graphNode));
+        }
+      }
+    }
+  } else {
+    // Fallback: plain string or array of strings
+    const prereqs = input['prerequisites'];
+    if (typeof prereqs === 'string' && prereqs.length > 0) {
+      const prereqIri = factory.namedNode(`${instanceBase}feat-${slugify(prereqs)}`);
+      quads.push(factory.quad(subject, vocab(vocabBase, 'hasPrerequisite', factory), prereqIri, graphNode));
+      quads.push(factory.quad(prereqIri, vocab(vocabBase, 'isPrerequisiteFor', factory), subject, graphNode));
+    } else if (Array.isArray(prereqs)) {
+      for (const prereq of prereqs) {
+        if (typeof prereq === 'string' && prereq.length > 0) {
+          const prereqIri = factory.namedNode(`${instanceBase}feat-${slugify(prereq)}`);
+          quads.push(factory.quad(subject, vocab(vocabBase, 'hasPrerequisite', factory), prereqIri, graphNode));
+          quads.push(factory.quad(prereqIri, vocab(vocabBase, 'isPrerequisiteFor', factory), subject, graphNode));
+        }
+      }
+    }
+  }
+
+  // Item 8: description
+  pushDescription(subject, input, vocabBase, graphNode, factory, quads);
+
+  // Item 7: dct:source
+  pushDctSource(subject, input, graphNode, factory, quads);
 
   return quads;
 }
@@ -217,12 +406,16 @@ function emitFeatQuads(
  * Emits quads for a classified spell record.
  *
  * Emits (all in graph `<graphs:spell>`):
- * - `<instances:tail>  rdf:type            <vocabulary:Spell>`
- * - `<instances:tail>  <vocabulary:name>    "name"^^xsd:string`
- * - `<instances:tail>  <vocabulary:level>   level^^xsd:integer`
- * - `<instances:tail>  <vocabulary:rarity>  <vocabulary:Rarity-rarity>`
+ * - `<instances:tail>  rdf:type               <vocabulary:Spell>`
+ * - `<instances:tail>  rdfs:label             "name"@en`
+ * - `<instances:tail>  <vocabulary:name>       "name"^^xsd:string`
+ * - `<instances:tail>  <vocabulary:level>      level^^xsd:integer`
+ * - `<instances:tail>  <vocabulary:rarity>     <vocabulary:Rarity-rarity>`
+ * - `<instances:tail>  <vocabulary:school>     <vocabulary:School-school>` (when present)
  * - `<instances:tail>  <vocabulary:tradition>  <vocabulary:Tradition-X>` (per tradition)
- * - `<instances:tail>  <vocabulary:trait>   <vocabulary:Trait-X>` (per trait)
+ * - `<instances:tail>  <vocabulary:trait>      <vocabulary:Trait-X>` (per trait)
+ * - `<instances:tail>  <vocabulary:description> "..."^^xsd:string`
+ * - `<instances:tail>  dct:source              <sourceUrl>`
  *
  * @param subject   - Subject NamedNode.
  * @param input     - Parsed record.
@@ -244,6 +437,9 @@ function emitSpellQuads(
   const xsdInteger = factory.namedNode(XSD_INTEGER_IRI);
 
   quads.push(factory.quad(subject, rdfType, vocab(vocabBase, 'Spell', factory), graphNode));
+
+  // Item 1: rdfs:label
+  pushRdfsLabel(subject, input, graphNode, factory, quads);
 
   if (typeof input['name'] === 'string') {
     quads.push(factory.quad(
@@ -268,6 +464,16 @@ function emitSpellQuads(
       subject,
       vocab(vocabBase, 'rarity', factory),
       vocab(vocabBase, `Rarity-${input['rarity']}`, factory),
+      graphNode,
+    ));
+  }
+
+  // Item 4: spell school as second-axis IRI
+  if (typeof input['school'] === 'string') {
+    quads.push(factory.quad(
+      subject,
+      vocab(vocabBase, 'school', factory),
+      vocab(vocabBase, `School-${input['school']}`, factory),
       graphNode,
     ));
   }
@@ -300,6 +506,12 @@ function emitSpellQuads(
     }
   }
 
+  // Item 8: description
+  pushDescription(subject, input, vocabBase, graphNode, factory, quads);
+
+  // Item 7: dct:source
+  pushDctSource(subject, input, graphNode, factory, quads);
+
   return quads;
 }
 
@@ -307,12 +519,16 @@ function emitSpellQuads(
  * Emits quads for a classified monster record.
  *
  * Emits (all in graph `<graphs:monster>`):
- * - `<instances:tail>  rdf:type         <vocabulary:Monster>`
- * - `<instances:tail>  <vocabulary:name>  "name"^^xsd:string`
+ * - `<instances:tail>  rdf:type           <vocabulary:Monster>`
+ * - `<instances:tail>  rdfs:label         "name"@en`
+ * - `<instances:tail>  <vocabulary:name>   "name"^^xsd:string`
  * - `<instances:tail>  <vocabulary:level>  level^^xsd:integer`
- * - `<instances:tail>  <vocabulary:rarity>  <vocabulary:Rarity-rarity>`
+ * - `<instances:tail>  <vocabulary:rarity> <vocabulary:Rarity-rarity>`
  * - `<instances:tail>  <vocabulary:trait>  <vocabulary:Trait-X>` (per trait)
- * - `<instances:tail>  <vocabulary:size>  "size"^^xsd:string` (when present)
+ * - `<instances:tail>  <vocabulary:size>   <vocabulary:Size-size>` (IRI, not literal)
+ * - `<instances:tail>  <vocabulary:statBlock> _:statNode` (per stat field present)
+ * - `<instances:tail>  <vocabulary:description> "..."^^xsd:string`
+ * - `<instances:tail>  dct:source         <sourceUrl>`
  *
  * @param subject   - Subject NamedNode.
  * @param input     - Parsed record.
@@ -334,6 +550,9 @@ function emitMonsterQuads(
   const xsdInteger = factory.namedNode(XSD_INTEGER_IRI);
 
   quads.push(factory.quad(subject, rdfType, vocab(vocabBase, 'Monster', factory), graphNode));
+
+  // Item 1: rdfs:label
+  pushRdfsLabel(subject, input, graphNode, factory, quads);
 
   if (typeof input['name'] === 'string') {
     quads.push(factory.quad(
@@ -376,14 +595,46 @@ function emitMonsterQuads(
     }
   }
 
+  // Item 9: size as IRI not literal
   if (typeof input['size'] === 'string') {
     quads.push(factory.quad(
       subject,
       vocab(vocabBase, 'size', factory),
-      factory.literal(input['size'], xsdString),
+      vocab(vocabBase, `Size-${input['size']}`, factory),
       graphNode,
     ));
   }
+
+  // Item 2: stat-block bnode reification (deterministic ID from subject IRI + field)
+  for (const statField of STAT_BLOCK_FIELDS) {
+    const statVal = input[statField];
+    if (statVal === null || statVal === undefined) continue;
+    const numVal = typeof statVal === 'number' ? statVal : null;
+    if (numVal === null) continue;
+
+    const statId   = `stat-${sanitizeLocal(subject.value)}-${statField}`;
+    const statNode = factory.blankNode(statId);
+    quads.push(factory.quad(subject, vocab(vocabBase, 'statBlock', factory), statNode, graphNode));
+    quads.push(factory.quad(statNode, rdfType, vocab(vocabBase, 'StatBlock', factory), graphNode));
+    quads.push(factory.quad(
+      statNode,
+      vocab(vocabBase, 'statName', factory),
+      factory.literal(statField, xsdString),
+      graphNode,
+    ));
+    quads.push(factory.quad(
+      statNode,
+      vocab(vocabBase, 'statValue', factory),
+      factory.literal(String(numVal), xsdInteger),
+      graphNode,
+    ));
+  }
+
+  // Item 8: description
+  pushDescription(subject, input, vocabBase, graphNode, factory, quads);
+
+  // Item 7: dct:source
+  pushDctSource(subject, input, graphNode, factory, quads);
 
   return quads;
 }
@@ -392,11 +643,14 @@ function emitMonsterQuads(
  * Emits quads for a classified action record.
  *
  * Emits (all in graph `<graphs:action>`):
- * - `<instances:tail>  rdf:type            <vocabulary:Action>`
- * - `<instances:tail>  <vocabulary:name>    "name"^^xsd:string`
- * - `<instances:tail>  <vocabulary:rarity>  <vocabulary:Rarity-rarity>`
- * - `<instances:tail>  <vocabulary:trait>   <vocabulary:Trait-X>` (per trait)
- * - `<instances:tail>  <vocabulary:actionCost>  "action_cost"^^xsd:string`
+ * - `<instances:tail>  rdf:type              <vocabulary:Action>`
+ * - `<instances:tail>  rdfs:label            "name"@en`
+ * - `<instances:tail>  <vocabulary:name>      "name"^^xsd:string`
+ * - `<instances:tail>  <vocabulary:rarity>   <vocabulary:Rarity-rarity>`
+ * - `<instances:tail>  <vocabulary:trait>    <vocabulary:Trait-X>` (per trait)
+ * - `<instances:tail>  <vocabulary:actionCost> _:costNode` (reified ActionCost bnode)
+ * - `<instances:tail>  <vocabulary:description> "..."^^xsd:string`
+ * - `<instances:tail>  dct:source            <sourceUrl>`
  *
  * @param subject   - Subject NamedNode.
  * @param input     - Parsed record.
@@ -417,6 +671,9 @@ function emitActionQuads(
   const xsdString = factory.namedNode(XSD_STRING_IRI);
 
   quads.push(factory.quad(subject, rdfType, vocab(vocabBase, 'Action', factory), graphNode));
+
+  // Item 1: rdfs:label
+  pushRdfsLabel(subject, input, graphNode, factory, quads);
 
   if (typeof input['name'] === 'string') {
     quads.push(factory.quad(
@@ -450,14 +707,25 @@ function emitActionQuads(
     }
   }
 
+  // Item 3: reified ActionCost bnode (deterministic ID from subject IRI)
   if (typeof input['action_cost'] === 'string') {
+    const costId   = `cost-${sanitizeLocal(subject.value)}`;
+    const costNode = factory.blankNode(costId);
+    quads.push(factory.quad(subject, vocab(vocabBase, 'actionCost', factory), costNode, graphNode));
+    quads.push(factory.quad(costNode, rdfType, vocab(vocabBase, 'ActionCost', factory), graphNode));
     quads.push(factory.quad(
-      subject,
-      vocab(vocabBase, 'actionCost', factory),
+      costNode,
+      vocab(vocabBase, 'actionSymbol', factory),
       factory.literal(input['action_cost'], xsdString),
       graphNode,
     ));
   }
+
+  // Item 8: description
+  pushDescription(subject, input, vocabBase, graphNode, factory, quads);
+
+  // Item 7: dct:source
+  pushDctSource(subject, input, graphNode, factory, quads);
 
   return quads;
 }
@@ -466,11 +734,14 @@ function emitActionQuads(
  * Emits quads for a classified equipment record.
  *
  * Emits (all in graph `<graphs:equipment>`):
- * - `<instances:tail>  rdf:type            <vocabulary:Equipment>`
- * - `<instances:tail>  <vocabulary:name>    "name"^^xsd:string`
- * - `<instances:tail>  <vocabulary:rarity>  <vocabulary:Rarity-rarity>`
- * - `<instances:tail>  <vocabulary:trait>   <vocabulary:Trait-X>` (per trait)
- * - `<instances:tail>  <vocabulary:itemLevel>  level^^xsd:integer` (when present)
+ * - `<instances:tail>  rdf:type              <vocabulary:Equipment>`
+ * - `<instances:tail>  rdfs:label            "name"@en`
+ * - `<instances:tail>  <vocabulary:name>      "name"^^xsd:string`
+ * - `<instances:tail>  <vocabulary:rarity>   <vocabulary:Rarity-rarity>`
+ * - `<instances:tail>  <vocabulary:trait>    <vocabulary:Trait-X>` (per trait)
+ * - `<instances:tail>  <vocabulary:itemLevel> level^^xsd:integer` (when present)
+ * - `<instances:tail>  <vocabulary:description> "..."^^xsd:string`
+ * - `<instances:tail>  dct:source            <sourceUrl>`
  *
  * @param subject   - Subject NamedNode.
  * @param input     - Parsed record.
@@ -492,6 +763,9 @@ function emitEquipmentQuads(
   const xsdInteger = factory.namedNode(XSD_INTEGER_IRI);
 
   quads.push(factory.quad(subject, rdfType, vocab(vocabBase, 'Equipment', factory), graphNode));
+
+  // Item 1: rdfs:label
+  pushRdfsLabel(subject, input, graphNode, factory, quads);
 
   if (typeof input['name'] === 'string') {
     quads.push(factory.quad(
@@ -534,6 +808,12 @@ function emitEquipmentQuads(
     ));
   }
 
+  // Item 8: description
+  pushDescription(subject, input, vocabBase, graphNode, factory, quads);
+
+  // Item 7: dct:source
+  pushDctSource(subject, input, graphNode, factory, quads);
+
   return quads;
 }
 
@@ -543,10 +823,13 @@ function emitEquipmentQuads(
  * background, condition, trait, hazard, generic, and unknown.
  *
  * Emits (all in graph `<graphs:className>`):
- * - `<instances:tail>  rdf:type            <vocabulary:ClassName>`
- * - `<instances:tail>  <vocabulary:name>    "name"^^xsd:string`
- * - `<instances:tail>  <vocabulary:rarity>  <vocabulary:Rarity-rarity>` (when present)
- * - `<instances:tail>  <vocabulary:trait>   <vocabulary:Trait-X>` (per trait)
+ * - `<instances:tail>  rdf:type              <vocabulary:ClassName>`
+ * - `<instances:tail>  rdfs:label            "name"@en`
+ * - `<instances:tail>  <vocabulary:name>      "name"^^xsd:string`
+ * - `<instances:tail>  <vocabulary:rarity>   <vocabulary:Rarity-rarity>` (when present)
+ * - `<instances:tail>  <vocabulary:trait>    <vocabulary:Trait-X>` (per trait)
+ * - `<instances:tail>  skos:broader          <vocabulary:TraitCategory-cat>` (trait class only)
+ * - `<instances:tail>  dct:source            <sourceUrl>`
  *
  * @param className - RDF class local name (e.g. `'Weapon'`, `'Ancestry'`).
  * @param subject   - Subject NamedNode.
@@ -569,6 +852,9 @@ function emitBaseQuads(
   const xsdString = factory.namedNode(XSD_STRING_IRI);
 
   quads.push(factory.quad(subject, rdfType, vocab(vocabBase, className, factory), graphNode));
+
+  // Item 1: rdfs:label
+  pushRdfsLabel(subject, input, graphNode, factory, quads);
 
   if (typeof input['name'] === 'string') {
     quads.push(factory.quad(
@@ -601,6 +887,22 @@ function emitBaseQuads(
       }
     }
   }
+
+  // Item 6: Trait skos:broader hierarchy (trait class only)
+  if (className === 'Trait') {
+    const category = input['category'];
+    if (typeof category === 'string' && category.length > 0) {
+      quads.push(factory.quad(
+        subject,
+        factory.namedNode(SKOS_BROADER_IRI),
+        vocab(vocabBase, `TraitCategory-${category}`, factory),
+        graphNode,
+      ));
+    }
+  }
+
+  // Item 7: dct:source
+  pushDctSource(subject, input, graphNode, factory, quads);
 
   return quads;
 }
@@ -646,7 +948,7 @@ const aonprdSquashTask = async (
     const graphNode = graph(graphBase, className, factory);
 
     const dispatch: Record<string, () => Quad[]> = {
-      feat:       () => emitFeatQuads(subject, input, vocabBase, graphNode, factory),
+      feat:       () => emitFeatQuads(subject, input, vocabBase, instanceBase, graphNode, factory),
       spell:      () => emitSpellQuads(subject, input, vocabBase, graphNode, factory),
       monster:    () => emitMonsterQuads(subject, input, vocabBase, graphNode, factory),
       action:     () => emitActionQuads(subject, input, vocabBase, graphNode, factory),

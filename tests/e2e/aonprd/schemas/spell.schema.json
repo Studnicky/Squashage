@@ -9,7 +9,7 @@
     "_type": { "type": "string", "const": "spell" },
     "url": { "type": "string", "format": "uri" },
     "name": { "type": "string" },
-    "level": { "type": "integer" },
+    "level": { "type": "integer", "minimum": 1, "maximum": 10 },
     "rarity": { "type": "string" },
     "traits": { "type": "array", "items": { "type": "string" } },
     "traditions": { "type": "array", "items": { "type": "string" } },
