@@ -18,105 +18,156 @@
       "additionalProperties": { "type": "string", "format": "uri" }
     },
     "ontology":       { "type": "object" },
-    "classification": {
+    "source": { "type": "boolean", "const": true },
+    "structural": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["className", "priority", "predicate", "reasons"],
+        "properties": {
+          "className": { "type": "string", "minLength": 1 },
+          "priority":  { "type": "number" },
+          "predicate": { "$ref": "https://squashage.dev/schemas/predicate.json" },
+          "reasons":   { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "rules": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["className", "priority", "predicate", "reasons"],
+        "properties": {
+          "className": { "type": "string", "minLength": 1 },
+          "priority":  { "type": "number" },
+          "predicate": { "$ref": "https://squashage.dev/schemas/predicate.json" },
+          "reasons":   { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "schemas": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["className", "priority", "schemaPath"],
+        "properties": {
+          "className":  { "type": "string", "minLength": 1 },
+          "priority":   { "type": "number" },
+          "schemaPath": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "ontologyClassifier": {
       "type": "object",
       "additionalProperties": false,
+      "required": ["classes"],
       "properties": {
-        "source": {
-          "type": "boolean",
-          "const": true
+        "classes": {
+          "type": "object",
+          "additionalProperties": { "type": "string", "format": "uri" },
+          "minProperties": 1
+        }
+      }
+    },
+    "conflict": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["onConflict", "onUnknown", "evidence"],
+      "properties": {
+        "onConflict": { "type": "string", "enum": ["quarantine", "pickPriority"] },
+        "onUnknown":  { "type": "string", "enum": ["quarantine", "skip"] },
+        "evidence":   { "type": "boolean" }
+      }
+    },
+    "shaclShape": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["shapesFrom"],
+      "properties": {
+        "shapesFrom": {
+          "oneOf": [
+            { "type": "string", "const": "ontology" },
+            { "type": "string", "minLength": 1 }
+          ]
         },
-        "structural": {
+        "priority": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "taxonomicNarrowing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tboxFrom"],
+      "properties": {
+        "tboxFrom": {
+          "oneOf": [
+            { "type": "string", "const": "ontology" },
+            { "type": "string", "minLength": 1 }
+          ]
+        },
+        "enabled": { "type": "boolean" }
+      }
+    },
+    "urlPattern": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["patterns"],
+      "properties": {
+        "patterns": {
           "type": "array",
           "minItems": 1,
           "items": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["className", "priority", "predicate", "reasons"],
+            "required": ["className", "match"],
             "properties": {
               "className": { "type": "string", "minLength": 1 },
-              "priority":  { "type": "number" },
-              "predicate": { "$ref": "https://squashage.dev/schemas/predicate.json" },
-              "reasons":   { "type": "array", "items": { "type": "string" } }
+              "match":     { "type": "string", "minLength": 1 },
+              "priority":  { "type": "integer", "minimum": 0 }
             }
-          }
-        },
-        "rules": {
-          "type": "array",
-          "minItems": 1,
-          "items": {
-            "type": "object",
-            "additionalProperties": false,
-            "required": ["className", "priority", "predicate", "reasons"],
-            "properties": {
-              "className": { "type": "string", "minLength": 1 },
-              "priority":  { "type": "number" },
-              "predicate": { "$ref": "https://squashage.dev/schemas/predicate.json" },
-              "reasons":   { "type": "array", "items": { "type": "string" } }
-            }
-          }
-        },
-        "schemas": {
-          "type": "array",
-          "minItems": 1,
-          "items": {
-            "type": "object",
-            "additionalProperties": false,
-            "required": ["className", "priority", "schemaPath"],
-            "properties": {
-              "className":  { "type": "string", "minLength": 1 },
-              "priority":   { "type": "number" },
-              "schemaPath": { "type": "string", "minLength": 1 }
-            }
-          }
-        },
-        "ontology": {
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["classes"],
-          "properties": {
-            "classes": {
-              "type": "object",
-              "additionalProperties": { "type": "string", "format": "uri" },
-              "minProperties": 1
-            }
-          }
-        },
-        "conflict": {
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["onConflict", "onUnknown", "evidence"],
-          "properties": {
-            "onConflict": { "type": "string", "enum": ["quarantine", "pickPriority"] },
-            "onUnknown":  { "type": "string", "enum": ["quarantine", "skip"] },
-            "evidence":   { "type": "boolean" }
-          }
-        },
-        "winknlpEntities": {
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["patterns"],
-          "properties": {
-            "patterns": {
-              "type": "array",
-              "minItems": 1,
-              "items": {
-                "type": "object",
-                "additionalProperties": false,
-                "required": ["name", "patterns", "className"],
-                "properties": {
-                  "name":      { "type": "string", "minLength": 1 },
-                  "patterns":  { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
-                  "className": { "type": "string", "minLength": 1 },
-                  "priority":  { "type": "integer", "minimum": 0 }
-                }
-              }
-            },
-            "fields": { "type": "array", "items": { "type": "string", "minLength": 1 } }
           }
         }
       }
     },
+    "propertyFingerprint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["fingerprintsFrom"],
+      "properties": {
+        "fingerprintsFrom": { "type": "string", "minLength": 1 },
+        "minMatchScore":    { "type": "number", "minimum": 0, "maximum": 1 },
+        "priority":         { "type": "integer", "minimum": 0 }
+      }
+    },
+    "winknlpEntities": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["patterns"],
+      "properties": {
+        "patterns": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "patterns", "className"],
+            "properties": {
+              "name":      { "type": "string", "minLength": 1 },
+              "patterns":  { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+              "className": { "type": "string", "minLength": 1 },
+              "priority":  { "type": "integer", "minimum": 0 }
+            }
+          }
+        },
+        "fields": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+      }
+    },
+    "enrichment":     { "type": "object" },
     "quarantine":     { "type": "object" },
     "concurrency":    { "type": "integer", "minimum": 1, "default": 1 }
   }
