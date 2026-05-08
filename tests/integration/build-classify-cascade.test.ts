@@ -4,7 +4,7 @@
  * @remarks
  * Exercises a complete classification cascade via a live
  * {@link SquashageOrchestrator.run} invocation with real classifier task
- * classes wired through {@link ClassificationFactory}:
+ * classes wired through the self-registering plugin aggregator:
  *
  * Pipeline: `json:read → classify:source → classify:structural →
  * classify:rules → classify:ontology → classify:conflict →
