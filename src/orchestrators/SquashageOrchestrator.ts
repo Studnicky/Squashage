@@ -311,9 +311,8 @@ export class SquashageOrchestrator {
     // Step 5b — Proposer-count check (Amendment A2). Counts hook + per-record
     //           manifests that declare `proposesClass: true` and asserts that
     //           `classify:conflict` is registered AND listed in the pipeline
-    //           when ≥2 distinct proposers participate. Mirrors the legacy
-    //           `crossValidateTarget` error message format so error consumers
-    //           do not break.
+    //           when ≥2 distinct proposers participate. Error message format
+    //           is stable so error consumers do not break.
     SquashageOrchestrator.#assertConflictResolverPresent(targetConfig, target);
 
     logger.debug('run', 'Run-wide context constructed via lifecycle hooks', {
@@ -618,9 +617,7 @@ export class SquashageOrchestrator {
    * also present in `targetConfig.pipeline`, and throws
    * {@link SquashageConfigError} when the count is ≥2 AND
    * `classify:conflict` is missing from the pipeline OR not registered. The
-   * error message format mirrors the legacy `crossValidateTarget`
-   * implementation in `src/config/SquashageConfig.ts` so error consumers do
-   * not break when task #26 deletes that legacy path.
+   * error message format is stable so error consumers do not break.
    *
    * @param targetConfig - The resolved target config (used for pipeline list).
    * @param target       - Target identifier (for error metadata).

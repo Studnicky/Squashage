@@ -25,9 +25,9 @@
  *    inspects `state.input._source`, appends a single `__source__` proposal
  *    with `source: 'classify:source'` when the block is present, and
  *    unconditionally calls `await next()`. `proposesClass` is `false` because
- *    `__source__` is a metadata gate, not a class vote (`SourceClassifier` is
- *    intentionally absent from `CLASS_PROPOSERS` in
- *    `src/config/SquashageConfig.ts`).
+ *    `__source__` is a metadata gate, not a class vote — it is registered with
+ *    `proposesClass: false` and is excluded from conflict-resolution vote
+ *    counting.
  *
  * The legacy class-based {@link SourceClassifier} is retained for the existing
  * {@link ClassificationFactory} wiring. Task #24 rewires the orchestrator to
@@ -252,9 +252,8 @@ function sourceOnRunStart(ctx: PipelineContextInterface): void {
  * or not a plain object, no proposal is emitted.
  *
  * This task is `proposesClass: false` (registered below) because
- * `__source__` is a metadata sentinel rather than a class vote;
- * `SourceClassifier` is intentionally absent from `CLASS_PROPOSERS` in
- * `src/config/SquashageConfig.ts`.
+ * `__source__` is a metadata sentinel rather than a class vote.
+ * It is excluded from conflict-resolution vote counting.
  *
  * @internal
  */

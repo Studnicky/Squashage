@@ -78,7 +78,10 @@ async function main(): Promise<void> {
     return obj;
   };
 
-  resolveSchemaPaths(targets[TARGET]!['classification']);
+  // Resolve schema paths: in v0.7.0 the schema entries live directly at
+  // targets[TARGET]['schemas'] (flat namespace), not inside a 'classification'
+  // sub-block.  Pass the target object so resolveSchemaPaths finds 'schemas'.
+  resolveSchemaPaths(targets[TARGET]!);
   resolveSchemaPaths(targets[TARGET]!['ontology']);
 
   const tmpCfgPath = resolve(OUT_DIR, '.squashage.config.tmp.json');
