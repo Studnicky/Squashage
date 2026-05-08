@@ -52,7 +52,6 @@ jobs:
           test -f dist/pipeline/Pipeline.js
           test -f dist/orchestrators/SquashageOrchestrator.js
           test -f dist/output/FileOutput.js
-          test -f dist/classification/ClassificationFactory.js
 
       - name: Audit production deps
         run: npm audit --omit=dev --audit-level=high
