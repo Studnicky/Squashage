@@ -66,19 +66,17 @@ function buildConfig(
         ],
         output: { kind: 'file', path: outputPath },
         graphs: {},
-        classification: {
-          source: true,
-          urlPattern: {
-            patterns: [
-              { className: 'feat',  match: '/Feats\\.aspx',  priority: 35 },
-              { className: 'spell', match: '/Spells\\.aspx', priority: 35 },
-            ],
-          },
-          conflict: {
-            onConflict: 'pickPriority',
-            onUnknown:  'quarantine',
-            evidence:   true,
-          },
+        source: true,
+        urlPattern: {
+          patterns: [
+            { className: 'feat',  match: '/Feats\\.aspx',  priority: 35 },
+            { className: 'spell', match: '/Spells\\.aspx', priority: 35 },
+          ],
+        },
+        conflict: {
+          onConflict: 'pickPriority',
+          onUnknown:  'quarantine',
+          evidence:   true,
         },
       },
     },

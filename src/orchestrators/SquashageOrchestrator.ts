@@ -287,15 +287,11 @@ export class SquashageOrchestrator {
     //          PRIVATE orchestrator-coordination bridge keys consumed by the
     //          `context:prefixes`, `context:ontology`, `classify:schema`, etc.
     //          plugins. They are NOT part of the silo contract documented in
-    //          `docs/context-silo.md`. Tasks #27/#28 will replace the bridge
-    //          with first-class init record threading.
+    //          `docs/context-silo.md`.
     //
-    //          Until tasks #27/#28 flip the target config to flat per-plugin
-    //          namespaces, the orchestrator splats `targetConfig.classification`
-    //          into top-level `ctx.config.<key>` slots (the keys classifier
-    //          plugins read). The classification block also carries the
-    //          legacy `ontology` key, which is renamed to `ontologyClassifier`
-    //          to match `OntologyClassifier`'s namespace constant.
+    //          Target configs carry flat per-plugin namespaces (tasks #27/#28
+    //          flipped the schema); classifier plugins read their namespace
+    //          directly from `ctx.config[<plugin-namespace>]`.
     const seededConfig = SquashageOrchestrator.#seedConfig(
       targetConfig,
       sampleSource,
@@ -532,19 +528,14 @@ export class SquashageOrchestrator {
    * @remarks
    * The returned object is the target config spread, with two additions:
    *
-   * 1. `__sampleSource` and `__schemasBase` — the orchestrator-coordination
-   *    bridge keys read by `context:prefixes`, `context:ontology`,
-   *    `classify:schema`, etc. NOT part of the silo contract; tasks #27 / #28
-   *    will replace this back-channel with first-class init record threading.
+   * `__sampleSource` and `__schemasBase` — the orchestrator-coordination
+   * bridge keys read by `context:prefixes`, `context:ontology`,
+   * `classify:schema`, etc. NOT part of the silo contract; these are private
+   * back-channel keys used for init-record threading between the orchestrator
+   * and lifecycle plugins.
    *
-   * 2. The legacy monolithic `classification: { source, structural, rules,
-   *    schemas, ontology, conflict, ... }` block is splatted into top-level
-   *    keys so each classifier plugin can read its per-plugin namespace
-   *    directly. The `ontology` key inside that block is renamed to
-   *    `ontologyClassifier` to match {@link OntologyClassifier}'s namespace
-   *    constant. This compat shim exists only until tasks #27 / #28 flip the
-   *    target config schema to flat per-plugin namespaces; thereafter the
-   *    splat is a no-op.
+   * Target configs already carry flat per-plugin namespaces (tasks #27/#28
+   * flipped the schema). No compat shim is needed.
    *
    * @param targetConfig - Per-target config from the squashage config file.
    * @param sampleSource - Optional `{ target, path }` derived from the first
@@ -564,21 +555,6 @@ export class SquashageOrchestrator {
       __schemasBase: schemasBase,
       ...(sampleSource !== undefined ? { __sampleSource: sampleSource } : {}),
     };
-
-    // Compat shim: bridge the legacy `classification: { ... }` block to
-    // top-level per-plugin namespaces. Removed when task #28 flips the config
-    // schema to flat namespaces.
-    const classification = (targetConfig as unknown as Record<string, unknown>)['classification'];
-    if (classification !== undefined && classification !== null && typeof classification === 'object') {
-      for (const [key, value] of Object.entries(classification as Record<string, unknown>)) {
-        // Rename `ontology` → `ontologyClassifier` to match
-        // `OntologyClassifier.CONFIG_NAMESPACE`.
-        const targetKey = key === 'ontology' ? 'ontologyClassifier' : key;
-        if (seeded[targetKey] === undefined) {
-          seeded[targetKey] = value;
-        }
-      }
-    }
 
     return Object.freeze(seeded);
   }

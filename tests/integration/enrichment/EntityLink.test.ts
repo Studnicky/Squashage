@@ -127,21 +127,19 @@ const buildConfig = (inputDir: string, outputPath: string) => ({
         'enrich:entity-link',
         'rdfjs:finalize',
       ],
-      classification: {
-        source: true,
-        structural: [
-          {
-            className: 'feat',
-            priority: 10,
-            predicate: { path: '/_type', equals: 'feat' },
-            reasons: ['_type=feat (structural)'],
-          },
-        ],
-        conflict: {
-          onConflict: 'quarantine',
-          onUnknown: 'quarantine',
-          evidence: true,
+      source: true,
+      structural: [
+        {
+          className: 'feat',
+          priority: 10,
+          predicate: { path: '/_type', equals: 'feat' },
+          reasons: ['_type=feat (structural)'],
         },
+      ],
+      conflict: {
+        onConflict: 'quarantine',
+        onUnknown: 'quarantine',
+        evidence: true,
       },
       enrichment: {
         entityLink: {

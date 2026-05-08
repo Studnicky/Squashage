@@ -63,24 +63,22 @@ function buildConfig(
         ],
         output: { kind: 'file', path: outputPath },
         graphs: {},
-        classification: {
-          source: true,
-          winknlpEntities: {
-            patterns: [
-              {
-                name:      'feat-action-cost',
-                patterns:  ['two actions', 'costs two'],
-                className: 'feat',
-                priority:  28,
-              },
-            ],
-            fields: ['description'],
-          },
-          conflict: {
-            onConflict: 'pickPriority',
-            onUnknown:  'quarantine',
-            evidence:   true,
-          },
+        source: true,
+        winknlpEntities: {
+          patterns: [
+            {
+              name:      'feat-action-cost',
+              patterns:  ['two actions', 'costs two'],
+              className: 'feat',
+              priority:  28,
+            },
+          ],
+          fields: ['description'],
+        },
+        conflict: {
+          onConflict: 'pickPriority',
+          onUnknown:  'quarantine',
+          evidence:   true,
         },
       },
     },

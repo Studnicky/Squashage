@@ -123,8 +123,7 @@ async function setupTmpFixture(root: string, provenance?: Record<string, unknown
   }
 
   // Resolve schema paths relative to tmp root.
-  const classification = target['classification'] as Record<string, unknown>;
-  const schemas = classification['schemas'] as Array<Record<string, unknown>>;
+  const schemas = target['schemas'] as Array<Record<string, unknown>>;
   for (const s of schemas) {
     const rel = s['schemaPath'] as string;
     s['schemaPath'] = join(schemasDir, rel.replace('./', '').replace('schemas/', ''));

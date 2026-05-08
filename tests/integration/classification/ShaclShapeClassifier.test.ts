@@ -112,20 +112,18 @@ function buildConfig(
             { schemaPath: './spell.schema.json' },
           ],
         } as unknown as Record<string, unknown>,
-        classification: {
-          shaclShape: {
-            shapesFrom: 'ontology',
-            priority:   45,
-          },
-          schemas: [
-            { className: 'Feat',  priority: 30, schemaPath: './feat.schema.json' },
-            { className: 'Spell', priority: 30, schemaPath: './spell.schema.json' },
-          ],
-          conflict: {
-            onConflict: 'pickPriority',
-            onUnknown:  'quarantine',
-            evidence:   true,
-          },
+        shaclShape: {
+          shapesFrom: 'ontology',
+          priority:   45,
+        },
+        schemas: [
+          { className: 'Feat',  priority: 30, schemaPath: './feat.schema.json' },
+          { className: 'Spell', priority: 30, schemaPath: './spell.schema.json' },
+        ],
+        conflict: {
+          onConflict: 'pickPriority',
+          onUnknown:  'quarantine',
+          evidence:   true,
         },
       },
     },
