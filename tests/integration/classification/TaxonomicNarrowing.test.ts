@@ -136,20 +136,18 @@ function buildConfig(
         ],
         output: { kind: 'file', path: outputPath },
         graphs: {},
-        classification: {
-          schemas: [
-            { className: 'Weapon',    priority: 30, schemaPath: weaponSchemaPath },
-            { className: 'Equipment', priority: 30, schemaPath: equipmentSchemaPath },
-          ],
-          taxonomicNarrowing: {
-            tboxFrom: tboxPath,
-            enabled:  true,
-          },
-          conflict: {
-            onConflict: 'pickPriority',
-            onUnknown:  'quarantine',
-            evidence:   true,
-          },
+        schemas: [
+          { className: 'Weapon',    priority: 30, schemaPath: weaponSchemaPath },
+          { className: 'Equipment', priority: 30, schemaPath: equipmentSchemaPath },
+        ],
+        taxonomicNarrowing: {
+          tboxFrom: tboxPath,
+          enabled:  true,
+        },
+        conflict: {
+          onConflict: 'pickPriority',
+          onUnknown:  'quarantine',
+          evidence:   true,
         },
       },
     },

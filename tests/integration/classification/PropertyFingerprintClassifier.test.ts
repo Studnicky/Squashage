@@ -86,18 +86,16 @@ function buildConfig(
         ],
         output: { kind: 'file', path: outputPath },
         graphs: {},
-        classification: {
-          source: true,
-          propertyFingerprint: {
-            fingerprintsFrom: fingerprintsPath,
-            minMatchScore:    0.80,
-            priority:         32,
-          },
-          conflict: {
-            onConflict: 'pickPriority',
-            onUnknown:  'quarantine',
-            evidence:   true,
-          },
+        source: true,
+        propertyFingerprint: {
+          fingerprintsFrom: fingerprintsPath,
+          minMatchScore:    0.80,
+          priority:         32,
+        },
+        conflict: {
+          onConflict: 'pickPriority',
+          onUnknown:  'quarantine',
+          evidence:   true,
         },
       },
     },

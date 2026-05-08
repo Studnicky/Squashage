@@ -20,39 +20,37 @@
       "graphs": {
         "default": "https://example.com/graph/default"
       },
-      "classification": {
-        "source": true,
-        "structural": [
-          {
-            "className": "YourClass",
-            "priority": 10,
-            "predicate": { "path": "/_type", "equals": "your-type" },
-            "reasons": ["_type=your-type (structural)"]
-          }
-        ],
-        "rules": [
-          {
-            "className": "YourClass",
-            "priority": 20,
-            "predicate": {
-              "all": [
-                { "path": "/_type", "equals": "your-type" },
-                { "path": "/id", "exists": true }
-              ]
-            },
-            "reasons": ["_type=your-type", "id present"]
-          }
-        ],
-        "ontology": {
-          "classes": {
-            "YourClass": "https://example.com/class/YourClass"
-          }
-        },
-        "conflict": {
-          "onConflict": "quarantine",
-          "onUnknown": "quarantine",
-          "evidence": true
+      "source": true,
+      "structural": [
+        {
+          "className": "YourClass",
+          "priority": 10,
+          "predicate": { "path": "/_type", "equals": "your-type" },
+          "reasons": ["_type=your-type (structural)"]
         }
+      ],
+      "rules": [
+        {
+          "className": "YourClass",
+          "priority": 20,
+          "predicate": {
+            "all": [
+              { "path": "/_type", "equals": "your-type" },
+              { "path": "/id", "exists": true }
+            ]
+          },
+          "reasons": ["_type=your-type", "id present"]
+        }
+      ],
+      "ontologyClassifier": {
+        "classes": {
+          "YourClass": "https://example.com/class/YourClass"
+        }
+      },
+      "conflict": {
+        "onConflict": "quarantine",
+        "onUnknown": "quarantine",
+        "evidence": true
       },
       "quarantine": {
         "dir": "./graphs/quarantine/your-target"

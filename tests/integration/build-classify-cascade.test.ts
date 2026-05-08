@@ -96,39 +96,37 @@ const buildConfig = (
       output:   { kind: 'file', path: outputPath },
       graphs:   {},
       ontology: { baseIri: 'https://example.org/' },
-      classification: {
-        source: true,
-        structural: [
-          {
-            className: 'feat',
-            priority:  10,
-            predicate: { path: '/_type', equals: 'feat' },
-            reasons:   ['_type=feat (structural)'],
-          },
-        ],
-        rules: [
-          {
-            className: 'feat',
-            priority:  20,
-            predicate: {
-              all: [
-                { path: '/_type', equals: 'feat' },
-                { path: '/level', type: 'number' },
-              ],
-            },
-            reasons:   ['_type=feat', 'level present'],
-          },
-        ],
-        ontology: {
-          classes: {
-            feat: 'https://example.org/class/Feat',
-          },
+      source: true,
+      structural: [
+        {
+          className: 'feat',
+          priority:  10,
+          predicate: { path: '/_type', equals: 'feat' },
+          reasons:   ['_type=feat (structural)'],
         },
-        conflict: {
-          onConflict: 'quarantine',
-          onUnknown:  'quarantine',
-          evidence:   true,
+      ],
+      rules: [
+        {
+          className: 'feat',
+          priority:  20,
+          predicate: {
+            all: [
+              { path: '/_type', equals: 'feat' },
+              { path: '/level', type: 'number' },
+            ],
+          },
+          reasons:   ['_type=feat', 'level present'],
         },
+      ],
+      ontologyClassifier: {
+        classes: {
+          feat: 'https://example.org/class/Feat',
+        },
+      },
+      conflict: {
+        onConflict: 'quarantine',
+        onUnknown:  'quarantine',
+        evidence:   true,
       },
     },
   },
