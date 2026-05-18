@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0a0a0a"/>
+      <stop offset="100%" stop-color="#1a1020"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#8b5fbf"/>
+      <stop offset="100%" stop-color="#c09fef"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bg)"/>
+
+  <!-- Decorative graph edges (RDF triple motif) -->
+  <g opacity="0.18" stroke="#8b5fbf" stroke-width="1.5" fill="none">
+    <!-- Node cluster right side -->
+    <circle cx="870" cy="180" r="8" fill="#8b5fbf" stroke="none" opacity="0.7"/>
+    <circle cx="980" cy="260" r="6" fill="#c09fef" stroke="none" opacity="0.6"/>
+    <circle cx="1050" cy="350" r="10" fill="#8b5fbf" stroke="none" opacity="0.7"/>
+    <circle cx="920" cy="430" r="7" fill="#c09fef" stroke="none" opacity="0.6"/>
+    <circle cx="1100" cy="180" r="5" fill="#6b3f9f" stroke="none" opacity="0.5"/>
+    <circle cx="840" cy="320" r="9" fill="#8b5fbf" stroke="none" opacity="0.6"/>
+    <circle cx="970" cy="500" r="6" fill="#c09fef" stroke="none" opacity="0.5"/>
+    <circle cx="1120" cy="450" r="8" fill="#8b5fbf" stroke="none" opacity="0.6"/>
+    <!-- Edges -->
+    <line x1="870" y1="180" x2="980" y2="260"/>
+    <line x1="870" y1="180" x2="840" y2="320"/>
+    <line x1="980" y1="260" x2="1050" y2="350"/>
+    <line x1="980" y1="260" x2="1100" y2="180"/>
+    <line x1="1050" y1="350" x2="920" y2="430"/>
+    <line x1="1050" y1="350" x2="1120" y2="450"/>
+    <line x1="920" y1="430" x2="970" y2="500"/>
+    <line x1="840" y1="320" x2="920" y2="430"/>
+    <line x1="1120" y1="450" x2="970" y2="500"/>
+    <line x1="1100" y1="180" x2="1050" y2="350"/>
+  </g>
+
+  <!-- Left accent bar -->
+  <rect x="60" y="120" width="4" height="390" fill="url(#accent)" rx="2"/>
+
+  <!-- Wordmark: Squashage -->
+  <text
+    x="88" y="270"
+    font-family="system-ui, -apple-system, 'Segoe UI', sans-serif"
+    font-size="96"
+    font-weight="700"
+    fill="#ffffff"
+    letter-spacing="-3">Squashage</text>
+
+  <!-- Tagline -->
+  <text
+    x="90" y="340"
+    font-family="system-ui, -apple-system, 'Segoe UI', sans-serif"
+    font-size="36"
+    font-weight="400"
+    fill="#c09fef">JSON → deterministic RDF graphs</text>
+
+  <!-- Sub-label -->
+  <text
+    x="90" y="410"
+    font-family="system-ui, -apple-system, 'Segoe UI', monospace"
+    font-size="22"
+    font-weight="400"
+    fill="#666666">Turtle · TriG · N-Triples · N-Quads · JSON-LD</text>
+
+  <!-- Bottom accent line -->
+  <rect x="60" y="530" width="680" height="2" fill="url(#accent)" rx="1" opacity="0.5"/>
+</svg>
