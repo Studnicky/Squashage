@@ -62,6 +62,35 @@
         "path": "./graphs/your-target.trig",
         "mode": "dataset"
       }
+    },
+    "your-target-bucketed": {
+      "input": "./output/your-target",
+      "pipeline": [
+        "json:read",
+        "your-target:squash",
+        "rdfjs:finalize",
+        "catalog:emit"
+      ],
+      "output": {
+        "kind": "file",
+        "path": "./graphs/your-target",
+        "format": "trig",
+        "bucketing": {
+          "enabled": true,
+          "strategy": "per-graph-iri",
+          "defaultGraphFilename": "default",
+          "defaultGraphCatalogIri": "urn:x-arq:DefaultGraphNode"
+        },
+        "catalog": {
+          "enabled": true,
+          "rewriteRoots": [
+            {
+              "uriStartString": "https://example.com/graph/your-target/",
+              "rewritePrefix": "./"
+            }
+          ]
+        }
+      }
     }
   }
 }
