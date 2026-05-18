@@ -34,7 +34,14 @@
  */
 
 import type { Quad } from '@rdfjs/types';
-import * as canonize from 'rdf-canonize';
+import { createRequire } from 'node:module';
+
+// rdf-canonize ships no TypeScript declarations; use createRequire to bypass
+// NodeNext module resolution and cast to the minimal interface used here.
+const _canonizeModule = createRequire(import.meta.url)('rdf-canonize') as {
+  canonize(input: Iterable<Quad>, options: { algorithm: 'RDFC-1.0' | 'URDNA2015' }): Promise<string>;
+};
+const canonize = { canonize: _canonizeModule.canonize.bind(_canonizeModule) };
 
 import { Parser } from './Parser.js';
 

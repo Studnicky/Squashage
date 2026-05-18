@@ -48,3 +48,4 @@ import './rdfjsStream.js';
 import './ontologyEmit.js';
 import './provenanceEmit.js';
 import './entityLink.js';
+import './emitCatalog.js';

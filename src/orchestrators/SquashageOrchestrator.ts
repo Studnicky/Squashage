@@ -254,8 +254,9 @@ export class SquashageOrchestrator {
     const FINALIZE_NAME    = 'rdfjs:finalize';
     const STREAM_NAME      = 'rdfjs:stream';
     const ENTITY_LINK_NAME = 'enrich:entity-link';
+    const CATALOG_NAME     = 'catalog:emit';
     const perRecordNames   = targetConfig.pipeline.filter(
-      name => name !== FINALIZE_NAME && name !== STREAM_NAME && name !== ENTITY_LINK_NAME,
+      name => name !== FINALIZE_NAME && name !== STREAM_NAME && name !== ENTITY_LINK_NAME && name !== CATALOG_NAME,
     );
     const pipelineSet = new Set(targetConfig.pipeline);
 
@@ -439,6 +440,15 @@ export class SquashageOrchestrator {
     await activeFinalizeTask(async (): Promise<void> => { /* no-op next */ }, endOfRunState);
 
     logger.info('finalize', `${activeFinalizeTaskName} completed`, { target });
+
+    // Invoke catalog:emit (when configured) after finalize so the output report
+    // is on disk and can be read by the catalog task.
+    if (pipelineSet.has(CATALOG_NAME)) {
+      logger.debug('catalog', 'Invoking catalog:emit', { target });
+      const catalogTask = TaskRegistry.get(CATALOG_NAME);
+      await catalogTask(async (): Promise<void> => { /* no-op next */ }, endOfRunState);
+      logger.info('catalog', 'catalog:emit completed', { target });
+    }
 
     // Step 10b — Fire every registered `onRunEnd` lifecycle hook with the same
     //            run-wide context. No built-in `onRunEnd` hooks ship today, so

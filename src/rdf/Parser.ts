@@ -22,8 +22,22 @@
  * @since 2.2.0
  */
 
-import type { ParserOptions, ParseCallback } from 'n3';
-import { Parser as N3Parser } from 'n3';
+// n3 v2.x ships no TypeScript declarations. Define minimal shapes locally and
+// use createRequire to bypass NodeNext module resolution.
+interface ParserOptions  { format?: string; baseIRI?: string; blankNodePrefix?: string; }
+/** Callback for N3 Parser.parse: called per-quad, then once at end with (null, null, prefixes). */
+type ParseCallback = (error: Error | null, quad: Quad | null, prefixes: Record<string, string> | undefined) => void;
+
+interface N3ParserInterface {
+  parse(input: string, callback: ParseCallback): void;
+  parse(input: string): Quad[];
+}
+
+type N3ParserCtor = new (options?: ParserOptions) => N3ParserInterface;
+
+import { createRequire } from 'node:module';
+const _n3Parser = createRequire(import.meta.url)('n3') as { Parser: N3ParserCtor };
+const N3Parser: N3ParserCtor = _n3Parser.Parser;
 import jsonld from 'jsonld';
 
 import type { Quad } from '@rdfjs/types';

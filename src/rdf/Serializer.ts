@@ -28,7 +28,23 @@
  * @since 2.2.0
  */
 
-import { Writer } from 'n3';
+/** Writer.end callback shape (n3 v2). Defined locally because n3 ships no TypeScript declarations. */
+type N3WriterEndCallback = (error: Error | null, result: string) => void;
+
+/** Minimal shape of the n3 Writer class used by Squashage. */
+interface N3WriterInterface {
+  addQuad(quad: Quad): void;
+  end(done?: N3WriterEndCallback): void;
+}
+
+/** n3 Writer constructor shape. */
+type N3WriterCtor = new (options: { format?: string; prefixes?: Record<string, string> }) => N3WriterInterface;
+
+// n3 v2.x ships no TypeScript declarations; use createRequire to bypass
+// NodeNext module resolution and cast to the local interface.
+import { createRequire } from 'node:module';
+const _n3 = createRequire(import.meta.url)('n3') as { Writer: N3WriterCtor };
+const Writer: N3WriterCtor = _n3.Writer;
 import jsonld from 'jsonld';
 
 import type { Quad } from '@rdfjs/types';
@@ -265,13 +281,14 @@ export class Serializer {
         writer.addQuad(quad);
       }
 
-      writer.end((error, result) => {
+      const endCallback: N3WriterEndCallback = (error, result) => {
         if (error !== null) {
           reject(error);
           return;
         }
         resolve({ data: result, format });
-      });
+      };
+      writer.end(endCallback);
     });
   }
 
