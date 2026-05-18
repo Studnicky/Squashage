@@ -54,6 +54,8 @@ import { Logger }              from '../modules/logger/logger.js';
 import { ExternalSchemaError } from '../errors/ExternalSchemaError.js';
 import { OutputConfigError }   from '../errors/OutputConfigError.js';
 import { FormatResolver }      from '../output/FormatResolver.js';
+import { Bucketer }            from '../output/Bucketer.js';
+import type { BucketingConfigInterface, BucketReportInterface } from '../output/Bucketer.js';
 import { OutputReport, OUTPUT_REPORT_FILENAME } from '../output/OutputReport.js';
 
 const logger = Logger.forComponent('rdfjsStream');
@@ -85,6 +87,8 @@ export class StreamWriter {
   #bytesWritten:      number = 0;
   #openedAt:          number = 0;
   #pendingWrites:     Promise<void> = Promise.resolve();
+  /** Whether the file was ever opened (first open). Controls header emission on reopen. */
+  #everOpened:        boolean = false;
 
   public constructor(
     path:      string,
@@ -122,8 +126,48 @@ export class StreamWriter {
       await this.appendChunk(header);
     }
 
+    this.#everOpened = true;
     logger.info('open', 'Stream writer opened', { path: this.#path });
   }
+
+  /**
+   * Reopens the file in append mode after an LRU close.
+   *
+   * @remarks
+   * No header is emitted on reopen — only the first `open()` writes the header.
+   * The underlying stream is replaced; the quad/byte counters continue from
+   * their current values.
+   */
+  public async reopen(): Promise<void> {
+    if (!this.#everOpened) {
+      throw new Error(`StreamWriter.reopen() called before open() for path "${this.#path}"`);
+    }
+    logger.debug('reopen', 'Reopening stream in append mode', { path: this.#path });
+    this.#stream = createWriteStream(this.#path, { encoding: 'utf8', flags: 'a' });
+  }
+
+  /**
+   * Closes the underlying stream without finalizing the report.
+   *
+   * @remarks
+   * Used by `MultiStreamWriter` for LRU eviction. The writer can be
+   * subsequently reopened via {@link reopen}.
+   */
+  public async closeHandle(): Promise<void> {
+    await this.#pendingWrites;
+    if (this.#stream !== null) {
+      await new Promise<void>((resolve, reject) => {
+        this.#stream!.end((err: Error | null | undefined) => {
+          if (err !== null && err !== undefined) { reject(err); } else { resolve(); }
+        });
+      });
+      this.#stream = null;
+    }
+    logger.debug('closeHandle', 'Stream handle closed (LRU eviction)', { path: this.#path });
+  }
+
+  /** Whether the file handle is currently open. */
+  public get isOpen(): boolean { return this.#stream !== null; }
 
   /**
    * Serializes a single quad to its line-form and appends it to the file.
@@ -297,13 +341,13 @@ export class StreamWriter {
 /**
  * Creates a write-through proxy around a `DatasetCore` that intercepts every
  * `add(quad)` call, optionally forwards it to the real dataset (unless
- * `dropInMemory` is true), and also writes the quad to the `StreamWriter`.
+ * `dropInMemory` is true), and also writes the quad to the writer.
  *
  * @since 0.7.0
  */
 export function buildDatasetProxy(
   inner:        DatasetCore,
-  writer:       StreamWriter,
+  writer:       StreamWriter | MultiStreamWriter,
   dropInMemory: boolean,
 ): DatasetCore {
   return new Proxy(inner, {
@@ -327,6 +371,323 @@ export function buildDatasetProxy(
       return raw;
     },
   });
+}
+
+// ---------------------------------------------------------------------------
+// MultiStreamWriter
+// ---------------------------------------------------------------------------
+
+/**
+ * Manages multiple `StreamWriter` instances — one per named-graph bucket.
+ *
+ * Two modes:
+ * - **Pre-open** (`per-config-bucket`): all file handles opened at
+ *   construction; quad routing is a O(1) Map lookup.
+ * - **Lazy-open** (`per-graph-iri`): file handles opened on the first quad
+ *   seen for each graph IRI. A `Map<string, Promise<StreamWriter>>` serialises
+ *   concurrent first-quad races. LRU eviction fires when open-file count
+ *   exceeds `bucketing.maxOpenFiles` (default 256).
+ *
+ * @since 0.7.0
+ * @category Tasks
+ */
+export class MultiStreamWriter {
+  readonly #format:      RDFFormat;
+  readonly #prefixes:    Record<string, string> | undefined;
+  readonly #bucketing:   BucketingConfigInterface;
+  readonly #bucketDir:   string;
+  readonly #maxOpen:     number;
+
+  /** Fully-open writers, keyed by bucket key. */
+  readonly #writers:     Map<string, StreamWriter> = new Map();
+  /** In-flight open promises — prevents double-open races. */
+  readonly #opening:     Map<string, Promise<StreamWriter>> = new Map();
+  /** LRU order: least-recently-written key is first. */
+  readonly #lruOrder:    string[] = [];
+  /** Serial write queue — ensures all enqueued writes are ordered. */
+  #pendingWrites: Promise<void> = Promise.resolve();
+
+  #totalQuads:   number = 0;
+  #totalBytes:   number = 0;
+  #openedAt:     number = 0;
+
+  public constructor(
+    format:    RDFFormat,
+    bucketing: BucketingConfigInterface,
+    bucketDir: string,
+    prefixes?: Record<string, string>,
+  ) {
+    this.#format    = format;
+    this.#bucketing = bucketing;
+    this.#bucketDir = bucketDir;
+    this.#prefixes  = prefixes;
+    this.#maxOpen   = bucketing.maxOpenFiles ?? 256;
+  }
+
+  /** Total quads written across all buckets. */
+  public get quadCount():    number { return this.#totalQuads; }
+  /** Total bytes written across all buckets. */
+  public get bytesWritten(): number { return this.#totalBytes; }
+
+  /**
+   * Pre-open mode: opens all buckets declared in `bucketing.buckets` upfront.
+   *
+   * @remarks
+   * Only valid for `per-config-bucket` strategy.
+   * All `StreamWriter` instances are opened; prefix headers are written.
+   */
+  public async openAll(): Promise<void> {
+    this.#openedAt = Date.now();
+    const strategy = this.#bucketing.strategy ?? 'per-graph-iri';
+    if (strategy !== 'per-config-bucket') return;
+
+    const buckets = this.#bucketing.buckets ?? {};
+    const allKeys = new Set(Object.keys(buckets));
+
+    for (const graphIri of allKeys) {
+      const stem = Bucketer.stemFor(graphIri, this.#bucketing, allKeys);
+      const ext  = `.${this.#format === 'ntriples' ? 'nt' : this.#format === 'nquads' ? 'nq' : this.#format === 'turtle' ? 'ttl' : this.#format === 'trig' ? 'trig' : this.#format}`;
+      const path = join(this.#bucketDir, `${stem}${ext}`);
+
+      const writer = new StreamWriter(path, this.#format, this.#prefixes);
+      await writer.open();
+      this.#writers.set(graphIri, writer);
+      this.#lruOrder.push(graphIri);
+    }
+
+    logger.debug('openAll', 'Pre-opened all bucket writers', {
+      bucketCount: this.#writers.size,
+      strategy,
+    });
+  }
+
+  /**
+   * Lazy-open mode initializer — sets the start time; no handles opened yet.
+   *
+   * @remarks
+   * For `per-graph-iri` strategy; call before per-record dispatch.
+   */
+  public startLazy(): void {
+    this.#openedAt = Date.now();
+    logger.debug('startLazy', 'MultiStreamWriter ready in lazy-open mode');
+  }
+
+  /**
+   * Routes a quad to the appropriate `StreamWriter`, opening it lazily if needed.
+   *
+   * @remarks
+   * Thread-safe via the `#opening` promise map — concurrent first-quad calls
+   * for the same graph IRI will share the same open promise.
+   *
+   * @param quad - The quad to write.
+   */
+  public async writeQuad(quad: Quad): Promise<void> {
+    const writer = await this.#resolveWriter(quad);
+    if (writer === null) return; // dropped per onUnmapped=drop
+
+    await writer.writeQuad(quad);
+    this.#totalQuads++;
+  }
+
+  /**
+   * Enqueues a quad write without awaiting (for use in the dataset proxy).
+   *
+   * @remarks
+   * Chains onto the serial write queue so all quads are processed in order,
+   * which is required for correct LRU open/close sequencing.
+   */
+  public enqueueQuad(quad: Quad): void {
+    this.#pendingWrites = this.#pendingWrites.then(
+      () => this.writeQuad(quad),
+      () => this.writeQuad(quad),
+    );
+  }
+
+  /**
+   * Closes all open writers and returns per-bucket report entries.
+   */
+  public async close(): Promise<{ reports: BucketReportInterface[]; durationMs: number }> {
+    // Drain the serial write queue first
+    await this.#pendingWrites;
+    // Then wait for any in-flight opens to settle
+    await Promise.allSettled([...this.#opening.values()]);
+
+    let totalQuads = 0;
+    let totalBytes = 0;
+    const reports: BucketReportInterface[] = [];
+
+    for (const [bucketKey, writer] of this.#writers) {
+      if (writer.isOpen) {
+        await writer.closeHandle();
+      }
+
+      const graphIri = bucketKey === '__default__' || bucketKey === '__other__' ? null : bucketKey;
+      const allKeys  = new Set(this.#writers.keys());
+      const stem     = Bucketer.stemFor(bucketKey, this.#bucketing, allKeys);
+      const ext      = this.#formatExt();
+      const filePath = join(this.#bucketDir, `${stem}${ext}`);
+
+      totalQuads += writer.quadCount;
+      totalBytes += writer.bytesWritten;
+
+      reports.push({
+        bucketKey,
+        path:         writer.quadCount > 0 ? filePath : null,
+        graphIri,
+        stem,
+        format:       this.#format,
+        quadCount:    writer.quadCount,
+        bytesWritten: writer.bytesWritten,
+      });
+    }
+
+    this.#totalQuads = totalQuads;
+    this.#totalBytes = totalBytes;
+
+    const durationMs = Date.now() - this.#openedAt;
+    logger.info('close', 'MultiStreamWriter closed all buckets', {
+      bucketCount: reports.length,
+      totalQuads,
+      totalBytes,
+      durationMs,
+    });
+
+    return { reports, durationMs };
+  }
+
+  // ---------------------------------------------------------------------------
+  // Private helpers
+  // ---------------------------------------------------------------------------
+
+  /** Returns the writer for the quad's graph, opening lazily if needed. */
+  async #resolveWriter(quad: Quad): Promise<StreamWriter | null> {
+    const strategy = this.#bucketing.strategy ?? 'per-graph-iri';
+    const term     = quad.graph;
+    let bucketKey: string;
+
+    if (term.termType === 'DefaultGraph') {
+      bucketKey = '__default__';
+    } else if (strategy === 'per-config-bucket') {
+      const iri     = term.value;
+      const buckets = this.#bucketing.buckets ?? {};
+      if (Object.prototype.hasOwnProperty.call(buckets, iri)) {
+        bucketKey = iri;
+      } else {
+        const onUnmapped = this.#bucketing.onUnmapped ?? 'other';
+        if (onUnmapped === 'drop') return null;
+        if (onUnmapped === 'fail') {
+          throw new Error(`MultiStreamWriter: graph IRI "${iri}" not in buckets map and onUnmapped="fail"`);
+        }
+        bucketKey = '__other__';
+      }
+    } else {
+      bucketKey = term.value;
+    }
+
+    // Fast path: writer known
+    const existing = this.#writers.get(bucketKey);
+    if (existing !== undefined) {
+      // If the writer was LRU-evicted (handle closed), reopen in append mode
+      if (!existing.isOpen) {
+        // Evict another slot if needed before reopening
+        if (this.#writers.size >= this.#maxOpen) {
+          await this.#evictLru();
+        }
+        await existing.reopen();
+        logger.debug('resolveWriter', 'Reopened LRU-evicted bucket writer', { bucketKey });
+      }
+      this.#touchLru(bucketKey);
+      return existing;
+    }
+
+    // Check for in-flight open
+    const inFlight = this.#opening.get(bucketKey);
+    if (inFlight !== undefined) {
+      return inFlight;
+    }
+
+    // Lazy-open a new writer
+    const openPromise = this.#lazyOpen(bucketKey);
+    this.#opening.set(bucketKey, openPromise);
+
+    let writer: StreamWriter;
+    try {
+      writer = await openPromise;
+    } finally {
+      this.#opening.delete(bucketKey);
+    }
+
+    return writer;
+  }
+
+  /** Opens a new `StreamWriter` for a previously-unseen bucket key. */
+  async #lazyOpen(bucketKey: string): Promise<StreamWriter> {
+    // Evict LRU handle if at capacity
+    if (this.#writers.size >= this.#maxOpen) {
+      await this.#evictLru();
+    }
+
+    const allKeys = new Set([...this.#writers.keys(), bucketKey]);
+    const stem    = Bucketer.stemFor(bucketKey, this.#bucketing, allKeys);
+    const ext     = this.#formatExt();
+    const path    = join(this.#bucketDir, `${stem}${ext}`);
+
+    // Ensure directory exists
+    await mkdirAsync(this.#bucketDir, { recursive: true });
+
+    const writer = new StreamWriter(path, this.#format, this.#prefixes);
+
+    try {
+      await writer.open();
+    } catch (err) {
+      // Lazy-open failure: surface cleanly; caller aborts the run
+      logger.error('lazyOpen', 'Failed to open bucket stream — aborting', {
+        bucketKey,
+        path,
+        error: err instanceof Error ? err.message : String(err),
+      });
+      throw err;
+    }
+
+    this.#writers.set(bucketKey, writer);
+    this.#lruOrder.push(bucketKey);
+
+    logger.debug('lazyOpen', 'Lazily opened bucket writer', { bucketKey, path });
+    return writer;
+  }
+
+  /** Evicts the least-recently-used open handle. */
+  async #evictLru(): Promise<void> {
+    const lruKey = this.#lruOrder.shift();
+    if (lruKey === undefined) return;
+
+    const writer = this.#writers.get(lruKey);
+    if (writer !== undefined && writer.isOpen) {
+      await writer.closeHandle();
+      logger.debug('evictLru', 'LRU-evicted bucket handle', { bucketKey: lruKey });
+    }
+  }
+
+  /** Updates the LRU order to mark a key as most-recently-used. */
+  #touchLru(key: string): void {
+    const idx = this.#lruOrder.indexOf(key);
+    if (idx !== -1) {
+      this.#lruOrder.splice(idx, 1);
+    }
+    this.#lruOrder.push(key);
+  }
+
+  /** Returns the file extension for the configured format. */
+  #formatExt(): string {
+    const extMap: Record<RDFFormat, string> = {
+      turtle:   '.ttl',
+      trig:     '.trig',
+      ntriples: '.nt',
+      nquads:   '.nq',
+      jsonld:   '.jsonld',
+    };
+    return extMap[this.#format];
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -389,7 +750,48 @@ const rdfjsStreamTask: TaskFnInterface<PipelineStateInterface> = async (
     );
   }
 
-  const writer = (ctx as unknown as Record<string, unknown>)['__streamWriter'] as StreamWriter | undefined;
+  const mutableCtx = ctx as unknown as Record<string, unknown>;
+  const rawWriter = mutableCtx['__streamWriter'];
+  const multiWriter = mutableCtx['__multiStreamWriter'] as MultiStreamWriter | undefined;
+
+  if (multiWriter !== undefined) {
+    // Bucketed streaming path
+    const { reports, durationMs } = await multiWriter.close();
+
+    const bucketDir = ctx.output.path;
+    const totalQuads = reports.reduce((sum, r) => sum + r.quadCount, 0);
+    const totalBytes = reports.reduce((sum, r) => sum + r.bytesWritten, 0);
+
+    const report: OutputReportInterface = {
+      path:         bucketDir,
+      format,
+      quadCount:    totalQuads,
+      graphCount:   reports.length,
+      durationMs,
+      bytesWritten: totalBytes,
+      errors:       [],
+      buckets:      reports,
+    };
+
+    const runDir     = join(ctx.outDir, ctx.target);
+    const reportPath = join(runDir, OUTPUT_REPORT_FILENAME);
+    await mkdirAsync(dirname(reportPath), { recursive: true });
+    await writeFile(reportPath, OutputReport.toJson(report), 'utf8');
+
+    logger.info('finalize', 'Bucketed streaming output written and report persisted', {
+      targetId:     state.targetId,
+      bucketDir,
+      reportPath,
+      totalQuads,
+      totalBytes,
+      durationMs,
+    });
+
+    await next();
+    return;
+  }
+
+  const writer = rawWriter as StreamWriter | undefined;
   if (writer === undefined) {
     throw ExternalSchemaError.create(
       'rdfjs:stream: no StreamWriter found on ctx.__streamWriter -- orchestrator must open it before per-record dispatch',
@@ -453,7 +855,55 @@ export async function openStreamingOutput(
 
   const rawPrefixes  = outputConfig.prefixes as Record<string, string> | undefined;
   const dropInMemory = (outputConfig as Record<string, unknown>)['dropInMemory'] === true;
+  const bucketing    = (outputConfig as Record<string, unknown>)['bucketing'] as BucketingConfigInterface | undefined;
+  const bucketingEnabled = bucketing?.enabled === true;
 
+  const mutableCtx = ctx as unknown as Record<string, unknown>;
+
+  if (bucketingEnabled) {
+    // Bucketed streaming path — use MultiStreamWriter
+    const strategy  = bucketing!.strategy ?? 'per-graph-iri';
+    const bucketDir = outputConfig.path;
+
+    await mkdirAsync(bucketDir, { recursive: true });
+
+    const multiWriter = new MultiStreamWriter(format, bucketing!, bucketDir, rawPrefixes);
+
+    if (strategy === 'per-config-bucket') {
+      await multiWriter.openAll();
+      logger.debug('openStreamingOutput', 'Multi-stream writer pre-opened (per-config-bucket)', {
+        bucketDir,
+        format,
+      });
+    } else {
+      multiWriter.startLazy();
+      logger.debug('openStreamingOutput', 'Multi-stream writer lazy-open ready (per-graph-iri)', {
+        bucketDir,
+        format,
+      });
+    }
+
+    mutableCtx['__multiStreamWriter'] = multiWriter;
+
+    const proxy = buildDatasetProxy(ctx.dataset, multiWriter, dropInMemory);
+    mutableCtx['dataset'] = proxy;
+
+    if (dropInMemory) {
+      logger.warn('openStreamingOutput', 'dropInMemory=true with bucketing: downstream tasks will see an empty store', {
+        bucketDir,
+      });
+    }
+
+    logger.debug('openStreamingOutput', 'Bucketed streaming output initialized', {
+      bucketDir,
+      format,
+      strategy,
+      dropInMemory,
+    });
+    return;
+  }
+
+  // Single-file streaming path
   const writer = new StreamWriter(outputConfig.path, format, rawPrefixes);
   await writer.open();
 
@@ -463,7 +913,6 @@ export async function openStreamingOutput(
     });
   }
 
-  const mutableCtx = ctx as unknown as Record<string, unknown>;
   mutableCtx['__streamWriter'] = writer;
 
   const proxy = buildDatasetProxy(ctx.dataset, writer, dropInMemory);
