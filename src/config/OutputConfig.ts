@@ -103,6 +103,62 @@ export const OUTPUT_SCHEMA = {
         },
       },
     },
+    catalog: {
+      type: 'object',
+      additionalProperties: false,
+      description: 'OASIS XML Catalog 1.1 generation. When enabled (requires bucketing.enabled=true), writes a <targetId>.catalog.xml file to the bucket directory after a run.',
+      properties: {
+        enabled: {
+          type: 'boolean',
+          default: false,
+          description: 'When true, an OASIS XML Catalog 1.1 file is written to the bucket directory. Requires bucketing.enabled=true.',
+        },
+        filename: {
+          type: 'string',
+          description: 'Override the catalog filename. Defaults to "<targetId>.catalog.xml"; falls back to "catalog.xml" when the target ID is unavailable.',
+        },
+        prefer: {
+          type: 'string',
+          enum: ['public', 'system'] as const,
+          default: 'public',
+          description: 'OASIS catalog "prefer" attribute. "public" (default) because we resolve by named-graph IRI.',
+        },
+        includeOntologies: {
+          type: 'boolean',
+          default: true,
+          description: 'When true (default), emit <public>/<uri> entries for ontology files when ctx.jt is populated.',
+        },
+        includeContexts: {
+          type: 'boolean',
+          default: true,
+          description: 'When true (default), emit <system> entries for JSON-LD context files when format=jsonld.',
+        },
+        includeShapes: {
+          type: 'boolean',
+          default: true,
+          description: 'When true (default), emit <uri> entries for the SHACL shapes file when output.validate.shapes is set.',
+        },
+        rewriteRoots: {
+          type: 'array',
+          items: {
+            type: 'object',
+            additionalProperties: false,
+            required: ['uriStartString', 'rewritePrefix'],
+            properties: {
+              uriStartString: {
+                type: 'string',
+                description: 'IRI prefix to rewrite.',
+              },
+              rewritePrefix: {
+                type: 'string',
+                description: 'Local path prefix to substitute.',
+              },
+            },
+          },
+          description: 'Optional <rewriteURI> entries for namespace-rooted graph families.',
+        },
+      },
+    },
     bucketing: {
       type: 'object',
       additionalProperties: false,
@@ -193,6 +249,29 @@ export const OUTPUT_SCHEMA = {
       then: {
         properties: {
           graph: { not: {} },
+        },
+      },
+    },
+    {
+      // catalog.enabled:true requires bucketing.enabled:true
+      if: {
+        required: ['catalog'],
+        properties: {
+          catalog: {
+            type: 'object',
+            required: ['enabled'],
+            properties: { enabled: { const: true } },
+          },
+        },
+      },
+      then: {
+        required: ['bucketing'],
+        properties: {
+          bucketing: {
+            type: 'object',
+            required: ['enabled'],
+            properties: { enabled: { const: true } },
+          },
         },
       },
     },
