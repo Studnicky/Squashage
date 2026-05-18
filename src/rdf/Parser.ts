@@ -16,28 +16,14 @@
  * — called once per quad with `(null, quad, undefined)`,
  * — called once at end with `(null, null, prefixes)`,
  * — called once on error with `(error, null, undefined)`.
+ * Typed via `@types/n3`; see {@link https://www.npmjs.com/package/@types/n3}.
  *
  * @module rdf/Parser
  * @category RDF
  * @since 2.2.0
  */
 
-// n3 v2.x ships no TypeScript declarations. Define minimal shapes locally and
-// use createRequire to bypass NodeNext module resolution.
-interface ParserOptions  { format?: string; baseIRI?: string; blankNodePrefix?: string; }
-/** Callback for N3 Parser.parse: called per-quad, then once at end with (null, null, prefixes). */
-type ParseCallback = (error: Error | null, quad: Quad | null, prefixes: Record<string, string> | undefined) => void;
-
-interface N3ParserInterface {
-  parse(input: string, callback: ParseCallback): void;
-  parse(input: string): Quad[];
-}
-
-type N3ParserCtor = new (options?: ParserOptions) => N3ParserInterface;
-
-import { createRequire } from 'node:module';
-const _n3Parser = createRequire(import.meta.url)('n3') as { Parser: N3ParserCtor };
-const N3Parser: N3ParserCtor = _n3Parser.Parser;
+import { Parser as N3Parser } from 'n3';
 import jsonld from 'jsonld';
 
 import type { Quad } from '@rdfjs/types';
@@ -203,13 +189,17 @@ export class Parser {
     const n3Format = N3_FORMAT[options.format as Exclude<RDFFormat, 'jsonld'>];
 
     return new Promise<ParseResultInterface>((resolve, reject) => {
-      const parserOptions: ParserOptions = { format: n3Format };
+      const parserOptions: { format?: string; baseIRI?: string } = { format: n3Format };
       if (options.baseIRI !== undefined) parserOptions.baseIRI = options.baseIRI;
       const parser = new N3Parser(parserOptions);
       const quads: Quad[] = [];
       const prefixes: Record<string, string> = {};
 
-      const callback: ParseCallback = (error, quad, parsedPrefixes) => {
+      // n3 calls callback(null, quad, undefined) per quad and callback(null, null, prefixes)
+      // at end-of-document. @types/n3 ParseCallback types error and quad as non-nullable;
+      // the double cast satisfies strict-null checks while preserving runtime correctness.
+      type N3Callback = Parameters<typeof parser.parse>[1];
+      parser.parse(text, ((error: Error | null, quad: Quad | null, parsedPrefixes: Record<string, string> | undefined) => {
         if (error !== null) {
           reject(error);
           return;
@@ -223,9 +213,7 @@ export class Parser {
         // quad is null → end-of-document signal; parsedPrefixes carries the map.
         Object.assign(prefixes, parsedPrefixes ?? {});
         resolve({ quads, prefixes });
-      };
-
-      parser.parse(text, callback);
+      }) as unknown as N3Callback);
     });
   }
 
@@ -238,10 +226,12 @@ export class Parser {
    * always `{}` for this path.
    */
   private static async parseJsonLd(text: string, options: ParseOptionsInterface): Promise<ParseResultInterface> {
-    const doc: unknown = JSON.parse(text) as unknown;
+    const doc = JSON.parse(text) as Parameters<typeof jsonld.toRDF>[0];
     const toRdfOpts: JsonLdToRdfOptions = { format: 'application/n-quads' };
     if (options.baseIRI !== undefined) toRdfOpts.base = options.baseIRI;
-    const nq = await jsonld.toRDF(doc, toRdfOpts);
+    // When options.format is 'application/n-quads', jsonld.toRDF returns a string
+    // at runtime. @types/jsonld types the return as RdfOrString; the cast is safe.
+    const nq = await jsonld.toRDF(doc, toRdfOpts) as string;
     const parseOpts: ParseOptionsInterface = { format: 'nquads' };
     if (options.baseIRI !== undefined) parseOpts.baseIRI = options.baseIRI;
     return Parser.parse(nq, parseOpts);
