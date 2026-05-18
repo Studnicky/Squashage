@@ -298,7 +298,10 @@ export class Serializer {
     const expanded = await jsonld.fromRDF(nq, { format: 'application/n-quads' });
 
     if (options.jsonldContext !== undefined) {
-      const compacted = await jsonld.compact(expanded, options.jsonldContext);
+      // JsonldContextDocInterface is Readonly<Record<string, unknown>>; @types/jsonld
+      // ContextDefinition has a narrower value type. The cast is safe because
+      // jsonld.compact accepts any plain object as its context at runtime.
+      const compacted = await jsonld.compact(expanded, options.jsonldContext as Parameters<typeof jsonld.compact>[1]);
       return { data: JSON.stringify(compacted, null, 2), format: 'jsonld' };
     }
 

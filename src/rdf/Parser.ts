@@ -37,9 +37,11 @@ import type { RDFFormat } from './Formats.js';
  * Internal options shape for `jsonld.toRDF`, scoped to this module.
  * Defined separately to satisfy `exactOptionalPropertyTypes` — fields are
  * set conditionally rather than spread with potentially-undefined values.
+ * `format` is typed as the literal `'application/n-quads'` to satisfy the
+ * `Options.ToRdf` constraint from `@types/jsonld`.
  */
 interface JsonLdToRdfOptions {
-  format?: string;
+  format?: 'application/n-quads';
   base?:   string;
 }
 
@@ -230,8 +232,9 @@ export class Parser {
     const toRdfOpts: JsonLdToRdfOptions = { format: 'application/n-quads' };
     if (options.baseIRI !== undefined) toRdfOpts.base = options.baseIRI;
     // When options.format is 'application/n-quads', jsonld.toRDF returns a string
-    // at runtime. @types/jsonld types the return as RdfOrString; the cast is safe.
-    const nq = await jsonld.toRDF(doc, toRdfOpts) as string;
+    // at runtime. @types/jsonld types the return as RdfOrString (object | string);
+    // the double cast is safe because n-quads output is always a string.
+    const nq = await jsonld.toRDF(doc, toRdfOpts) as unknown as string;
     const parseOpts: ParseOptionsInterface = { format: 'nquads' };
     if (options.baseIRI !== undefined) parseOpts.baseIRI = options.baseIRI;
     return Parser.parse(nq, parseOpts);
