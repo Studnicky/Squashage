@@ -1,0 +1,49 @@
+# Squashage
+
+> Squashage is the graph reconstitution pipeline. Feed it classified JSON records; it squashes them into deterministic RDF graphs you can serve as Turtle, TriG, N-Triples, N-Quads, or JSON-LD. Same JSON in, same graph out — byte-identical across runs and machines, no random seeds, no network calls after startup.
+
+Squashage is a TypeScript pipeline for converting structured JSON records into deterministic RDF graphs. It classifies each record through a cascade of configurable engines (structural, schema, SHACL-shape, URL-pattern, property-fingerprint, winkNLP, ontology, rules, conflict resolver, taxonomic narrowing), normalises the results to RDF/JS quads, and serialises the entire dataset to a single file. Output formats: Turtle, TriG, N-Triples, N-Quads, JSON-LD. The pipeline is fully deterministic: no `Math.random`, no `Date.now`, no network after startup.
+
+## Getting started
+
+- [Squashage home](https://studnicky.github.io/Squashage/): project overview, quick install, and where to look next.
+- [Getting started](https://studnicky.github.io/Squashage/getting-started): install from source (not yet on npm), run the AONPRD demo, and open the cytoscape visualisation in a browser.
+- [Walk-through](https://studnicky.github.io/Squashage/walk-through): end-to-end example from raw Pathfinder JSON to interactive RDF graph — config, plugin, JSON-LD output, cytoscape render.
+
+## Usage
+
+- [Configuration](https://studnicky.github.io/Squashage/usage/configuration): the JSON config schema — top-level shape, target blocks, plugin namespaces, schema paths, output block. Source of truth: `src/schemas/squashage-config.schema.json`.
+- [Pipeline](https://studnicky.github.io/Squashage/usage/pipeline): ordered async middleware queue; each task receives `(next, state)` and calls `next()` to hand off. Per-record and lifecycle hooks.
+- [Classifier cascade](https://studnicky.github.io/Squashage/usage/classifier-cascade): eleven task classes opt-in via `pipeline:` config array. Purely deterministic — same config plus same record produces byte-identical proposals every run.
+- [SHACL-shape classifier](https://studnicky.github.io/Squashage/usage/shacl-shape-classifier): validates each record's projected ABox against SHACL NodeShapes and emits one proposal per conforming shape. Sits at priority 45 between schema (30) and ontology (50).
+- [URL-pattern classifier](https://studnicky.github.io/Squashage/usage/url-pattern-classifier): evaluates pre-compiled regular expressions against each record's URL field. Strongest signal for scraped data with consistent URL patterns.
+- [Property-fingerprint classifier](https://studnicky.github.io/Squashage/usage/property-fingerprint-classifier): Jaccard similarity between a record's property key set and pre-loaded class fingerprints. Catches the long tail of records lacking a clean discriminator field.
+- [winkNLP entities classifier](https://studnicky.github.io/Squashage/usage/winknlp-entities): deterministic, pattern-based NER over prose fields (`description`, `summary`, `rules_text`). Recovers type signal buried in human-readable text.
+- [Entity-link enrichment](https://studnicky.github.io/Squashage/usage/entity-link): densifies the graph by scanning prose fields after classification and inserting object-property links between records that mention each other. ~10x edge density on AONPRD-scale corpora.
+- [Taxonomic narrowing](https://studnicky.github.io/Squashage/usage/taxonomic-narrowing): collapses supertype proposals when a more-specific subtype is present, using the OWL `subClassOf` transitive closure from the configured TBox. Runs before the conflict resolver.
+- [Ontology (json-tology)](https://studnicky.github.io/Squashage/usage/ontology): two modes — hand-map (flat class → IRI map) and json-tology engine (derives SHACL shapes, JSON Schemas, and OWL TBox from a single ontology definition file).
+- [Output](https://studnicky.github.io/Squashage/usage/output): one file per target. Formats: Turtle, TriG, N-Triples, N-Quads, JSON-LD. Atomic write by default; stream mode available for very large datasets.
+- [Streaming output](https://studnicky.github.io/Squashage/usage/streaming-output): `encoding: stream` eliminates the in-memory quad accumulation ceiling. File handle opened once; each quad serialised immediately on emission.
+- [Provenance (PROV-O sidecar)](https://studnicky.github.io/Squashage/usage/provenance): writes PROV-O classification metadata into a dedicated named graph alongside the ABox. SPARQL-queryable provenance without log scraping.
+- [Viz](https://studnicky.github.io/Squashage/usage/viz): `squashage viz --in graph.jsonld --out graph.html` produces a self-contained cytoscape HTML document — no network, no `node_modules` required to open.
+- [Plugins](https://studnicky.github.io/Squashage/usage/plugins): a plugin calls `TaskRegistry.register` or `TaskRegistry.registerHook` at module load time. Config lists plugin paths (globs, absolute, or relative). Load failure exits code 2 before any record is processed.
+- [Cache](https://studnicky.github.io/Squashage/usage/cache): `ScraperCache` — sharded, content-addressed pointer cache. Stores fetched payloads so subsequent runs skip the network.
+- [Crawler](https://studnicky.github.io/Squashage/usage/crawler): `LinkLister` recursively follows links from starting URLs and returns the set matching a target pattern. Hands the URL list to a scraper.
+- [Scrapers](https://studnicky.github.io/Squashage/usage/scrapers): `HtmlScraper` (native fetch + cheerio) and `MediaWikiScraper` (MediaWiki JSON API, three enumeration modes).
+- [MediaWiki](https://studnicky.github.io/Squashage/usage/mediawiki): hits the MediaWiki JSON API directly — no mwn, no axios, no browser. Category listing with full pagination, 50-page batch wikitext fetches.
+
+## Reference
+
+- [Architecture](https://studnicky.github.io/Squashage/architecture): pipeline phases, package boundaries, output contract. JSON record → classify → normalize → RDF/JS quads → serialized file.
+- [Context silo (plugin contract)](https://studnicky.github.io/Squashage/context-silo): the cross-plugin coordination protocol. Well-known keys on `PipelineContextInterface` (run-wide) and `PipelineStateInterface` (per-record). Who writes, who reads, what guarantees.
+- [Classifier engines (deep dive)](https://studnicky.github.io/Squashage/classification-engines): why each engine exists, the determinism guarantees, considered alternatives that did not ship.
+- [Roadmap](https://studnicky.github.io/Squashage/roadmap): shipped features (v2.x), planned work, and the v2.0 ground-up rewrite history from PathRipper.
+
+## Demo
+
+- [Pathfinder/AONPRD graph](https://studnicky.github.io/Squashage/examples/aonprd): interactive cytoscape graph of 12,553+ Pathfinder Second Edition records. Nodes coloured by RDF class; edges show object-property links.
+
+## Source
+
+- [GitHub repository](https://github.com/Studnicky/Squashage)
+- [Sitemap](https://studnicky.github.io/Squashage/sitemap.xml)
