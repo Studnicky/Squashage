@@ -61,6 +61,8 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@types/jsonld": "^1.5.15",
+    "@types/n3": "^1.26.1",
     "@types/node": "^25.6.0",
     "@types/rdfjs__data-model": "^2.0.9",
     "@types/rdfjs__dataset": "^2.0.7",
