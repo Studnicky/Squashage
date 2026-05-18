@@ -84,5 +84,12 @@
   "private": true,
   "sideEffects": false,
   "author": "a.j.studnicky@gmail.com",
-  "license": "UNLICENSED"
+  "license": "MIT",
+  "squashage": {
+    "seo": {
+      "googleSiteVerification": "",
+      "bingSiteVerification": "",
+      "twitterHandle": ""
+    }
+  }
 }
