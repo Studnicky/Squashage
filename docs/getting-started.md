@@ -1,3 +1,9 @@
+---
+layout: doc
+title: Getting Started
+description: Install Squashage from source, run the Pathfinder AONPRD demo pipeline, and open the self-contained cytoscape graph in any browser. No npm package yet.
+---
+
 # Getting Started
 
 Squashage is not on npm yet. Clone the repo, install, and build.

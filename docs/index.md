@@ -1,6 +1,7 @@
 ---
 layout: doc
 title: Squashage
+description: Squashage is the graph reconstitution pipeline. Feed it JSON records; it classifies each one, squashes the lot into a deterministic RDF graph, and writes one file you can serve.
 ---
 
 <div style="text-align:center;padding:2rem 0 1rem">

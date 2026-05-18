@@ -1,3 +1,9 @@
+---
+layout: doc
+title: Context Silo
+description: The Squashage plugin contract — well-known keys on PipelineContextInterface (run-wide) and PipelineStateInterface (per-record), with writer/reader guarantees for every key.
+---
+
 # Context Silo
 
 Squashage's per-run context is the cross-plugin coordination protocol.

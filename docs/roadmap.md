@@ -1,3 +1,9 @@
+---
+layout: doc
+title: Roadmap
+description: Squashage shipped features (v2.x) and planned work. A ground-up TypeScript rewrite of the 2019 PathRipper with a typed Pipeline, structured logger, and RDF graph output.
+---
+
 # Roadmap
 
 v2.0.0 is a ground-up rewrite of the 2019 PathRipper. The core pipeline, HTML scraper, MediaWiki scraper, and link crawler are live.

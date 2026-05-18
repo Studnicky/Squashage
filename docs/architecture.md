@@ -1,3 +1,9 @@
+---
+layout: doc
+title: Architecture
+description: Squashage's pipeline phases, package boundaries, and output contract. JSON record → classify → normalize → RDF/JS quads → one serialized file per target.
+---
+
 # Squashage Architecture
 
 Squashage is a graph reconstitution pipeline. It starts with structured JSON
@@ -59,8 +65,7 @@ metadata to make classification reproducible and attribution tractable:
 
 ### Classification
 
-Classification identifies the ontology class or projection lane for an input
-record. It is not just a label; it is a decision with evidence.
+Classification identifies the ontology class or projection lane for an input record. It is not just a label; it is a decision with evidence.
 
 ```json
 {
@@ -75,7 +80,9 @@ record. It is not just a label; it is a decision with evidence.
 }
 ```
 
-**Per-record state machine**: Each record flows through: (1) input (parsed JSON + source); (2) classify (zero or more proposals accumulated); (3) conflict resolution (one winner picked, or quarantine); (4) project (emit quads using the winning class) or skip (unknown + onUnknown: skip); (5) output (final dataset serialized) or quarantine (SHACL failure). A single state.classification value at step (3) controls whether projection happens.
+**Per-record state machine**: Each record flows through: (1) input (parsed JSON + source); (2) classify (zero or more proposals accumulated on `state.classifications`); (3) conflict resolution (one winner picked by `classify:conflict`, written to `state.classification`, or quarantine); (4) project (emit quads using the winning class) or skip (unknown + onUnknown: skip); (5) output (final dataset serialized) or quarantine (SHACL failure).
+
+**Silo-driven classifiers**: Each classifier is a self-registering plugin that declares `proposesClass: true | false` in its registration manifest and reads its config from `ctx.config[<namespace>]`. There is no central `ClassificationFactory` mediating between them. The orchestrator counts `proposesClass: true` registrations and asserts `classify:conflict` is registered when that count is two or more. See [Context silo](./context-silo) for the full plugin coordination contract.
 
 ### RDF/JS As Internal Canonical Product
 

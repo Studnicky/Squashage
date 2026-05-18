@@ -1,3 +1,9 @@
+---
+layout: doc
+title: Classifier Engines
+description: Deep dive into Squashage's deterministic classifier engines — why each engine exists, the determinism guarantees it provides, and considered alternatives that did not ship.
+---
+
 # Classifier Engines
 
 Squashage's classification cascade is purely deterministic. Same inputs

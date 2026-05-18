@@ -1,6 +1,7 @@
 ---
 layout: doc
 title: Pathfinder/AONPRD Demo
+description: Interactive cytoscape graph of 12,553+ Pathfinder Second Edition records from Archives of Nethys — nodes coloured by RDF class, edges showing object-property links. Produced by the Squashage pipeline.
 ---
 
 # Pathfinder/AONPRD Graph Demo

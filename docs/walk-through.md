@@ -1,6 +1,7 @@
 ---
 layout: doc
 title: Walk-through
+description: End-to-end example from raw Pathfinder JSON to interactive RDF graph — config, plugin, JSON-LD output, and cytoscape render. Everything runs from tests/e2e/aonprd/.
 ---
 
 # Walk-through
