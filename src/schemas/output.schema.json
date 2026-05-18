@@ -141,6 +141,57 @@
           "description": "Provenance encoding strategy. 'named-graph' (default) emits PROV-O quads into a sidecar named graph. 'rdf-star' emits quoted-triple-subject quads where the rdf:type assertion for each record is the subject of provenance metadata."
         }
       }
+    },
+    "bucketing": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Named-graph bucketing configuration. When enabled, output.path is treated as a directory and one file is written per named graph.",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "When true, the dataset is split into one file per named graph under output.path (which becomes the bucket root directory)."
+        },
+        "strategy": {
+          "type": "string",
+          "enum": [
+            "per-graph-iri",
+            "per-config-bucket"
+          ],
+          "default": "per-graph-iri",
+          "description": "Bucketing strategy. 'per-graph-iri' (default) derives filenames from graph IRIs. 'per-config-bucket' uses an explicit graphIRI → filename mapping from bucketing.buckets."
+        },
+        "defaultGraphFilename": {
+          "type": "string",
+          "description": "Filename stem (without extension) for the default-graph bucket. Defaults to 'default'. Set to null to drop default-graph quads with a warning."
+        },
+        "defaultGraphCatalogIri": {
+          "type": "string",
+          "description": "Optional IRI to use as the catalog <uri name> for the default-graph bucket (e.g. 'urn:x-arq:DefaultGraphNode' for Jena compatibility). When absent, the default-graph bucket is not indexed in the catalog."
+        },
+        "buckets": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "For strategy=per-config-bucket: explicit graphIRI → filename stem mapping."
+        },
+        "onUnmapped": {
+          "type": "string",
+          "enum": [
+            "other",
+            "drop",
+            "fail"
+          ],
+          "default": "other",
+          "description": "What to do when a quad's graph IRI is not in the bucketing.buckets map (only relevant for per-config-bucket strategy)."
+        },
+        "maxOpenFiles": {
+          "type": "number",
+          "default": 256,
+          "description": "Maximum number of simultaneously open file handles in lazy-open streaming mode. Excess handles are LRU-closed and reopened on demand."
+        }
+      }
     }
   },
   "allOf": [
@@ -199,6 +250,31 @@
       },
       "then": {
         "not": {}
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "bucketing"
+        ],
+        "properties": {
+          "bucketing": {
+            "type": "object",
+            "required": [
+              "enabled"
+            ],
+            "properties": {
+              "enabled": {
+                "const": true
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "graph": false
+        }
       }
     }
   ]
