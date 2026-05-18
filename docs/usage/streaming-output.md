@@ -1,6 +1,7 @@
 ---
 layout: doc
 title: Streaming Output
+description: Squashage streaming output mode — encoding stream eliminates in-memory quad accumulation. File handle opened once; each quad serialised immediately, supporting datasets of millions of triples.
 ---
 
 # Streaming Output
@@ -10,6 +11,12 @@ The default output mode (`encoding: atomic`) loads all quads into an in-memory d
 `encoding: stream` eliminates that ceiling. The orchestrator opens a file handle once before per-record dispatch, and each time a plugin calls `dataset.add(quad)`, the quad is serialized immediately to the file and counted. No RAM accumulation. The file grows as records are processed.
 
 ---
+
+## Plugin contract
+
+`rdfjs:stream` is a built-in pipeline task registered alongside `rdfjs:finalize`. The orchestrator selects it when `output.encoding === 'stream'`. It opens a streaming file handle during `onRunStart`, wraps `ctx.dataset` with a write-through proxy during per-record dispatch, then finalizes the stream during `onRunEnd`.
+
+See [Context silo](../context-silo) for the full lifecycle phase protocol.
 
 ## Problem framing
 

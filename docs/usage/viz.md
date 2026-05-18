@@ -1,6 +1,7 @@
 ---
 layout: doc
 title: Viz
+description: Squashage viz command — generate a self-contained cytoscape HTML document from any JSON-LD graph output. No network required; open in any browser with node_modules absent.
 ---
 
 # Viz

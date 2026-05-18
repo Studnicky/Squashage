@@ -1,3 +1,9 @@
+---
+layout: doc
+title: SHACL-shape classifier
+description: classify:shacl-shape validates each record's projected ABox against SHACL NodeShapes and emits one proposal per conforming shape. Sits at priority 45 between schema (30) and ontology (50) classifiers.
+---
+
 # SHACL-shape classifier
 
 The `classify:shacl-shape` task is a deterministic classifier that validates each record's projected ABox against SHACL shapes and emits one proposal per conforming `sh:NodeShape`. It sits between the schema classifier (priority 30) and the ontology classifier (priority 50) in the standard cascade, with a default priority of 45.
@@ -62,15 +68,26 @@ Choose `classify:shacl-shape` when:
 
 **ABox projection** uses the shape's `sh:path` property IRIs as predicates. For each path IRI, the classifier looks for a record property whose key matches the last fragment or path segment of the IRI (e.g., `https://squashage.dev/schemas/aonprd/feat#name` maps to `record["name"]`). A synthetic `sh:targetNode` is injected when the shape lacks `sh:targetClass`.
 
+## Plugin contract
+
+`classify:shacl-shape` is a self-registering silo plugin. It installs:
+
+- An `onRunStart` lifecycle hook (registered via `TaskRegistry.registerHook`) that reads `ctx.config['shaclShape']`, validates it via `ctx.ajv.compile(shaclShapeConfigSchema)`, and caches compiled startup state keyed by `ctx.target`. When `ctx.config['shaclShape']` is absent the hook is a no-op.
+- A per-record task (registered via `TaskRegistry.register` with `{ proposesClass: true }`) that reads from the module-private cache.
+
+The plugin declares `proposesClass: true`, so the orchestrator counts it when asserting that `classify:conflict` is registered.
+
+See [Context silo](../context-silo) for the full plugin coordination protocol.
+
 ## Config schema
+
+The config namespace is `shaclShape` at the top level of the target config (not under a `classification` wrapper):
 
 ```json
 {
-  "classification": {
-    "shaclShape": {
-      "shapesFrom": "ontology",
-      "priority": 45
-    }
+  "shaclShape": {
+    "shapesFrom": "ontology",
+    "priority": 45
   }
 }
 ```
@@ -103,26 +120,24 @@ Choose `classify:shacl-shape` when:
           { "schemaPath": "./schemas/spell.schema.json" }
         ]
       },
-      "classification": {
-        "shaclShape": {
-          "shapesFrom": "ontology",
-          "priority":   45
-        },
-        "schemas": [
-          { "className": "feat",  "priority": 30, "schemaPath": "./schemas/feat.schema.json" },
-          { "className": "spell", "priority": 30, "schemaPath": "./schemas/spell.schema.json" }
-        ],
-        "ontology": {
-          "classes": {
-            "feat":  "https://squashage.dev/vocabulary/aonprd#Feat",
-            "spell": "https://squashage.dev/vocabulary/aonprd#Spell"
-          }
-        },
-        "conflict": {
-          "onConflict": "quarantine",
-          "onUnknown":  "quarantine",
-          "evidence":   true
+      "shaclShape": {
+        "shapesFrom": "ontology",
+        "priority":   45
+      },
+      "schemas": [
+        { "className": "feat",  "priority": 30, "schemaPath": "./schemas/feat.schema.json" },
+        { "className": "spell", "priority": 30, "schemaPath": "./schemas/spell.schema.json" }
+      ],
+      "ontologyClassifier": {
+        "classes": {
+          "feat":  "https://squashage.dev/vocabulary/aonprd#Feat",
+          "spell": "https://squashage.dev/vocabulary/aonprd#Spell"
         }
+      },
+      "conflict": {
+        "onConflict": "quarantine",
+        "onUnknown":  "quarantine",
+        "evidence":   true
       }
     }
   }
@@ -133,11 +148,9 @@ Choose `classify:shacl-shape` when:
 
 ```jsonc
 {
-  "classification": {
-    "shaclShape": {
-      "shapesFrom": "./shacl/aonprd-shapes.ttl",
-      "priority":   45
-    }
+  "shaclShape": {
+    "shapesFrom": "./shacl/aonprd-shapes.ttl",
+    "priority":   45
   }
 }
 ```

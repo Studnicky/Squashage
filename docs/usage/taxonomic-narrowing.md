@@ -1,3 +1,9 @@
+---
+layout: doc
+title: Taxonomic narrowing
+description: classify:taxonomic-narrowing collapses supertype proposals when a more-specific subtype is present, using the OWL subClassOf transitive closure from the TBox. Runs before conflict resolution.
+---
+
 # Taxonomic narrowing classifier
 
 The `classify:taxonomic-narrowing` task collapses supertype proposals from the classification cascade when a more-specific subtype is also present, using the OWL `subClassOf` transitive closure derived from the configured TBox.
@@ -36,17 +42,28 @@ json:read
 
 The closure is built once per classifier instance. In `tboxFrom: "ontology"` mode the TBox quads are fetched from `state.context.jt.tbox()` on the first record processed and cached for all subsequent records in the same run. In file-path mode the file is read at construction time and parsed asynchronously; the closure is built on first execute.
 
+## Plugin contract
+
+`classify:taxonomic-narrowing` is a self-registering silo plugin. It installs:
+
+- An `onRunStart` lifecycle hook (registered via `TaskRegistry.registerHook`) that reads `ctx.config['taxonomicNarrowing']`, validates it via `ctx.ajv.compile(taxonomicNarrowingConfigSchema)`, and — in file-path mode — loads and parses the TBox file. When `ctx.config['taxonomicNarrowing']` is absent the hook is a no-op.
+- A per-record task (registered via `TaskRegistry.register`) that filters supertype proposals from `state.classifications` before `classify:conflict` runs.
+
+The plugin does NOT declare `proposesClass: true`: it filters existing proposals but does not add new class proposals.
+
+See [Context silo](../context-silo) for the full plugin coordination protocol.
+
 ## Configuration
+
+The config namespace is `taxonomicNarrowing` at the top level of the target config (not under a `classification` wrapper):
 
 ```jsonc
 {
   "targets": {
     "aonprd": {
-      "classification": {
-        "taxonomicNarrowing": {
-          "enabled":  true,
-          "tboxFrom": "ontology"
-        }
+      "taxonomicNarrowing": {
+        "enabled":  true,
+        "tboxFrom": "ontology"
       }
     }
   }

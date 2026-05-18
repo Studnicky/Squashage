@@ -1,6 +1,7 @@
 ---
 layout: doc
 title: Crawler
+description: LinkLister — Squashage's recursive link crawler. Follows links from starting URLs, filters by three configurable regexes, and returns the matching URL set for a scraper to process.
 ---
 
 # Crawler

@@ -1,6 +1,7 @@
 ---
 layout: doc
 title: Cache
+description: ScraperCache — sharded content-addressed pointer cache for Squashage. Stores what was fetched so subsequent pipeline runs skip the network entirely.
 ---
 
 # Cache

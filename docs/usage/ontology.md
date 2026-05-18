@@ -1,3 +1,9 @@
+---
+layout: doc
+title: Ontology (json-tology)
+description: Squashage ontology modes — hand-map (flat class-to-IRI map) and json-tology engine (derives SHACL shapes, JSON Schemas, and OWL TBox from a single ontology definition). Both modes coexist within a target.
+---
+
 # Ontology
 
 Squashage supports two ontology modes for a target: the default **hand-map** mode and the opt-in **json-tology** engine. Both modes coexist; changing an existing config to use `engine: "json-tology"` does not break the classification pipeline.
@@ -6,18 +12,18 @@ Squashage supports two ontology modes for a target: the default **hand-map** mod
 
 ### Hand-map mode (default)
 
-The legacy mode. You supply a flat `classification.ontology.classes` map:
+The legacy mode. You supply a flat class map under `ontologyClassifier` (the top-level config namespace for the `classify:ontology` plugin):
 
 ```json
-"classification": {
-  "ontology": {
-    "classes": {
-      "feat":  "https://squashage.dev/vocabulary/aonprd#Feat",
-      "spell": "https://squashage.dev/vocabulary/aonprd#Spell"
-    }
+"ontologyClassifier": {
+  "classes": {
+    "feat":  "https://squashage.dev/vocabulary/aonprd#Feat",
+    "spell": "https://squashage.dev/vocabulary/aonprd#Spell"
   }
 }
 ```
+
+Note: the config namespace is `ontologyClassifier`, not `ontology`. The `ontology` key at the target level is reserved for the json-tology engine config (`targets.<id>.ontology.engine`). This asymmetry prevents collision.
 
 The `classify:ontology` task uses this map to validate that every proposed class name has a registered IRI. No schemas are needed; no TBox or SHACL files are produced. This is the right choice when:
 
@@ -52,7 +58,7 @@ With this mode active, Squashage:
 4. Exposes a `JsonTologyOntology` instance on `state.context.jt` for use in plugin tasks.
 5. Runs the `ontology:emit` task to write the TBox and SHACL files to the configured paths.
 
-The `classification.ontology.classes` block is **not** replaced by this mode; it continues to drive `classify:ontology` in the same way. Migration of that block is a Phase 2 concern.
+The `ontologyClassifier.classes` block is **not** replaced by this mode; it continues to drive `classify:ontology` in the same way.
 
 ## Schema requirements
 

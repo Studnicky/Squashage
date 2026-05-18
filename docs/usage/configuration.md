@@ -1,6 +1,7 @@
 ---
 layout: doc
 title: Configuration
+description: Squashage JSON config schema — top-level shape, target blocks, plugin namespace declarations, schema paths, and output block. Load with squashage build --config squashage.config.json.
 ---
 
 # Configuration

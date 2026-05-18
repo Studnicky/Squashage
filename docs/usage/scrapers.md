@@ -1,6 +1,7 @@
 ---
 layout: doc
 title: Scrapers
+description: Squashage's two scraper classes — HtmlScraper (native fetch + cheerio) and MediaWikiScraper (MediaWiki JSON API). Neither knows about the pipeline; they hand structured data to plugins.
 ---
 
 # Scrapers

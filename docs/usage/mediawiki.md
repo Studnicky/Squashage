@@ -1,6 +1,7 @@
 ---
 layout: doc
 title: MediaWiki
+description: Squashage MediaWiki scraper — hits the MediaWiki JSON API directly with three enumeration modes (category, page list, search). Full pagination, 50-page batch wikitext fetches, wtf_wikipedia infobox parsing.
 ---
 
 # MediaWiki

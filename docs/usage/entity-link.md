@@ -1,3 +1,9 @@
+---
+layout: doc
+title: Entity-link enrichment
+description: Entity-link enrichment closes the gap between records that mention each other in prose fields, densifying the graph by approximately 10x on typical AONPRD-scale corpora through prose field scanning.
+---
+
 # Entity-link enrichment
 
 ## Problem framing
@@ -7,6 +13,14 @@ After classification and quad emission, records that mention each other in their
 This gap means SPARQL queries like "find all Feats that mention any Spell" return nothing, and the WebGL visualisation shows sparse clusters where the domain knowledge implies dense cross-links.
 
 The entity-link enrichment task closes this gap without requiring per-record rules. It densifies the graph by approximately 10x on typical AONPRD-scale corpora purely from prose field scanning.
+
+## Plugin contract
+
+`enrich:entity-link` is a self-registering silo plugin. It registers as an `onRunEnd` lifecycle task: the orchestrator strips `enrich:entity-link` from the per-record pipeline and invokes it once after all per-record tasks have settled, so the entity index is built from the fully-populated dataset.
+
+The task reads its config from `ctx.config['enrichment']?.entityLink` and reads entity IRIs and labels from `ctx.dataset`. It writes enrichment edge quads back into `ctx.dataset` for downstream serialization by `rdfjs:finalize`.
+
+See [Context silo](../context-silo) for the full plugin coordination protocol, including the `onRunEnd` phase.
 
 ## State machine
 

@@ -1,3 +1,9 @@
+---
+layout: doc
+title: Provenance (PROV-O sidecar)
+description: Squashage PROV-O sidecar — writes classification metadata as RDF quads into a dedicated named graph. Join domain triples with provenance in a single SPARQL request, no log scraping required.
+---
+
 # Provenance (PROV-O sidecar)
 
 ## The problem: logs vs queryable provenance
@@ -5,6 +11,12 @@
 Every Squashage run logs which classifier resolved each record and with what confidence. Those logs answer "what happened" but they are ephemeral, unstructured, and not queriable from the same RDF store that holds the classification output.
 
 The sidecar provenance feature writes classification metadata as RDF quads into a dedicated named graph alongside the regular ABox output. Because provenance lives in the same TriG/N-Quads file as the domain data, a SPARQL query can join domain triples with their provenance in a single request -- no log scraping required.
+
+## Plugin contract
+
+`output:provenance` is a per-record pipeline task registered via `TaskRegistry.register`. It reads its config from `ctx.output.provenance` (the resolved output config block, post-CLI-merge). It reads `state.classification` and `ctx.runStartTime` (populated by `context:run-time` during `onRunStart`) and emits PROV-O quads into `ctx.dataset`.
+
+See [Context silo](../context-silo) for the full plugin coordination protocol, including the `runStartTime` silo key.
 
 ## How it works
 

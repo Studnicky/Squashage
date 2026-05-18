@@ -1,3 +1,9 @@
+---
+layout: doc
+title: Property-fingerprint classifier
+description: classify:property-fingerprint computes Jaccard similarity between a record's property key set and pre-loaded class fingerprints. Catches records lacking _type, failing schema validation, or outside URL-pattern coverage.
+---
+
 # Property-fingerprint classifier
 
 The `classify:property-fingerprint` task is a classifier that computes Jaccard similarity between a record's top-level property key set and a set of pre-loaded class fingerprints. Rules generalize poorly across scraped corpora where records share a structural shape but not a clean discriminator field. Fingerprints catch the long tail: records that lack a `_type` field, fail schema validation, or sit outside URL-pattern coverage but still carry a recognisable property silhouette.
@@ -71,16 +77,27 @@ Each entry maps a `className` to an object with:
 | `keys` | string[] | Yes | Top-level property keys that characterise this class. Must be non-empty. |
 | `weight` | number | No | Informational; stored in the file but not currently used in scoring. Reserved for future extension. |
 
+## Plugin contract
+
+`classify:property-fingerprint` is a self-registering silo plugin. It installs:
+
+- An `onRunStart` lifecycle hook (registered via `TaskRegistry.registerHook`) that reads `ctx.config['propertyFingerprint']`, validates it via `ctx.ajv.compile(propertyFingerprintConfigSchema)`, loads the fingerprints JSON file relative to `ctx.config.__schemasBase` or the run output directory, pre-computes each fingerprint into a `Set<string>`, and caches the result keyed by `ctx.target`. When `ctx.config['propertyFingerprint']` is absent the hook is a no-op.
+- A per-record task (registered via `TaskRegistry.register` with `{ proposesClass: true }`) that reads from the module-private cache.
+
+The plugin declares `proposesClass: true`, so the orchestrator counts it when asserting that `classify:conflict` is registered.
+
+See [Context silo](../context-silo) for the full plugin coordination protocol.
+
 ## Config schema
+
+The config namespace is `propertyFingerprint` at the top level of the target config (not under a `classification` wrapper):
 
 ```json
 {
-  "classification": {
-    "propertyFingerprint": {
-      "fingerprintsFrom": "./fingerprints.json",
-      "minMatchScore":    0.85,
-      "priority":         32
-    }
+  "propertyFingerprint": {
+    "fingerprintsFrom": "./fingerprints.json",
+    "minMatchScore":    0.85,
+    "priority":         32
   }
 }
 ```
@@ -135,18 +152,16 @@ With the aonprd test corpus this produces (keys sorted):
         "aonprd:squash",
         "rdfjs:finalize"
       ],
-      "classification": {
-        "source": true,
-        "propertyFingerprint": {
-          "fingerprintsFrom": "./fingerprints.json",
-          "minMatchScore":    0.80,
-          "priority":         32
-        },
-        "conflict": {
-          "onConflict": "quarantine",
-          "onUnknown":  "quarantine",
-          "evidence":   true
-        }
+      "source": true,
+      "propertyFingerprint": {
+        "fingerprintsFrom": "./fingerprints.json",
+        "minMatchScore":    0.80,
+        "priority":         32
+      },
+      "conflict": {
+        "onConflict": "quarantine",
+        "onUnknown":  "quarantine",
+        "evidence":   true
       }
     }
   }

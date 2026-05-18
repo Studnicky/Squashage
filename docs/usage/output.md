@@ -1,6 +1,7 @@
 ---
 layout: doc
 title: Output
+description: Squashage output configuration — one file per target, format options (Turtle, TriG, N-Triples, N-Quads, JSON-LD), atomic vs stream encoding, RDFC-1.0 canonicalization, and SHACL validation.
 ---
 
 # Output

@@ -1,6 +1,7 @@
 ---
 layout: doc
 title: Pipeline
+description: Squashage's ordered async middleware queue — task signature, per-record lifecycle, onRunStart hooks, and how the orchestrator chains tasks through the classification and projection stages.
 ---
 
 # Pipeline
@@ -109,18 +110,40 @@ interface PipelineStateInterface extends Record<string, unknown> {
 
 Tasks can attach extra keys; the `Record<string, unknown>` index signature allows it. Use this for inter-task communication that doesn't belong on the canonical fields.
 
+## Lifecycle phases
+
+A run proceeds through three phases. Plugins declare which phase they participate in via `TaskRegistry.registerHook`:
+
+| Phase | When | Examples |
+|-------|------|---------|
+| `onRunStart` | Once per target, before any record flows | `context:logger`, `context:ajv`, `context:dataset`, `context:prefixes`, `context:ontology`, `context:run-time`, classifier startup hooks |
+| per-record | Once per input record | `json:read`, `classify:*`, `aonprd:squash`, `output:provenance` |
+| `onRunEnd` | After all records settled, in declaration order | `enrich:entity-link`, `rdfjs:finalize`, `rdfjs:stream` finalize |
+
+`onRunStart` hooks populate the run-wide context (`ctx`). Per-record tasks read context and write per-record state. `onRunEnd` tasks scan or drain the shared dataset before finalization.
+
+See [Context silo](../context-silo) for the full lifecycle protocol and well-known key table.
+
 ## Built-in tasks
 
 | Name | What it does |
 |------|-------------|
 | `json:read` | Reads one JSON file, populates `state.input` and `state.source`. |
-| `classify:source` | Emits `__source__` marker proposal from `_source`. |
-| `classify:structural` | Runs closed-vocab predicate rules, emits class proposals. |
-| `classify:rules` | Runs decision-table rules, emits class proposals. |
-| `classify:schema` | Runs per-class AJV validators, emits class proposals. |
-| `classify:ontology` | Validates proposals against ontology class map. |
-| `classify:conflict` | Picks winning class; quarantines ties and unknowns. |
+| `classify:source` | Emits `__source__` marker proposal from `_source`. Config namespace: `source`. |
+| `classify:structural` | Runs closed-vocab predicate rules, emits class proposals. Config namespace: `structural`. |
+| `classify:rules` | Runs decision-table rules, emits class proposals. Config namespace: `rules`. |
+| `classify:schema` | Runs per-class AJV validators, emits class proposals. Config namespace: `schemas`. |
+| `classify:url-pattern` | Evaluates URL regexes, emits class proposals. Config namespace: `urlPattern`. |
+| `classify:property-fingerprint` | Computes Jaccard fingerprint similarity, emits class proposals. Config namespace: `propertyFingerprint`. |
+| `classify:winknlp-entities` | Runs winkNLP pattern NER on prose fields, emits class proposals. Config namespace: `winknlpEntities`. |
+| `classify:shacl-shape` | Validates against SHACL NodeShapes, emits class proposals. Config namespace: `shaclShape`. |
+| `classify:taxonomic-narrowing` | Collapses supertype proposals using OWL subClassOf closure. Config namespace: `taxonomicNarrowing`. |
+| `classify:ontology` | Validates proposals against ontology class map. Config namespace: `ontologyClassifier`. |
+| `classify:conflict` | Picks winning class; quarantines ties and unknowns. Config namespace: `conflict`. |
+| `enrich:entity-link` | Post-run: scans dataset prose fields and emits entity-link edges. |
+| `output:provenance` | Emits PROV-O metadata quads per classified record. |
 | `rdfjs:finalize` | Serializes dataset to file; runs canonicalization and SHACL validation. |
+| `rdfjs:stream` | Streaming output; writes quads to file as they arrive. |
 
 ## Custom task; minimal example
 

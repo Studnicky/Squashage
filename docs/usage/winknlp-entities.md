@@ -1,3 +1,9 @@
+---
+layout: doc
+title: winkNLP entities classifier
+description: classify:winknlp-entities uses deterministic pattern-based NER to inspect prose fields and emit classification proposals. Recovers type signal buried in human-readable text invisible to structural or URL classifiers.
+---
+
 # winkNLP entities classifier
 
 The `classify:winknlp-entities` task is a deterministic, pattern-based Named Entity Recognition (NER) classifier that inspects configured prose fields (such as `description`, `summary`, or `rules_text`) and emits one classification proposal per matched pattern. It recovers type signal that is buried in human-readable text but invisible to structural or URL classifiers.
@@ -45,29 +51,38 @@ matches `two action`, `two actions`, `2 action`, or `2 actions`.
 
 For the full pattern reference, see the [winkNLP learnCustomEntities documentation](https://winkjs.org/wink-nlp/learn-custom-entities.html).
 
+## Plugin contract
+
+`classify:winknlp-entities` is a self-registering silo plugin. It installs:
+
+- An `onRunStart` lifecycle hook (registered via `TaskRegistry.registerHook`) that reads `ctx.config['winknlpEntities']`, validates it via `ctx.ajv.compile(winknlpEntitiesConfigSchema)`, loads the winkNLP model, calls `learnCustomEntities` with all configured patterns, and caches the compiled NLP instance keyed by `ctx.target`. When `ctx.config['winknlpEntities']` is absent the hook is a no-op. Invalid patterns fail fast with `OutputConfigError` naming the offending pattern.
+- A per-record task (registered via `TaskRegistry.register` with `{ proposesClass: true }`) that reads from the module-private cache.
+
+The plugin declares `proposesClass: true`, so the orchestrator counts it when asserting that `classify:conflict` is registered.
+
+See [Context silo](../context-silo) for the full plugin coordination protocol.
+
 ## Configuration
 
-Add `classification.winknlpEntities` to any target:
+Add `winknlpEntities` to any target (top-level namespace, not under `classification`):
 
 ```jsonc
-"classification": {
-  "winknlpEntities": {
-    "patterns": [
-      {
-        "name":      "feat-action-cost",
-        "patterns":  ["two actions", "three actions", "[one|1] action"],
-        "className": "feat",
-        "priority":  28
-      },
-      {
-        "name":      "spell-cast-time",
-        "patterns":  ["cast this spell", "casting time"],
-        "className": "spell",
-        "priority":  28
-      }
-    ],
-    "fields": ["description", "summary", "rules_text"]
-  }
+"winknlpEntities": {
+  "patterns": [
+    {
+      "name":      "feat-action-cost",
+      "patterns":  ["two actions", "three actions", "[one|1] action"],
+      "className": "feat",
+      "priority":  28
+    },
+    {
+      "name":      "spell-cast-time",
+      "patterns":  ["cast this spell", "casting time"],
+      "className": "spell",
+      "priority":  28
+    }
+  ],
+  "fields": ["description", "summary", "rules_text"]
 }
 ```
 
@@ -120,7 +135,7 @@ Given the following aonprd records:
 }
 ```
 
-With config:
+With config (top-level namespace):
 
 ```jsonc
 "winknlpEntities": {

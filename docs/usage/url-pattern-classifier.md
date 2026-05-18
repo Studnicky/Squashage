@@ -1,3 +1,9 @@
+---
+layout: doc
+title: URL-pattern classifier
+description: classify:url-pattern evaluates pre-compiled regexes against each record's URL field. The strongest classifier for scraped data — a /Feats.aspx path is unambiguous where property structure is not.
+---
+
 # URL-pattern classifier
 
 The `classify:url-pattern` task is a deterministic classifier that evaluates pre-compiled regular expressions against each record's URL field and emits one proposal per matching pattern. For scraped data, the URL is often the strongest available type signal -- a `/Feats.aspx` path is unambiguous in a way that property structure alone cannot be. This engine promotes that signal to an explicit, configurable surface.
@@ -59,20 +65,31 @@ The default priority (35) places URL-pattern proposals below schema classifier p
 
 Regex instances are compiled once at construction time in `UrlPatternClassifier.create(config)`. The hot per-record path performs only `regex.test(url)` calls against the frozen compiled-pattern array -- no string interpolation, no allocation beyond the proposal list.
 
+## Plugin contract
+
+`classify:url-pattern` is a self-registering silo plugin. It installs:
+
+- An `onRunStart` lifecycle hook (registered via `TaskRegistry.registerHook`) that reads `ctx.config['urlPattern']`, validates it via `ctx.ajv.compile(urlPatternConfigSchema)`, compiles all `match` strings into `RegExp` instances, and caches the compiled array keyed by `ctx.target`. When `ctx.config['urlPattern']` is absent the hook is a no-op.
+- A per-record task (registered via `TaskRegistry.register` with `{ proposesClass: true }`) that reads from the module-private cache.
+
+The plugin declares `proposesClass: true`, so the orchestrator counts it when asserting that `classify:conflict` is registered.
+
+See [Context silo](../context-silo) for the full plugin coordination protocol.
+
 ## Config schema
+
+The config namespace is `urlPattern` at the top level of the target config (not under a `classification` wrapper):
 
 ```json
 {
-  "classification": {
-    "urlPattern": {
-      "patterns": [
-        {
-          "className": "feat",
-          "match":     "/Feats\\.aspx",
-          "priority":  35
-        }
-      ]
-    }
+  "urlPattern": {
+    "patterns": [
+      {
+        "className": "feat",
+        "match":     "/Feats\\.aspx",
+        "priority":  35
+      }
+    ]
   }
 }
 ```
@@ -100,29 +117,27 @@ Regex instances are compiled once at construction time in `UrlPatternClassifier.
         "aonprd:squash",
         "rdfjs:finalize"
       ],
-      "classification": {
-        "source": true,
-        "urlPattern": {
-          "patterns": [
-            { "className": "feat",  "match": "/Feats\\.aspx",  "priority": 35 },
-            { "className": "spell", "match": "/Spells\\.aspx", "priority": 35 }
-          ]
-        },
-        "schemas": [
-          { "className": "feat",  "priority": 30, "schemaPath": "./schemas/feat.schema.json" },
-          { "className": "spell", "priority": 30, "schemaPath": "./schemas/spell.schema.json" }
-        ],
-        "ontology": {
-          "classes": {
-            "feat":  "https://squashage.dev/vocabulary/aonprd#Feat",
-            "spell": "https://squashage.dev/vocabulary/aonprd#Spell"
-          }
-        },
-        "conflict": {
-          "onConflict": "quarantine",
-          "onUnknown":  "quarantine",
-          "evidence":   true
+      "source": true,
+      "urlPattern": {
+        "patterns": [
+          { "className": "feat",  "match": "/Feats\\.aspx",  "priority": 35 },
+          { "className": "spell", "match": "/Spells\\.aspx", "priority": 35 }
+        ]
+      },
+      "schemas": [
+        { "className": "feat",  "priority": 30, "schemaPath": "./schemas/feat.schema.json" },
+        { "className": "spell", "priority": 30, "schemaPath": "./schemas/spell.schema.json" }
+      ],
+      "ontologyClassifier": {
+        "classes": {
+          "feat":  "https://squashage.dev/vocabulary/aonprd#Feat",
+          "spell": "https://squashage.dev/vocabulary/aonprd#Spell"
         }
+      },
+      "conflict": {
+        "onConflict": "quarantine",
+        "onUnknown":  "quarantine",
+        "evidence":   true
       }
     }
   }
