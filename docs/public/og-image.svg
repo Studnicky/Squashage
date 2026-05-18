@@ -15,7 +15,6 @@
 
   <!-- Decorative graph edges (RDF triple motif) -->
   <g opacity="0.18" stroke="#8b5fbf" stroke-width="1.5" fill="none">
-    <!-- Node cluster right side -->
     <circle cx="870" cy="180" r="8" fill="#8b5fbf" stroke="none" opacity="0.7"/>
     <circle cx="980" cy="260" r="6" fill="#c09fef" stroke="none" opacity="0.6"/>
     <circle cx="1050" cy="350" r="10" fill="#8b5fbf" stroke="none" opacity="0.7"/>
@@ -24,7 +23,6 @@
     <circle cx="840" cy="320" r="9" fill="#8b5fbf" stroke="none" opacity="0.6"/>
     <circle cx="970" cy="500" r="6" fill="#c09fef" stroke="none" opacity="0.5"/>
     <circle cx="1120" cy="450" r="8" fill="#8b5fbf" stroke="none" opacity="0.6"/>
-    <!-- Edges -->
     <line x1="870" y1="180" x2="980" y2="260"/>
     <line x1="870" y1="180" x2="840" y2="320"/>
     <line x1="980" y1="260" x2="1050" y2="350"/>
@@ -38,20 +36,23 @@
   </g>
 
   <!-- Left accent bar -->
-  <rect x="60" y="120" width="4" height="390" fill="url(#accent)" rx="2"/>
+  <rect x="60" y="140" width="4" height="350" fill="url(#accent)" rx="2"/>
 
-  <!-- Wordmark: Squashage -->
+  <!-- Site logo (same squashage.png used by VitePress nav, favicons, hero) -->
+  <image href="squashage.png" x="88" y="165" width="200" height="200" preserveAspectRatio="xMidYMid meet"/>
+
+  <!-- Wordmark: Squashage (lockup right of logo) -->
   <text
-    x="88" y="270"
+    x="320" y="290"
     font-family="system-ui, -apple-system, 'Segoe UI', sans-serif"
     font-size="96"
     font-weight="700"
     fill="#ffffff"
     letter-spacing="-3">Squashage</text>
 
-  <!-- Tagline -->
+  <!-- Tagline (below logo lockup) -->
   <text
-    x="90" y="340"
+    x="88" y="430"
     font-family="system-ui, -apple-system, 'Segoe UI', sans-serif"
     font-size="36"
     font-weight="400"
@@ -59,12 +60,12 @@
 
   <!-- Sub-label -->
   <text
-    x="90" y="410"
+    x="88" y="480"
     font-family="system-ui, -apple-system, 'Segoe UI', monospace"
     font-size="22"
     font-weight="400"
-    fill="#666666">Turtle · TriG · N-Triples · N-Quads · JSON-LD</text>
+    fill="#888888">Turtle · TriG · N-Triples · N-Quads · JSON-LD</text>
 
   <!-- Bottom accent line -->
-  <rect x="60" y="530" width="680" height="2" fill="url(#accent)" rx="1" opacity="0.5"/>
+  <rect x="60" y="540" width="680" height="2" fill="url(#accent)" rx="1" opacity="0.5"/>
 </svg>
