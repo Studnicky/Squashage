@@ -1,0 +1,43 @@
+{
+  "name": "Squashage: JSON → deterministic RDF graphs",
+  "short_name": "Squashage",
+  "description": "Squashage is the graph reconstitution pipeline. Feed it classified JSON records; it squashes them into deterministic RDF graphs you can serve as Turtle, TriG, N-Triples, N-Quads, or JSON-LD.",
+  "id": "/Squashage/",
+  "start_url": "/Squashage/",
+  "scope": "/Squashage/",
+  "display": "standalone",
+  "orientation": "any",
+  "theme_color": "#8b5fbf",
+  "background_color": "#0a0a0a",
+  "lang": "en-US",
+  "categories": ["productivity", "developer", "data"],
+  "icons": [
+    {
+      "src": "/Squashage/favicon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
+      "purpose": "any"
+    },
+    {
+      "src": "/Squashage/squashage.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/Squashage/squashage.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/Squashage/og-image.png",
+      "type": "image/png",
+      "sizes": "1200x630",
+      "form_factor": "wide",
+      "label": "Squashage docs landing page"
+    }
+  ]
+}
