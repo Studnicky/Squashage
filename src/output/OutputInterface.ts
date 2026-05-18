@@ -18,6 +18,9 @@
 
 import type { Quad } from '@rdfjs/types';
 import type { RDFFormat } from '../rdf/Formats.js';
+import type { BucketReportInterface } from './Bucketer.js';
+
+export type { BucketReportInterface };
 
 // ---------------------------------------------------------------------------
 // OutputErrorInterface
@@ -98,6 +101,15 @@ export interface OutputReportInterface {
   readonly bytesWritten: number;
   /** Structured errors captured during the output lifecycle; empty on success. */
   readonly errors:       ReadonlyArray<OutputErrorInterface>;
+  /**
+   * Per-bucket report entries when `output.bucketing.enabled === true`.
+   *
+   * @remarks
+   * When bucketing is off, this field is absent. When on, each entry describes
+   * one output file keyed by graph IRI (or the default/overflow sentinel).
+   * The top-level `path` field is the bucket-root directory path.
+   */
+  readonly buckets?:     ReadonlyArray<BucketReportInterface>;
 }
 
 // ---------------------------------------------------------------------------

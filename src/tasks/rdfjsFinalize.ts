@@ -57,18 +57,23 @@ const runDirFor = (outDir: string, targetId: string): string => join(outDir, tar
 /**
  * Asserts that the target's named-graph emissions are compatible with the
  * resolved output format. Triple-only formats (turtle, ntriples) cannot
- * serialize quads with non-default graphs unless `output.graph` is set.
+ * serialize quads with non-default graphs unless `output.graph` is set OR
+ * bucketing is enabled (each bucket contains exactly one graph).
  *
  * @throws {OutputConfigError} When named-graph quads exist but the format
- *   cannot represent them and `graph` is not set.
+ *   cannot represent them and neither `graph` nor `bucketing.enabled` is set.
  */
 const assertGraphCompatibility = (
-  dataset: { [Symbol.iterator](): Iterator<{ graph: { termType: string } }> },
-  format:  string,
-  graph:   string | undefined,
+  dataset:          { [Symbol.iterator](): Iterator<{ graph: { termType: string } }> },
+  format:           string,
+  graph:            string | undefined,
+  bucketingEnabled: boolean,
 ): void => {
   if (Formats.supportsQuads(format as Parameters<typeof Formats.supportsQuads>[0])) return;
   if (graph !== undefined && graph.length > 0) return;
+  // When bucketing is on, each bucket file contains only one graph — triple-only
+  // formats are valid per-bucket even without output.graph.
+  if (bucketingEnabled) return;
   for (const quad of dataset) {
     if (quad.graph.termType !== 'DefaultGraph') {
       throw OutputConfigError.create(
@@ -116,10 +121,14 @@ const rdfjsFinalizeTask: TaskFnInterface<PipelineStateInterface> = async (
   const format = FormatResolver.resolve(ctx.output);
   logger.debug('validate', 'Resolved output format', { format, path: ctx.output.path });
 
+  const bucketingEnabled = (ctx.output as Record<string, unknown>)['bucketing'] !== undefined &&
+    ((ctx.output as Record<string, unknown>)['bucketing'] as Record<string, unknown>)['enabled'] === true;
+
   assertGraphCompatibility(
     ctx.dataset as unknown as { [Symbol.iterator](): Iterator<{ graph: { termType: string } }> },
     format,
     ctx.output.graph,
+    bucketingEnabled,
   );
 
   const runDir = runDirFor(ctx.outDir, ctx.target);

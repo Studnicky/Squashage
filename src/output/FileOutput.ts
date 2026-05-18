@@ -41,7 +41,7 @@ import { join, dirname, resolve }          from 'node:path';
 import type { Quad }                       from '@rdfjs/types';
 import type { RDFFormat }                  from '../rdf/Formats.js';
 import type { OutputConfigInterface }      from '../config/OutputConfig.js';
-import type { OutputInterface, OutputReportInterface } from './OutputInterface.js';
+import type { OutputInterface, OutputReportInterface, BucketReportInterface } from './OutputInterface.js';
 import type { PrefixResolutionInterface }  from '../classification/PrefixResolver.js';
 
 import { Formats }                         from '../rdf/Formats.js';
@@ -53,6 +53,8 @@ import { Dataset }                         from '../rdf/Dataset.js';
 import { dataFactory }                     from '../rdf/DataFactory.js';
 import { ShaclGate }                       from '../shacl/ShaclGate.js';
 import { FormatResolver }                  from './FormatResolver.js';
+import { Bucketer }                        from './Bucketer.js';
+import type { BucketingConfigInterface }   from './Bucketer.js';
 import { FileOutputError }                 from '../errors/FileOutputError.js';
 import { Logger }                          from '../modules/logger/logger.js';
 
@@ -239,9 +241,14 @@ export class FileOutput implements OutputInterface {
    * and returns the output report.
    *
    * @remarks
-   * See class-level remarks for the full close sequence.  Every step is logged
-   * with a distinct `operation` value so structured log consumers can correlate
-   * timing across the pipeline.
+   * When `output.bucketing.enabled === true`:
+   * - Canonicalization and SHACL validation run once on the union dataset.
+   * - The dataset is then classified into per-bucket groups via {@link Bucketer}.
+   * - Each non-empty bucket is serialized and written atomically.
+   * - The report `path` field is the bucket-root directory; `buckets` holds
+   *   per-bucket detail.
+   *
+   * When bucketing is off, the existing single-file path runs unchanged.
    *
    * @returns The structured output report.
    * @throws {FileOutputError} On validation failure, serialization error, or I/O failure.
@@ -249,6 +256,24 @@ export class FileOutput implements OutputInterface {
   public async close(): Promise<OutputReportInterface> {
     log.debug('close', 'Beginning close sequence', { path: this.#config.path });
 
+    const bucketing = (this.#config as Record<string, unknown>)['bucketing'] as BucketingConfigInterface | undefined;
+    const bucketingEnabled = bucketing?.enabled === true;
+
+    if (bucketingEnabled) {
+      return this.#closeBucketed(bucketing!);
+    }
+
+    return this.#closeSingleFile();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Private close paths
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Single-file close path (bucketing off) — unchanged from pre-bucketing behaviour.
+   */
+  async #closeSingleFile(): Promise<OutputReportInterface> {
     let quads: ReadonlyArray<Quad> = this.#buffer;
 
     // Step 1 — Canonicalize
@@ -275,7 +300,7 @@ export class FileOutput implements OutputInterface {
     const { data } = await this.#serialize(quads);
 
     // Step 6 — Atomic write
-    await this.#atomicWrite(data);
+    await this.#atomicWrite(data, this.#config.path);
 
     const bytesWritten = Buffer.byteLength(data, 'utf8');
     const durationMs   = Date.now() - this.#openedAt;
@@ -297,6 +322,127 @@ export class FileOutput implements OutputInterface {
       graphCount:   report.graphCount,
       durationMs:   report.durationMs,
       bytesWritten: report.bytesWritten,
+    });
+
+    return report;
+  }
+
+  /**
+   * Bucketed close path — classify quads into per-bucket groups, serialize
+   * and write each non-empty bucket atomically.
+   *
+   * @remarks
+   * Canonicalization and SHACL validation run once on the full union before
+   * classification. Each bucket is serialized independently.
+   *
+   * @param bucketing - The validated bucketing config block.
+   */
+  async #closeBucketed(bucketing: BucketingConfigInterface): Promise<OutputReportInterface> {
+    const bucketDir = this.#config.path;
+
+    log.debug('closeBucketed', 'Starting bucketed close', { bucketDir });
+
+    // Ensure bucket directory exists
+    await mkdir(bucketDir, { recursive: true });
+
+    let quads: ReadonlyArray<Quad> = this.#buffer;
+
+    // Step 1 — Canonicalize on union (before classify)
+    if (this.#config.canonicalize === true) {
+      quads = await this.#canonicalize(quads);
+    }
+
+    // Step 2 — SHACL validation on union (before classify)
+    if (this.#config.validate !== undefined) {
+      await this.#shaclValidate(quads);
+    }
+
+    // Step 3 — Dry run
+    if (this.#config.dryRun === true) {
+      return this.#dryRunReport(quads);
+    }
+
+    // Step 4 — Classify into per-bucket groups
+    const groups  = Bucketer.classify(quads, bucketing);
+    const allKeys = new Set(groups.keys());
+
+    // Step 5 — Default-graph handling: emit warning when no defaultGraphFilename
+    if (groups.has('__default__') && bucketing.defaultGraphFilename === undefined) {
+      log.warn('closeBucketed', 'Default-graph quads present but bucketing.defaultGraphFilename not set — writing to "default" bucket', {
+        quadCount: groups.get('__default__')?.length ?? 0,
+      });
+    }
+
+    // Step 6 — Serialize + write each bucket
+    const bucketReports: BucketReportInterface[] = [];
+    let totalBytes = 0;
+    let totalQuads = 0;
+
+    for (const [bucketKey, bucketQuads] of groups) {
+      const file = Bucketer.filenameFor(bucketKey, this.#format, bucketing, bucketDir, allKeys);
+
+      // Determine graphIri for the report
+      const graphIri = bucketKey === '__default__' || bucketKey === '__other__'
+        ? null
+        : bucketKey;
+
+      if (bucketQuads.length === 0) {
+        bucketReports.push({
+          bucketKey,
+          path:         null,
+          graphIri,
+          stem:         file.stem,
+          format:       this.#format,
+          quadCount:    0,
+          bytesWritten: 0,
+        });
+        continue;
+      }
+
+      const { data } = await this.#serialize(bucketQuads);
+      await this.#atomicWrite(data, file.path);
+
+      const bytes = Buffer.byteLength(data, 'utf8');
+      totalBytes += bytes;
+      totalQuads += bucketQuads.length;
+
+      bucketReports.push({
+        bucketKey,
+        path:         file.path,
+        graphIri,
+        stem:         file.stem,
+        format:       this.#format,
+        quadCount:    bucketQuads.length,
+        bytesWritten: bytes,
+      });
+
+      log.info('closeBucketed', 'Bucket written', {
+        bucketKey,
+        path:         file.path,
+        quadCount:    bucketQuads.length,
+        bytesWritten: bytes,
+      });
+    }
+
+    const durationMs = Date.now() - this.#openedAt;
+
+    const report: OutputReportInterface = {
+      path:         bucketDir,
+      format:       this.#format,
+      quadCount:    totalQuads,
+      graphCount:   groups.size,
+      durationMs,
+      bytesWritten: totalBytes,
+      errors:       [],
+      buckets:      bucketReports,
+    };
+
+    log.info('closeBucketed', 'Bucketed output complete', {
+      bucketDir,
+      bucketCount:  bucketReports.length,
+      quadCount:    totalQuads,
+      bytesWritten: totalBytes,
+      durationMs,
     });
 
     return report;
@@ -503,10 +649,14 @@ export class FileOutput implements OutputInterface {
   /**
    * Atomic write: `<path>.tmp` → fsync → rename.  On failure, renames the
    * `.tmp` to `<path>.partial` and re-throws.
+   *
+   * @param data      - UTF-8 content to write.
+   * @param destPath  - Destination file path (defaults to `this.#config.path`
+   *   for the single-file mode; pass the bucket path for bucketed writes).
    */
-  async #atomicWrite(data: string): Promise<void> {
-    const tmpPath     = `${this.#config.path}.tmp`;
-    const partialPath = `${this.#config.path}.partial`;
+  async #atomicWrite(data: string, destPath: string): Promise<void> {
+    const tmpPath     = `${destPath}.tmp`;
+    const partialPath = `${destPath}.partial`;
 
     log.debug('atomicWrite', 'Writing to tmp path', { tmpPath });
 
@@ -516,7 +666,7 @@ export class FileOutput implements OutputInterface {
       const cause = err instanceof Error ? err : undefined;
       throw FileOutputError.create(
         `Failed to write tmp file "${tmpPath}"`,
-        { cause, metadata: { stage: 'finalize', path: this.#config.path, tmpPath } },
+        { cause, metadata: { stage: 'finalize', path: destPath, tmpPath } },
       );
     }
 
@@ -533,7 +683,7 @@ export class FileOutput implements OutputInterface {
 
     // Atomic rename
     try {
-      await rename(tmpPath, this.#config.path);
+      await rename(tmpPath, destPath);
     } catch (err) {
       // Rename failed: leave the tmp as .partial for inspection
       try {
@@ -543,12 +693,12 @@ export class FileOutput implements OutputInterface {
       }
       const cause = err instanceof Error ? err : undefined;
       throw FileOutputError.create(
-        `Atomic rename from "${tmpPath}" to "${this.#config.path}" failed`,
-        { cause, metadata: { stage: 'finalize', path: this.#config.path, tmpPath, partialPath } },
+        `Atomic rename from "${tmpPath}" to "${destPath}" failed`,
+        { cause, metadata: { stage: 'finalize', path: destPath, tmpPath, partialPath } },
       );
     }
 
-    log.debug('atomicWrite', 'Rename complete', { dest: this.#config.path });
+    log.debug('atomicWrite', 'Rename complete', { dest: destPath });
   }
 
   /**

@@ -15,7 +15,7 @@
  * @since 2.2.0
  */
 
-import type { OutputReportInterface, OutputErrorInterface } from './OutputInterface.js';
+import type { OutputReportInterface, OutputErrorInterface, BucketReportInterface } from './OutputInterface.js';
 import type { RDFFormat } from '../rdf/Formats.js';
 import { Formats } from '../rdf/Formats.js';
 
@@ -44,11 +44,31 @@ function isOutputError(v: unknown): v is OutputErrorInterface {
 }
 
 /**
+ * Returns `true` when `v` is a structurally valid `BucketReportInterface`.
+ */
+function isBucketReport(v: unknown): v is BucketReportInterface {
+  if (typeof v !== 'object' || v === null) return false;
+  const obj = v as Record<string, unknown>;
+  return (
+    typeof obj['bucketKey']    === 'string' &&
+    (typeof obj['path']        === 'string' || obj['path'] === null) &&
+    (typeof obj['graphIri']    === 'string' || obj['graphIri'] === null) &&
+    typeof obj['stem']         === 'string' &&
+    typeof obj['format']       === 'string' && Formats.isRdfFormat(obj['format']) &&
+    typeof obj['quadCount']    === 'number' &&
+    typeof obj['bytesWritten'] === 'number'
+  );
+}
+
+/**
  * Returns `true` when `v` is a structurally valid `OutputReportInterface`.
  */
 function isOutputReport(v: unknown): v is OutputReportInterface {
   if (typeof v !== 'object' || v === null) return false;
   const obj = v as Record<string, unknown>;
+  const bucketsOk = obj['buckets'] === undefined
+    ? true
+    : Array.isArray(obj['buckets']) && (obj['buckets'] as unknown[]).every(isBucketReport);
   return (
     typeof obj['path']         === 'string' &&
     typeof obj['format']       === 'string' && Formats.isRdfFormat(obj['format']) &&
@@ -57,7 +77,8 @@ function isOutputReport(v: unknown): v is OutputReportInterface {
     typeof obj['durationMs']   === 'number' &&
     typeof obj['bytesWritten'] === 'number' &&
     Array.isArray(obj['errors']) &&
-    (obj['errors'] as unknown[]).every(isOutputError)
+    (obj['errors'] as unknown[]).every(isOutputError) &&
+    bucketsOk
   );
 }
 
@@ -111,7 +132,7 @@ export class OutputReport {
    * ```
    */
   public static toJson(report: OutputReportInterface): string {
-    const obj = {
+    const obj: Record<string, unknown> = {
       path:         report.path,
       format:       report.format as RDFFormat,
       quadCount:    report.quadCount,
@@ -120,6 +141,9 @@ export class OutputReport {
       bytesWritten: report.bytesWritten,
       errors:       report.errors,
     };
+    if (report.buckets !== undefined) {
+      obj['buckets'] = report.buckets;
+    }
     return JSON.stringify(obj, null, 2);
   }
 
