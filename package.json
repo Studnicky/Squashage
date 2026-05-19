@@ -81,7 +81,7 @@
     "@eslint/js": "^10.0.1",
     "@types/jsonld": "^1.5.15",
     "@types/n3": "^1.26.1",
-    "@types/node": "^25.6.0",
+    "@types/node": "^25.9.0",
     "@types/rdfjs__data-model": "^2.0.9",
     "@types/rdfjs__dataset": "^2.0.7",
     "@xmldom/xmldom": "^0.9.10",
@@ -92,11 +92,11 @@
     "graphology-layout-forceatlas2": "^0.10.1",
     "graphology-types": "^0.24.8",
     "sigma": "^3.0.3",
-    "tsx": "^4.0.0",
+    "tsx": "^4.22.2",
     "typescript": "^6.0.3",
-    "typescript-eslint": "8.59.2",
+    "typescript-eslint": "8.59.4",
     "vitepress": "^1.6.4",
-    "vue": "^3.0.0"
+    "vue": "^3.5.34"
   },
   "engines": {
     "node": ">=24.0.0"
