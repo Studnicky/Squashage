@@ -1,0 +1,14 @@
+{
+  "$id": "https://noocodec.dev/squashage/core/Vocabulary.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Vocabulary",
+  "type": "object",
+  "allOf": [
+    { "$ref": "https://noocodec.dev/squashage/core/NamedThing.schema.json" }
+  ],
+  "properties": {
+    "category": { "type": ["string", "null"] }
+  },
+  "additionalProperties": true,
+  "description": "A closed-vocabulary term with a name and optional category. Used for traits, action costs, rarities, and other enumerated types."
+}

@@ -1,4 +1,5 @@
-import type { ClassificationEvidenceInterface, InputSourceInterface } from './PipelineState.js';
+import type { ClassificationEvidence as ClassificationEvidenceInterface } from '../state/schemas/ClassificationEvidence.js';
+import type { InputSource as InputSourceInterface } from '../state/schemas/InputSource.js';
 
 export type { ClassificationEvidenceInterface, InputSourceInterface };
 

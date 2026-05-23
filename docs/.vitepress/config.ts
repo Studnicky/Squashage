@@ -1,6 +1,8 @@
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { resolve }                                from 'node:path';
 import { defineConfig } from 'vitepress';
+// @ts-expect-error — vitepress-plugin-mermaid ships ESM with no published .d.ts
+import { withMermaid } from 'vitepress-plugin-mermaid';
 import { themeConfig } from './theme.config.js';
 import pkg              from '../../package.json' with { type: 'json' };
 
@@ -69,29 +71,27 @@ const sidebar = [
   {
     text: 'Usage',
     items: [
-      { link: '/usage/configuration',      text: 'Configuration' },
-      { link: '/usage/pipeline',           text: 'Pipeline' },
-      { link: '/usage/classifier-cascade',      text: 'Classifier cascade' },
-      { link: '/usage/shacl-shape-classifier',  text: 'SHACL-shape classifier' },
-      { link: '/usage/url-pattern-classifier',           text: 'URL-pattern classifier' },
+      { link: '/usage/configuration',                  text: 'Configuration' },
+      { link: '/usage/pipeline',                       text: 'DAG' },
+      { link: '/usage/classifier-cascade',             text: 'Classifier cascade' },
+      { link: '/usage/shacl-shape-classifier',         text: 'SHACL-shape classifier' },
+      { link: '/usage/url-pattern-classifier',         text: 'URL-pattern classifier' },
       { link: '/usage/property-fingerprint-classifier', text: 'Property-fingerprint classifier' },
-      { link: '/usage/winknlp-entities',                text: 'winkNLP entities classifier' },
-      { link: '/usage/entity-link',                     text: 'Entity-link enrichment' },
-      { link: '/usage/taxonomic-narrowing',             text: 'Taxonomic narrowing' },
-      { link: '/usage/ontology',                text: 'Ontology (json-tology)' },
-      { link: '/usage/output',             text: 'Output' },
-      { link: '/usage/streaming-output',    text: 'Streaming output' },
-      { link: '/usage/provenance',         text: 'Provenance (PROV-O sidecar)' },
-      { link: '/usage/viz',                text: 'Viz' },
-      { link: '/usage/plugins',            text: 'Plugins' },
+      { link: '/usage/winknlp-entities',               text: 'winkNLP entities classifier' },
+      { link: '/usage/entity-link',                    text: 'Entity-link enrichment' },
+      { link: '/usage/taxonomy',                        text: 'Taxonomy (upper ontology)' },
+      { link: '/usage/taxonomic-narrowing',            text: 'Taxonomic narrowing' },
+      { link: '/usage/ontology',                       text: 'Ontology (json-tology)' },
+      { link: '/usage/output',                         text: 'Output' },
+      { link: '/usage/provenance',                     text: 'Provenance (PROV-O graph)' },
+      { link: '/usage/viz',                            text: 'Viz' },
+      { link: '/usage/plugins',                        text: 'Plugins' },
     ]
   },
   {
     text: 'Reference',
     items: [
-      { link: '/architecture',           text: 'Architecture' },
-      { link: '/context-silo',           text: 'Context silo (plugin contract)' },
-      { link: '/classification-engines', text: 'Classifier engines (deep dive)' },
+      { link: '/architecture', text: 'Architecture' },
     ]
   },
   {
@@ -102,7 +102,7 @@ const sidebar = [
   },
 ];
 
-export default defineConfig({
+export default withMermaid(defineConfig({
   'appearance': themeConfig.appearance,
   'base':        SITE_BASE,
   'lang':        'en-US',
@@ -112,7 +112,12 @@ export default defineConfig({
   'cleanUrls':   true,
   'lastUpdated': true,
   'srcDir':      '.',
-  'srcExclude':  ['plans/**', 'plans/*.md'],
+  'srcExclude':  ['plans/**', 'plans/*.md', 'architecture/dags/**'],
+  'mermaid':     {
+    // Theme variables — mermaid honours these per-diagram.
+    'theme': 'dark',
+    'themeVariables': { 'primaryColor': '#8b5fbf', 'lineColor': '#a78bfa' },
+  },
   'sitemap': {
     /* VitePress generates sitemap.xml from every page rendered into
        /dist. Crawlers (Googlebot, Bingbot, DuckDuckGo) discover routes
@@ -428,4 +433,4 @@ export default defineConfig({
     sidebar,
     socialLinks: [{ icon: 'github', link: SITE_REPO }],
   },
-});
+}));

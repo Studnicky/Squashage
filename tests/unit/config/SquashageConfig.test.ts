@@ -45,7 +45,6 @@ describe('SquashageConfig.validate()', () => {
       targets: {
         foo: {
           input:    './output/foo',
-          pipeline: ['json:read', 'foo:squash', 'rdfjs:finalize'],
           output:   { kind: 'file', path: './graphs/foo.trig' },
         },
       },
@@ -71,7 +70,6 @@ describe('SquashageConfig.validate()', () => {
       targets: {
         foo: {
           input:    './output/foo',
-          pipeline: ['json:read'],
           // output deliberately omitted
         },
       },
@@ -92,7 +90,6 @@ describe('SquashageConfig.validate()', () => {
       targets: {
         foo: {
           input:    './output/foo',
-          pipeline: ['json:read', 'rdfjs:finalize'],
           output:   { kind: 'file', path: './graphs/foo.rdf', format: 'rdfxml' },
         },
       },
@@ -113,7 +110,6 @@ describe('SquashageConfig.validate()', () => {
       targets: {
         foo: {
           input:    './output/foo',
-          pipeline: ['json:read', 'rdfjs:finalize'],
           output:   {
             kind:         'file',
             path:         './graphs/foo.trig',
@@ -138,7 +134,6 @@ describe('SquashageConfig.validate()', () => {
       targets: {
         foo: {
           input:    './output/foo',
-          pipeline: ['json:read', 'rdfjs:finalize'],
           output:   { kind: 'file', path: './graphs/foo.trig', mode: 'stream' },
         },
       },
@@ -155,7 +150,6 @@ describe('SquashageConfig.validate() — jsonldContext cross-validation', () => 
       targets: {
         foo: {
           input:    './output/foo',
-          pipeline: ['json:read', 'rdfjs:finalize'],
           output:   { kind: 'file', path: './graphs/foo.jsonld', format: 'jsonld', jsonldContext: 'auto' },
         },
       },
@@ -170,7 +164,6 @@ describe('SquashageConfig.validate() — jsonldContext cross-validation', () => 
       targets: {
         foo: {
           input:    './output/foo',
-          pipeline: ['json:read', 'rdfjs:finalize'],
           output:   { kind: 'file', path: './graphs/foo.jsonld', jsonldContext: 'auto' },
         },
       },
@@ -185,7 +178,6 @@ describe('SquashageConfig.validate() — jsonldContext cross-validation', () => 
       targets: {
         foo: {
           input:    './output/foo',
-          pipeline: ['json:read', 'rdfjs:finalize'],
           output:   {
             kind:         'file',
             path:         './graphs/foo.jsonld',
@@ -205,7 +197,6 @@ describe('SquashageConfig.validate() — jsonldContext cross-validation', () => 
       targets: {
         foo: {
           input:    './output/foo',
-          pipeline: ['json:read', 'rdfjs:finalize'],
           output:   {
             kind:         'file',
             path:         './graphs/foo.ttl',
@@ -231,7 +222,6 @@ describe('SquashageConfig.validate() — jsonldContext cross-validation', () => 
       targets: {
         foo: {
           input:    './output/foo',
-          pipeline: ['json:read', 'rdfjs:finalize'],
           output:   { kind: 'file', path: './graphs/foo.nq', format: 'nquads', jsonldContext: 'auto' },
         },
       },
@@ -251,12 +241,83 @@ describe('SquashageConfig.validate() — jsonldContext cross-validation', () => 
       targets: {
         foo: {
           input:    './output/foo',
-          pipeline: ['json:read', 'rdfjs:finalize'],
           output:   { kind: 'file', path: './graphs/foo.trig' },
         },
       },
     };
     const cfg = SquashageConfig.validate(raw);
     assert.ok(cfg.targets['foo'] !== undefined);
+  });
+});
+
+describe('SquashageConfig.validate() — classification.discriminator', () => {
+  it('accepts classification.discriminator with only "from"', () => {
+    const raw = {
+      input:   { basePath: './output', format: 'json' },
+      targets: {
+        foo: {
+          input:    './output/foo',
+          output:   { kind: 'file', path: './graphs/foo.trig' },
+          classification: { discriminator: { from: '/_type' } },
+        },
+      },
+    };
+    const cfg = SquashageConfig.validate(raw);
+    assert.ok(cfg.targets['foo'] !== undefined);
+  });
+
+  it('accepts classification.discriminator with sanitize: pascalCase', () => {
+    const raw = {
+      input:   { basePath: './output', format: 'json' },
+      targets: {
+        foo: {
+          input:    './output/foo',
+          output:   { kind: 'file', path: './graphs/foo.trig' },
+          classification: { discriminator: { from: '/_type', sanitize: 'pascalCase' } },
+        },
+      },
+    };
+    const cfg = SquashageConfig.validate(raw);
+    assert.ok(cfg.targets['foo'] !== undefined);
+  });
+
+  it('rejects classification.discriminator with sanitize: unknown', () => {
+    const raw = {
+      input:   { basePath: './output', format: 'json' },
+      targets: {
+        foo: {
+          input:    './output/foo',
+          output:   { kind: 'file', path: './graphs/foo.trig' },
+          classification: { discriminator: { from: '/_type', sanitize: 'unknown' } },
+        },
+      },
+    };
+    assert.throws(
+      () => SquashageConfig.validate(raw),
+      (err: unknown) => {
+        assert.ok(err instanceof SquashageConfigError);
+        return true;
+      },
+    );
+  });
+
+  it('rejects classification.discriminator missing required "from" field', () => {
+    const raw = {
+      input:   { basePath: './output', format: 'json' },
+      targets: {
+        foo: {
+          input:    './output/foo',
+          output:   { kind: 'file', path: './graphs/foo.trig' },
+          classification: { discriminator: { fallback: '/category' } },
+        },
+      },
+    };
+    assert.throws(
+      () => SquashageConfig.validate(raw),
+      (err: unknown) => {
+        assert.ok(err instanceof SquashageConfigError);
+        return true;
+      },
+    );
   });
 });

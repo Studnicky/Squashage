@@ -1,0 +1,14 @@
+{
+  "$id": "https://noocodec.dev/squashage/core/DocumentSegment.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "DocumentSegment",
+  "type": "object",
+  "allOf": [
+    { "$ref": "https://noocodec.dev/squashage/core/NamedThing.schema.json" }
+  ],
+  "properties": {
+    "text": { "type": "string" }
+  },
+  "additionalProperties": true,
+  "description": "A piece of structured prose with a name and optional text content. Used for chapter pages, rules text, and other document-level segments."
+}

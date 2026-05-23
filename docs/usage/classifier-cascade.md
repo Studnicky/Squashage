@@ -1,341 +1,191 @@
 ---
 layout: doc
 title: Classifier cascade
-description: Squashage's eleven deterministic classifier tasks — how to opt in via pipeline config, how proposesClass tasks interact with conflict resolution, and the silo-driven architecture.
+description: Squashage's eleven deterministic classifier nodes — what each one proposes, how the parallel placement collects their votes, how the conflict resolver picks a winner.
 ---
 
 # Classifier cascade
 
-Eleven tasks. You list the ones you want in `pipeline:` and supply a matching top-level config namespace. That's the whole opt-in.
+Eleven classifier nodes participate in the per-record DAG. Nine run concurrently in a `parallel: collect` placement; two run sequentially after the parallel because they read other classifiers' proposals. The conflict resolver reduces every non-sentinel proposal into a single winning `state.classification`.
 
-List none and you get no classifier. List two or more `proposesClass: true` tasks and you must list `classify:conflict` after them, or the orchestrator throws at startup. Each plugin is a self-registering silo module: it installs its own `onRunStart` hook that validates config and compiles startup state, and a per-record task that reads from the pre-compiled cache. No central factory mediates between them.
+The cascade is deterministic: same config + same record produce identical proposals, identical winner, identical PROV-O quads.
 
-The cascade is purely deterministic. Same config + same record = same classification, same quarantine, same exit code. No probabilistic models, no random seeds, no network calls.
+## Opt-in
 
-## Silo-driven architecture
+Each classifier has a config slot under `targets[].classification.<key>`. When the slot is present, the corresponding classifier is instantiated and registered on the dispatcher. When the slot is absent, a no-op classifier is registered under the same name so the static DAG topology still resolves.
 
-Each classifier is a self-registering plugin. When the module loads, it calls:
+The nine parallel classifiers + two sequential classifiers + the conflict resolver are wired in `SquashageRun.forTarget(...)` from the matching config slots.
 
-```ts
-TaskRegistry.register('classify:<name>', perRecordTask, { proposesClass: true | false });
-TaskRegistry.registerHook('classify:<name>', 'onRunStart', startupHook, manifest);
-```
+## Primary path — the discriminator
 
-The `onRunStart` hook runs once per target before any record flows. It reads `ctx.config[<namespace>]`, validates via `ctx.ajv.compile(<pluginConfigSchema>)`, compiles predicates/regexes/schemas/fingerprints into a module-private cache keyed by `ctx.target`, and fails fast with `OutputConfigError` if the config is invalid. The per-record task reads from the cache and produces `ClassificationProposalInterface` objects, appending them onto `state.classifications`.
+For targets where records carry a discriminator field (e.g. `_type`), the `classify:discriminator` node is the primary classification path. It reads the literal value at a configured JSON Pointer and uses it directly as the class name proposal — no per-class enumeration required.
 
-`classify:conflict` consumes the full `state.classifications` array and writes `state.classification`. The orchestrator counts how many registered tasks have `proposesClass: true` and asserts `classify:conflict` is registered when that count is two or more.
+<ClassifierCard
+  name="classify:discriminator"
+  slot="discriminator"
+  placement="parallel"
+  :priority="50"
+  :outputs="['proposed', 'no-match']"
+  engine="Reads a configured JSON Pointer (default /_type) from the record. Uses the resolved string (after optional sanitization) as the className proposal. Open-world: any non-empty string value classifies without enumeration."
+/>
 
-For the full plugin coordination protocol, see [Context silo](../context-silo).
-
-## Priority cascade
-
-Higher number wins. When two proposals share the same priority and disagree on class, `classify:conflict` applies `onConflict` policy.
-
-```
-classify:structural           priority 10  (configurable)
-classify:rules                priority 20  (configurable)
-classify:schema               priority 30  (configurable)
-classify:property-fingerprint priority 32  (default; configurable)
-classify:url-pattern          priority 35  (default; configurable)
-classify:winknlp-entities     priority 28  (default; configurable)
-classify:shacl-shape          priority 45  (default; configurable)
-classify:ontology             (validator; does not propose a class)
-classify:taxonomic-narrowing  (post-proposer filter; does not propose a class)
-classify:conflict             (resolver; reads all proposals, writes winner)
-```
-
-```mermaid
-graph LR
-  subgraph Proposers
-    src["classify:source<br/>p=0 (marker only)"]
-    str["classify:structural<br/>p=10"]
-    rul["classify:rules<br/>p=20"]
-    sch["classify:schema<br/>p=30"]
-    fp["classify:property-fingerprint<br/>p=32 (default)"]
-    url["classify:url-pattern<br/>p=35 (default)"]
-    wink["classify:winknlp-entities<br/>p=28 (default)"]
-    shacl["classify:shacl-shape<br/>p=45 (default)"]
-  end
-  subgraph Filters
-    onto["classify:ontology<br/>(validator)"]
-    narrow["classify:taxonomic-narrowing<br/>(supertype filter)"]
-  end
-  subgraph Resolver
-    conflict["classify:conflict<br/>(picks winner)"]
-  end
-  str & rul & sch & fp & url & wink & shacl --> narrow
-  onto --> narrow
-  narrow --> conflict
-  conflict --> state["state.classification"]
-```
-
-## Task menu
-
-| Task | `proposesClass` | Config namespace | Default priority |
-|------|-----------------|-----------------|-----------------|
-| `classify:source` | false (marker) | `source: true` | 0 |
-| `classify:structural` | true | `structural: []` | 10 |
-| `classify:rules` | true | `rules: []` | 20 |
-| `classify:schema` | true | `schemas: []` | 30 |
-| `classify:property-fingerprint` | true | `propertyFingerprint: {}` | 32 |
-| `classify:url-pattern` | true | `urlPattern: {}` | 35 |
-| `classify:winknlp-entities` | true | `winknlpEntities: {}` | 28 |
-| `classify:shacl-shape` | true | `shaclShape: {}` | 45 |
-| `classify:ontology` | false (validator) | `ontologyClassifier: {}` | — |
-| `classify:taxonomic-narrowing` | false (filter) | `taxonomicNarrowing: {}` | — |
-| `classify:conflict` | false (resolver) | `conflict: {}` | — |
-
-**Proposal accumulation flow**: Each proposing task (source, structural, rules, schema, url-pattern, property-fingerprint, winknlp-entities, shacl-shape) appends to `state.classifications` independently. A single record can accumulate many proposals if multiple classifiers match. Taxonomic narrowing filters out supertype proposals. The conflict resolver then examines all of them, filters metadata sentinels like `__source__` and `__narrowing_applied__`, and picks one winner by priority (highest first) and className (lex asc as tiebreak). If two proposals tie on priority and disagree on class, `onConflict: 'quarantine'` writes the record to quarantine with both candidates preserved; `onConflict: 'pickPriority'` deterministically picks the lexicographically first className.
-
----
-
-## classify:source
-
-Reads the `_source` block from the record. If `_source` is present and valid, emits a `__source__` marker proposal at priority 0. Does not propose a class; just marks the record as traceable.
-
-Config namespace: `source: true`. No other options.
-
-What it emits:
-```json
-{ "source": "classify:source", "className": "__source__", "priority": 0, "confidence": 1, "reasons": ["_source present"] }
-```
-
----
-
-## classify:structural
-
-Closed-vocab predicate rules evaluated against the record. Each rule has one predicate expression and emits at most one proposal.
+Config slot: `classification.discriminator`
 
 ```json
-"structural": [
-  {
-    "className": "feat",
-    "priority":  10,
-    "predicate": { "path": "/_type", "equals": "feat" },
-    "reasons":   ["_type=feat (structural)"]
-  }
-]
-```
-
-When to use: the record has a single discriminator field whose value unambiguously identifies the class.
-
----
-
-## classify:rules
-
-Same rule shape as structural, but the predicate can compose multiple conditions. Use `all`, `any`, `not` to build decision tables.
-
-```json
-"rules": [
-  {
-    "className": "feat",
-    "priority":  20,
-    "predicate": {
-      "all": [
-        { "path": "/_type", "equals": "feat" },
-        { "path": "/level", "type": "number" },
-        { "path": "/rarity", "in": ["common", "uncommon", "rare"] }
-      ]
-    },
-    "reasons": ["_type=feat", "level present", "rarity valid"]
-  }
-]
-```
-
-Priority 20 is higher than structural's 10; so if both fire, the rules proposal wins.
-
----
-
-## classify:schema
-
-Runs the record through an ordered list of pre-compiled AJV validators. First match wins. Schema files are loaded and compiled once at startup via the run-wide shared AJV instance from `context:ajv`.
-
-```json
-"schemas": [
-  { "className": "feat",  "priority": 30, "schemaPath": "./schemas/feat.schema.json" },
-  { "className": "spell", "priority": 30, "schemaPath": "./schemas/spell.schema.json" }
-]
-```
-
-`schemaPath` is resolved relative to the config file. Standard JSON Schema Draft-07 format.
-
----
-
-## classify:ontology
-
-Validates that every proposed class name has an entry in the ontology map. Proposals with unknown class names are annotated with a `__validation__` sentinel.
-
-Config namespace is `ontologyClassifier` (not `ontology` — that key is reserved for `targets.<id>.ontology.engine`):
-
-```json
-"ontologyClassifier": {
-  "classes": {
-    "feat":  "https://squashage.dev/vocabulary/aonprd#Feat",
-    "spell": "https://squashage.dev/vocabulary/aonprd#Spell"
+{
+  "discriminator": {
+    "from":     "/_type",
+    "sanitize": "pascalCase",
+    "priority": 80
   }
 }
 ```
 
----
+| Field | Type | Default | Description |
+|---|---|---|---|
+| `from` | string | required | JSON Pointer (RFC 6901) into the record. |
+| `fallback` | string | — | Pointer used when `from` is absent or non-string. |
+| `priority` | number | 50 | Proposal priority; set higher than legacy classifiers to ensure it wins on conflict. |
+| `sanitize` | string | `"verbatim"` | `"verbatim"` uses the value as-is; `"pascalCase"` and `"kebabToPascal"` split on `[-_\s]+` and capitalize each segment. |
 
-## classify:conflict
+When the pointer resolves to a non-empty string, a proposal is emitted with `confidence: 1.0`. When the pointer is absent or non-string, the node outputs `no-match` and legacy classifiers may still produce a proposal.
 
-Picks the winner from all accumulated proposals.
+**Source:** `src/nodes/record/classifiers/DiscriminatorClassifierNode.ts`
+
+## Parallel classifiers (9)
+
+These run concurrently inside `classify-all`. Each writes to its own slot in `state.proposals[<classifier-name>]`, so the writes are race-free. Each classifier's outputs (`proposed` / `no-match`) route to `null` within the parallel placement; the parallel's combined output (`success`) routes forward to the first sequential classifier.
+
+<ClassifierCard
+  name="classify:source"
+  slot="source"
+  placement="parallel"
+  :priority="0"
+  :outputs="['proposed', 'no-match']"
+  engine="Inspects the record's _source block; emits a __source__ metadata marker. Never proposes a class."
+/>
+<ClassifierCard
+  name="classify:url-pattern"
+  slot="urlPattern"
+  placement="parallel"
+  :priority="35"
+  :outputs="['proposed', 'no-match']"
+  engine="Compiled regex over _source.url (priority) or top-level url. Highest-priority matching pattern wins the slot."
+  href="./url-pattern-classifier"
+/>
+<ClassifierCard
+  name="classify:structural"
+  slot="structural"
+  placement="parallel"
+  :priority="10"
+  :outputs="['proposed', 'no-match']"
+  engine="Compiled JSON-pointer predicates over state.input via the Predicate engine."
+/>
+<ClassifierCard
+  name="classify:rules"
+  slot="rules"
+  placement="parallel"
+  :priority="20"
+  :outputs="['proposed', 'no-match']"
+  engine="Full decision-table predicates (equals, in, exists, range, length, regex, all/any composition). Same engine as structural; different config slot."
+/>
+<ClassifierCard
+  name="classify:schema"
+  slot="schemas"
+  placement="parallel"
+  :priority="30"
+  :outputs="['proposed', 'no-match']"
+  engine="Per-class AJV validators loaded from JSON Schema files and compiled via services.ajv."
+/>
+<ClassifierCard
+  name="classify:shacl-shape"
+  slot="shaclShape"
+  placement="parallel"
+  :priority="45"
+  :outputs="['proposed', 'no-match']"
+  engine="SHACL NodeShape ABox validation against record-projected quads. Reads shapes from a Turtle file or services.ontology.shacl()."
+  href="./shacl-shape-classifier"
+/>
+<ClassifierCard
+  name="classify:property-fingerprint"
+  slot="propertyFingerprint"
+  placement="parallel"
+  :priority="32"
+  :outputs="['proposed', 'no-match']"
+  engine="Jaccard similarity between the record's top-level key set and pre-compiled fingerprints. Confidence = the Jaccard score."
+  href="./property-fingerprint-classifier"
+/>
+<ClassifierCard
+  name="classify:winknlp-entities"
+  slot="winknlpEntities"
+  placement="parallel"
+  :priority="28"
+  :outputs="['proposed', 'no-match']"
+  engine="winkNLP custom-entity pattern NER over configured prose fields. Patterns compiled once at construction."
+  href="./winknlp-entities"
+/>
+
+## Sequential post-parallel classifiers (2)
+
+These read every other classifier's proposal, so they cannot run in parallel without race conditions. Order: `classify:ontology` runs first, then `classify:taxonomic-narrowing`.
+
+<ClassifierCard
+  name="classify:ontology"
+  slot="ontologyClassifier"
+  placement="sequential"
+  :priority="0"
+  :outputs="['validated', 'no-match']"
+  engine="Validates every other classifier's className against config.classes. Emits a __validation__ sentinel listing unknown classes."
+/>
+<ClassifierCard
+  name="classify:taxonomic-narrowing"
+  slot="taxonomicNarrowing"
+  placement="sequential"
+  :priority="0"
+  :outputs="['narrowed', 'no-op']"
+  engine="Drops supertype proposals when a more-specific subtype is also present. Uses OWL subClassOf transitive closure built once at construction."
+  href="./taxonomic-narrowing"
+/>
+
+## Conflict resolver
+
+`classify-conflict` runs after the gate (`record-health-gate`) has confirmed at least one non-sentinel proposal exists. It implements the documented resolution algorithm:
+
+1. Filter sentinels (`__source__`, `__validation__`, `__narrowing_applied__`, `unknown`).
+2. If every surviving proposal agrees on a single className → that class wins; engine becomes the comma-joined unique sources.
+3. If multiple classes propose, find the highest priority. Single winner at the top → it wins. Tie → apply `onConflict`:
+   - `quarantine`: bucket `'conflicts'`, exit via the quarantine path.
+   - `pickPriority`: lexicographically first className wins; `candidates` lists all tied classes.
+4. Confidence comes from the winning proposal.
+
+Configure via `targets[].classification.conflict`:
 
 ```json
-"conflict": {
-  "onConflict": "quarantine",
-  "onUnknown":  "quarantine",
+{
+  "onConflict": "pickPriority",
   "evidence":   true
 }
 ```
 
-Resolution order:
-1. `__source__` and `__narrowing_applied__` sentinels are filtered out.
-2. Remaining proposals sorted: `priority` descending, then `className` lexicographic ascending as tiebreak.
-3. If the top two proposals share the same priority → conflict. `onConflict` decides: `quarantine` writes the record to `quarantine/conflicts/<id>.json`; `pickPriority` takes the first one alphabetically.
-4. If no proposals survive → unknown. `onUnknown` decides: `quarantine` writes to `quarantine/unknown/<id>.json`; `skip` drops the record.
-5. Winner is written to `state.classification`.
+`evidence: true` concatenates every contributing proposal's `reasons` into the final `state.classification.reasons`. `evidence: false` keeps only the winner's first reason.
 
-Quarantine is graceful. The build doesn't fail when records land there; exit code stays `0`. Check `graphs/<target>/quarantine/` after a build.
+## Sentinels
 
-**Edge cases**: If structural proposes `feat` at priority 10 and rules proposes `feat` at priority 20, both for the same record, conflict resolution sees one className (feat) with two distinct priorities. The higher-priority rules proposal wins; the structural proposal is superseded, not a conflict. A true conflict happens when structural and rules both fire for different classes at the same priority: `feat` at 20 and `spell` at 20. Then `onConflict` decides whether to quarantine or pick the lexicographically first one (spell).
+| Sentinel | Producer | Meaning |
+|---|---|---|
+| `__source__` | `classify:source` | The record's `_source` block was inspected; preserved in evidence as provenance. |
+| `__validation__` | `classify:ontology` | One or more classifiers proposed a class outside the known map. |
+| `__narrowing_applied__` | `classify:taxonomic-narrowing` | Supertype proposals were dropped in favor of subtypes. |
 
----
+All three are filtered before conflict resolution and preserved in the final `ClassificationEvidence.reasons` array when `conflict.evidence: true`.
 
-## classify:url-pattern
+## See also
 
-See [URL-pattern classifier](./url-pattern-classifier) for full documentation. Summary: evaluates pre-compiled regexes against the record's URL field and emits one proposal per matching pattern. Default priority 35. Config namespace: `urlPattern`.
-
----
-
-## classify:property-fingerprint
-
-See [Property-fingerprint classifier](./property-fingerprint-classifier) for full documentation. Summary: computes Jaccard similarity between the record's property key set and pre-loaded class fingerprints. Default priority 32. Config namespace: `propertyFingerprint`.
-
----
-
-## classify:winknlp-entities
-
-See [winkNLP entities classifier](./winknlp-entities) for full documentation. Summary: runs deterministic pattern-based NER on configured prose fields using winkNLP custom entities. Default priority 28. Config namespace: `winknlpEntities`.
-
----
-
-## classify:shacl-shape
-
-See [SHACL-shape classifier](./shacl-shape-classifier) for full documentation. Summary: validates each record's projected ABox against SHACL NodeShapes. Default priority 45. Config namespace: `shaclShape`.
-
----
-
-## classify:taxonomic-narrowing
-
-See [Taxonomic narrowing](./taxonomic-narrowing) for full documentation. Summary: collapses supertype proposals when a more-specific subtype is also present, using the OWL `subClassOf` transitive closure from the configured TBox. Config namespace: `taxonomicNarrowing`. Place after all proposers, before `classify:conflict`.
-
----
-
-## Predicate language
-
-All structural and rules predicates use JSON Pointer paths (RFC 6901) and a closed operator set defined in `src/schemas/predicate.schema.json`.
-
-Paths:
-- `/field`: top-level field
-- `/nested/field`: nested
-- `/array/0`: array index
-- `~1` escapes `/`, `~0` escapes `~`
-- Empty pointer `""` is rejected
-
-### Operators
-
-| Operator | Shape | Notes |
-|----------|-------|-------|
-| `equals` | `{ path, equals: value }` | Deep structural equality. |
-| `notEquals` | `{ path, notEquals: value }` | Inverse of equals. |
-| `in` | `{ path, in: [value, ...] }` | Value must be in the array. |
-| `notIn` | `{ path, notIn: [value, ...] }` | Value must not be in the array. |
-| `exists` | `{ path, exists: true }` | Path must resolve to a non-null value. |
-| `missing` | `{ path, missing: true }` | Path must not resolve (or resolve to null). |
-| `type` | `{ path, type: 'string'\|'number'\|'boolean'\|'object'\|'array'\|'null' }` | JSON type check. |
-| `regex` | `{ path, regex: '^...$' }` | Anchors required. No flags. |
-| `length` | `{ path, length: { gte?, lte?, eq? } }` | String or array length. |
-| `range` | `{ path, range: { gte?, lte?, gt?, lt? } }` | Finite number comparison. |
-| `all` | `{ all: [Predicate, ...] }` | All must match. |
-| `any` | `{ any: [Predicate, ...] }` | At least one must match. |
-| `not` | `{ not: Predicate }` | Invert. |
-
-### Worked examples
-
-One predicate per operator:
-
-```jsonc
-// equals; exact value match
-{ "path": "/_type", "equals": "feat" }
-
-// notEquals; exclude a value
-{ "path": "/_type", "notEquals": "spell" }
-
-// in; set membership
-{ "path": "/rarity", "in": ["common", "uncommon"] }
-
-// notIn; set exclusion
-{ "path": "/rarity", "notIn": ["rare", "unique"] }
-
-// exists; field present and non-null
-{ "path": "/level", "exists": true }
-
-// missing; field absent or null
-{ "path": "/deprecated", "missing": true }
-
-// type; JSON type
-{ "path": "/level", "type": "number" }
-
-// regex; pattern match (anchors required)
-{ "path": "/url", "regex": "^https://2e\\.aonprd\\.com/Feats\\.aspx" }
-
-// length; string or array length bounds
-{ "path": "/traits", "length": { "gte": 1 } }
-
-// range; numeric range
-{ "path": "/level", "range": { "gte": 1, "lte": 20 } }
-
-// all; conjunction
-{ "all": [
-    { "path": "/_type", "equals": "feat" },
-    { "path": "/level", "type": "number" },
-    { "path": "/rarity", "exists": true }
-] }
-
-// any; disjunction
-{ "any": [
-    { "path": "/_type", "equals": "feat" },
-    { "path": "/_type", "equals": "archetype" }
-] }
-
-// not; negation
-{ "not": { "path": "/_type", "equals": "spell" } }
-```
-
-Composition works to arbitrary depth:
-
-```json
-{
-  "all": [
-    { "path": "/_type", "equals": "feat" },
-    { "any": [
-        { "path": "/level", "range": { "gte": 1, "lte": 10 } },
-        { "path": "/traits", "in": ["legendary"] }
-    ]},
-    { "not": { "path": "/deprecated", "exists": true } }
-  ]
-}
-```
-
-Predicates are compiled once at config load. Runtime evaluation is a single switch over the AST; no interpretation overhead per record.
-
----
-
-## Related
-
-- [Configuration](./configuration); how to wire classifiers in the config
-- [Pipeline](./pipeline); where classification fits in the task queue
-- [Plugins](./plugins); how to author a self-registering pipeline plugin
-- [Context silo](../context-silo); the plugin coordination contract
+- [DAG](./pipeline) — full per-record + run-scope topology.
+- [Taxonomy — upper ontology and parents DSL](./taxonomy) — squashage-core classes, `parents` DSL, and `TaxonomicInheritanceEnricher`.
+- [URL-pattern classifier](./url-pattern-classifier) — config reference.
+- [SHACL-shape classifier](./shacl-shape-classifier) — config reference.
+- [Property-fingerprint classifier](./property-fingerprint-classifier) — config reference.
+- [winkNLP entities classifier](./winknlp-entities) — config reference.
+- [Taxonomic narrowing](./taxonomic-narrowing) — config reference.
+- [Ontology (json-tology)](./ontology) — how to wire an ontology engine for SHACL + narrowing.

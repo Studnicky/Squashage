@@ -37,10 +37,9 @@ const TARGET_SCHEMA = {
   title: 'Squashage Target Config',
   type: 'object',
   additionalProperties: false,
-  required: ['input', 'pipeline', 'output'],
+  required: ['input', 'output'],
   properties: {
     input:          { type: 'string', minLength: 1 },
-    pipeline:       { type: 'array', items: { type: 'string', minLength: 1 }, minItems: 1 },
     output:         { $ref: 'https://squashage.dev/schemas/output.json' },
     graphs:         { type: 'object', additionalProperties: { type: 'string', format: 'uri' } },
     ontology: {
@@ -151,10 +150,9 @@ const TARGET_SCHEMA = {
         conflict: {
           type: 'object',
           additionalProperties: false,
-          required: ['onConflict', 'onUnknown', 'evidence'],
+          required: ['onConflict', 'evidence'],
           properties: {
             onConflict: { type: 'string', enum: ['quarantine', 'pickPriority'] as const },
-            onUnknown:  { type: 'string', enum: ['quarantine', 'skip'] as const },
             evidence:   { type: 'boolean' },
           },
         },
@@ -247,6 +245,17 @@ const TARGET_SCHEMA = {
             },
           },
         },
+        discriminator: {
+          type: 'object',
+          additionalProperties: false,
+          required: ['from'],
+          properties: {
+            from:     { type: 'string', minLength: 1 },
+            fallback: { type: 'string', minLength: 1 },
+            priority: { type: 'integer', minimum: 0 },
+            sanitize: { type: 'string', enum: ['verbatim', 'pascalCase', 'kebabToPascal'] as const },
+          },
+        },
       },
     },
     enrichment: {
@@ -282,6 +291,16 @@ const TARGET_SCHEMA = {
             },
           },
         },
+      },
+    },
+    subjectIri: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['from', 'sanitize'] as const,
+      properties: {
+        from:     { type: 'string', minLength: 1 },
+        sanitize: { type: 'string', enum: ['url-tail', 'url-host-path', 'slug', 'verbatim'] as const },
+        fallback: { type: 'string', minLength: 1 },
       },
     },
     quarantine:     { type: 'object' },
@@ -351,8 +370,6 @@ const _validate: ValidateFunction<object> = ajv.compile(ROOT_SCHEMA);
 export interface TargetConfigInterface {
   /** Path to the input directory or file containing source JSON records. */
   readonly input: string;
-  /** Ordered list of pipeline task names to execute per record. */
-  readonly pipeline: ReadonlyArray<string>;
   /** Resolved output configuration (merged with CLI overrides at runtime). */
   readonly output: OutputConfigInterface;
   /** Named-graph IRIs keyed by lane name (e.g. `{ default: 'https://…' }`). */
@@ -367,6 +384,20 @@ export interface TargetConfigInterface {
   readonly quarantine?: Readonly<Record<string, unknown>> | undefined;
   /** Maximum concurrent pipeline executions (default 1). */
   readonly concurrency?: number | undefined;
+  /**
+   * Subject-IRI derivation policy for this target.
+   *
+   * When absent, subject IRIs are derived from a sha1 hash of
+   * `recordPath:recordLine` (legacy default).
+   */
+  readonly subjectIri?: {
+    /** JSON Pointer into the record to read the candidate IRI value. */
+    readonly from: string;
+    /** Sanitize strategy applied to the resolved string. */
+    readonly sanitize: 'url-tail' | 'url-host-path' | 'slug' | 'verbatim';
+    /** JSON Pointer used when `from` resolves to undefined. */
+    readonly fallback?: string | undefined;
+  } | undefined;
 }
 
 /**

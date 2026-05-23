@@ -1,0 +1,14 @@
+{
+  "$id": "https://noocodec.dev/squashage/core/Reference.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Reference",
+  "type": "object",
+  "allOf": [
+    { "$ref": "https://noocodec.dev/squashage/core/Thing.schema.json" }
+  ],
+  "properties": {
+    "href": { "$ref": "https://noocodec.dev/squashage/core/primitives/IriString.schema.json" }
+  },
+  "additionalProperties": true,
+  "description": "An IRI-promoted cross-reference between entities. Used when a field value needs to become an edge in the graph rather than a literal."
+}

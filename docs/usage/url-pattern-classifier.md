@@ -1,150 +1,51 @@
 ---
 layout: doc
 title: URL-pattern classifier
-description: classify:url-pattern evaluates pre-compiled regexes against each record's URL field. The strongest classifier for scraped data — a /Feats.aspx path is unambiguous where property structure is not.
+description: classify:url-pattern evaluates pre-compiled regexes against each record's URL field and emits one proposal per matching pattern.
 ---
 
 # URL-pattern classifier
 
-The `classify:url-pattern` task is a deterministic classifier that evaluates pre-compiled regular expressions against each record's URL field and emits one proposal per matching pattern. For scraped data, the URL is often the strongest available type signal -- a `/Feats.aspx` path is unambiguous in a way that property structure alone cannot be. This engine promotes that signal to an explicit, configurable surface.
+`classify:url-pattern` evaluates regular expressions against each record's URL field. For scraped data, the URL is often the strongest available type signal — a `/Feats.aspx` path is unambiguous in a way property structure alone cannot be.
 
-## When to use URL-pattern classification
+Regexes are compiled once in the node's constructor; the per-record hot path is `regex.test(url)` against the frozen compiled array.
 
-| Engine | Best for | Signal strength |
-|--------|----------|-----------------|
-| `classify:structural` | Type-discriminator fields (`_type`, `kind`) | Very high when field is present |
-| `classify:schema` | JSON Schema property validation (AJV) | High, but schema must be manually maintained |
-| `classify:url-pattern` | URL path as a class discriminator | Very high for scraped data with consistent URL patterns |
-| `classify:rules` | Complex multi-field compound predicates | High for narrow conditions; brittle at scale |
+## URL field resolution
 
-Choose `classify:url-pattern` when:
+Resolved in priority order:
 
-- You are processing scraped records where the page URL reliably identifies the record type (e.g., `/Feats.aspx`, `/Spells.aspx`).
-- You want to capture type information that is not present in the JSON record body itself.
-- URL patterns are stable across your data corpus and change only with schema-breaking upstream updates.
+1. `_source.url` (squashage-enriched form).
+2. Top-level `url` (raw scrape form).
 
-The default priority (35) places URL-pattern proposals below schema classifier proposals (priority 30 is a common baseline) but at a corroborating tier. Adjust `priority` in config to change how the ConflictResolver weighs this signal against others.
+When neither field exists or both are empty strings, the classifier emits no proposal and routes `no-match`.
 
-## State machine
+## Config slot
 
-```
-                  +----------------------------------------------+
-                  |  UrlPatternClassifier.execute(state)          |
-                  +--------------------+--------------------------+
-                                       |
-               No _source.url AND no top-level url?
-                                       |  YES
-                                       v
-                           next()  [no proposal]
-                                       |  NO
-                                       v
-                    url = _source.url ?? input.url
-                                       |
-                    +------------------v------------------+
-                    |  For each compiled pattern (frozen) |
-                    +------------------+------------------+
-                                       |
-                    +------------------v------------------+
-                    |  pattern.regex.test(url)?           |
-                    +------------------+------------------+
-                               NO |   | YES
-                                  |   v
-                                  | emit proposal {
-                                  |   className, priority,
-                                  |   engine: 'url-pattern',
-                                  |   reasons: ['url-pattern: <src>', 'url=<url>']
-                                  | }
-                                  |   |
-                    +--------------+--+
-                                       |
-                       (more patterns to evaluate?)
-                                       |
-                                       v
-                              next()
-```
-
-Regex instances are compiled once at construction time in `UrlPatternClassifier.create(config)`. The hot per-record path performs only `regex.test(url)` calls against the frozen compiled-pattern array -- no string interpolation, no allocation beyond the proposal list.
-
-## Plugin contract
-
-`classify:url-pattern` is a self-registering silo plugin. It installs:
-
-- An `onRunStart` lifecycle hook (registered via `TaskRegistry.registerHook`) that reads `ctx.config['urlPattern']`, validates it via `ctx.ajv.compile(urlPatternConfigSchema)`, compiles all `match` strings into `RegExp` instances, and caches the compiled array keyed by `ctx.target`. When `ctx.config['urlPattern']` is absent the hook is a no-op.
-- A per-record task (registered via `TaskRegistry.register` with `{ proposesClass: true }`) that reads from the module-private cache.
-
-The plugin declares `proposesClass: true`, so the orchestrator counts it when asserting that `classify:conflict` is registered.
-
-See [Context silo](../context-silo) for the full plugin coordination protocol.
-
-## Config schema
-
-The config namespace is `urlPattern` at the top level of the target config (not under a `classification` wrapper):
+Under `targets[].classification.urlPattern`:
 
 ```json
 {
-  "urlPattern": {
-    "patterns": [
-      {
-        "className": "feat",
-        "match":     "/Feats\\.aspx",
-        "priority":  35
-      }
-    ]
-  }
-}
-```
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `patterns` | array | Yes | One or more pattern entries. At least one is required. |
-| `patterns[].className` | string | Yes | Ontology class id to propose when the pattern matches. |
-| `patterns[].match` | string | Yes | Regex source string. Compiled once at config load via `new RegExp(match)`. |
-| `patterns[].priority` | integer | No (default: 35) | Numeric priority written onto every proposal emitted by this pattern. |
-
-### Worked example: aonprd feat and spell patterns
-
-```jsonc
-{
-  "targets": {
-    "aonprd": {
-      "pipeline": [
-        "json:read",
-        "classify:source",
-        "classify:url-pattern",
-        "classify:schema",
-        "classify:ontology",
-        "classify:conflict",
-        "aonprd:squash",
-        "rdfjs:finalize"
-      ],
-      "source": true,
-      "urlPattern": {
-        "patterns": [
-          { "className": "feat",  "match": "/Feats\\.aspx",  "priority": 35 },
-          { "className": "spell", "match": "/Spells\\.aspx", "priority": 35 }
-        ]
-      },
-      "schemas": [
-        { "className": "feat",  "priority": 30, "schemaPath": "./schemas/feat.schema.json" },
-        { "className": "spell", "priority": 30, "schemaPath": "./schemas/spell.schema.json" }
-      ],
-      "ontologyClassifier": {
-        "classes": {
-          "feat":  "https://squashage.dev/vocabulary/aonprd#Feat",
-          "spell": "https://squashage.dev/vocabulary/aonprd#Spell"
-        }
-      },
-      "conflict": {
-        "onConflict": "quarantine",
-        "onUnknown":  "quarantine",
-        "evidence":   true
-      }
+  "classification": {
+    "urlPattern": {
+      "patterns": [
+        { "className": "feat",  "match": "/Feats\\.aspx",  "priority": 35 },
+        { "className": "spell", "match": "/Spells\\.aspx", "priority": 35 }
+      ]
     }
   }
 }
 ```
 
-A record with `_source.url: "https://2e.aonprd.com/Feats.aspx?ID=750"` produces:
+| Field | Type | Required | Default | Notes |
+|---|---|---|---|---|
+| `patterns` | array, min 1 | yes | | One or more pattern entries. |
+| `patterns[].className` | string | yes | | Ontology class id proposed when the pattern matches. |
+| `patterns[].match` | string | yes | | Regex source. Compiled via `new RegExp(match)` at construction. |
+| `patterns[].priority` | integer | no | `35` | Numeric priority written onto the emitted proposal. |
+
+## Emitted proposal
+
+The highest-priority matching pattern wins the `state.proposals['classify:url-pattern']` slot. The proposal carries every matched pattern's source in `reasons`:
 
 ```json
 {
@@ -153,41 +54,20 @@ A record with `_source.url: "https://2e.aonprd.com/Feats.aspx?ID=750"` produces:
   "priority":   35,
   "confidence": 1,
   "reasons": [
-    "url-pattern: /Feats\\.aspx",
+    "engine=url-pattern,regex=/Feats\\.aspx → feat",
     "url=https://2e.aonprd.com/Feats.aspx?ID=750"
   ]
 }
 ```
 
-## URL field resolution
-
-The classifier looks for the URL in two places, in priority order:
-
-1. `_source.url` (squashage-enriched form, populated by the scraper plugin).
-2. Top-level `url` field (raw scrape form, present when the scraper did not embed a `_source` block).
-
-When `_source` is present but has no `url` field, the classifier falls back to the top-level `url`. When neither is present (or both are empty strings), no proposal is emitted and the record passes through to the next task.
-
 ## Edge cases
 
-### Missing URL field
+- **Missing URL field.** Returns `no-match`; no proposal emitted. Other classifiers may still produce one.
+- **Invalid regex.** Construction throws synchronously, naming the zero-based pattern index. The pipeline never starts.
+- **Multiple matches.** All matched patterns appear in `reasons`; the highest-priority className wins.
+- **Non-string URL fields.** Skipped silently; falls through to the next field (or `no-match` if both are missing).
 
-Records without `_source.url` and without a top-level `url` field receive no URL-pattern proposals. The record continues through the pipeline; other classifiers (structural, schema, rules) may still produce proposals. If no classifier produces any proposal, `classify:conflict` applies `onUnknown` policy.
+## See also
 
-### Invalid regex at construction
-
-If any `match` string in the config is not a valid regular-expression source, `UrlPatternClassifier.create()` throws an `OutputConfigError` at startup (before any records are processed). The error message names the zero-based pattern index:
-
-```
-classify:url-pattern: invalid regex at patterns[1].match "[invalid(": ...
-```
-
-This is intentional: invalid regex patterns indicate a config error, not a per-record failure. The pipeline never starts.
-
-### Ambiguous URL matching multiple patterns
-
-A URL that matches two or more patterns produces multiple proposals -- one per matching pattern. The `classify:conflict` resolver selects the winner based on priority. When two patterns share the same `priority` and both match, the conflict resolver applies `onConflict` policy (`pickPriority` selects the first by insertion order; `quarantine` writes the record to the conflicts bucket).
-
-### Non-string URL fields
-
-If `_source.url` or top-level `url` exists but is not a string (e.g., `null`, a number, or an object), the classifier skips that field and moves to the fallback. A non-string value in both positions is treated the same as an absent URL -- no proposal is emitted.
+- [Classifier cascade](./classifier-cascade) — full classifier set + conflict resolution.
+- [Configuration](./configuration) — every config slot.

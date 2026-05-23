@@ -68,6 +68,18 @@ data
 dist/
 # Top-level output/ directory (run artifacts); src/output/ is source code and is tracked.
 /output/
+
+# Pipeline + viz outputs (gigabytes of N-Quads + per-class JSON chunks).
+# Reproduce by re-running the pipeline + viz CLI.
+/graphs/
+/graphs.partial/
+/viz/
+/plugins/*/schemas/inferred/
+/plugins/*/schemas/primitives/
+/plugins/*/schemas/objects/
+
+# Scratch debug scripts (one-off conversions, ad-hoc tests).
+/scripts/test-*.mjs
 # Example output files are committed as documentation of expected output shape
 !examples/**/output/
 !examples/**/output/**

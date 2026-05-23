@@ -1,0 +1,15 @@
+{
+  "$id": "https://noocodec.dev/squashage/core/ContentEntry.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ContentEntry",
+  "type": "object",
+  "allOf": [
+    { "$ref": "https://noocodec.dev/squashage/core/NamedThing.schema.json" }
+  ],
+  "properties": {
+    "description": { "type": "string" },
+    "rarity":      { "type": "string" }
+  },
+  "additionalProperties": true,
+  "description": "Canonical superclass for catalog-style records. Inherits NamedThing (name → rdfs:label) and Provenance (source → dct:source)."
+}

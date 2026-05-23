@@ -1,0 +1,15 @@
+{
+  "$id": "https://noocodec.dev/squashage/core/NamedThing.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "NamedThing",
+  "type": "object",
+  "allOf": [
+    { "$ref": "https://noocodec.dev/squashage/core/Thing.schema.json" }
+  ],
+  "properties": {
+    "name": { "type": "string" }
+  },
+  "x-squashage-rdfs-label": "/name",
+  "additionalProperties": true,
+  "description": "A Thing that carries a human-readable name. The name property is bound to rdfs:label."
+}

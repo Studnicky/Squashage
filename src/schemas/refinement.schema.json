@@ -1,0 +1,160 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://squashage.dev/schemas/refinement.schema.json",
+  "title": "Squashage Refinement DSL",
+  "description": "A .refine.json document that the RefinementApplier applies to a draft schema to produce a final blessed schema.",
+  "type": "object",
+  "required": ["$schema", "appliesTo"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "const": "https://squashage.dev/schemas/refinement.schema.json"
+    },
+    "appliesTo": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The className this refinement targets (must match the draft's x-squashage-class basename)."
+    },
+    "rename": {
+      "type": "object",
+      "description": "JSON Pointer → new property name. Renames properties in the output schema.",
+      "additionalProperties": { "type": "string", "minLength": 1 }
+    },
+    "promoteIri": {
+      "type": "array",
+      "description": "JSON Pointer paths for properties to mark as IRI references (sets x-squashage-iri-promotion: true and format: 'iri').",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "closedEnum": {
+      "type": "array",
+      "description": "Property names to mark as closed enums (x-squashage-closed-enum: true).",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "openVocabulary": {
+      "type": "array",
+      "description": "Property names to mark as open vocabulary (x-squashage-open-vocab: true; removes any enum).",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "rdfsLabel": {
+      "type": "string",
+      "minLength": 1,
+      "description": "JSON Pointer to the property whose value is the rdfs:label (sets top-level x-squashage-rdfs-label)."
+    },
+    "rdfsComment": {
+      "type": "string",
+      "minLength": 1,
+      "description": "JSON Pointer to the property whose value is the rdfs:comment (sets top-level x-squashage-rdfs-comment)."
+    },
+    "range": {
+      "type": "object",
+      "description": "Property name → range class name override (sets x-squashage-range on the property).",
+      "additionalProperties": { "type": "string", "minLength": 1 }
+    },
+    "drop": {
+      "type": "array",
+      "description": "Property paths to drop entirely from the schema.",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "subjectIriPolicy": {
+      "type": "object",
+      "description": "Per-class subject-IRI override (consumed by SubjectIriPolicy.withOverride in Phase 2).",
+      "required": ["from", "sanitize"],
+      "additionalProperties": false,
+      "properties": {
+        "from": {
+          "type": "string",
+          "minLength": 1,
+          "description": "JSON Pointer into the record instance to read the candidate IRI value."
+        },
+        "sanitize": {
+          "type": "string",
+          "enum": ["url-tail", "url-host-path", "slug", "verbatim"],
+          "description": "Sanitize strategy applied to the resolved string."
+        },
+        "fallback": {
+          "type": "string",
+          "minLength": 1,
+          "description": "JSON Pointer used when 'from' resolves to undefined."
+        }
+      }
+    },
+    "arrayEnumIri": {
+      "type": "object",
+      "description": "Array property name → range class name. For each element in the array, emits vocab:<arrayProp> vocab:<RangeClass>-<sanitize(value)>. Sets x-squashage-array-enum-iri at schema top level.",
+      "additionalProperties": { "type": "string", "minLength": 1 }
+    },
+    "skolemSubject": {
+      "type": "object",
+      "description": "Field name → sub-resource declaration. When the field is present, mints a skolem IRI at <subject>#<fragment>, asserts rdf:type vocab:<type>, and emits one data triple per declared property. Sets x-squashage-skolem-subject at schema top level.",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["fragment", "type"],
+        "additionalProperties": false,
+        "properties": {
+          "fragment": {
+            "type": "string",
+            "minLength": 1,
+            "description": "IRI fragment appended to the subject IRI (e.g. 'actionCost')."
+          },
+          "type": {
+            "type": "string",
+            "minLength": 1,
+            "description": "vocab class name for the rdf:type assertion on the skolem subject."
+          },
+          "properties": {
+            "type": "object",
+            "description": "Declared data properties: propName → xsd type (string | integer | number | boolean).",
+            "additionalProperties": {
+              "type": "string",
+              "enum": ["xsd:string", "xsd:integer", "xsd:number", "xsd:boolean"]
+            }
+          }
+        }
+      }
+    },
+    "provenanceIri": {
+      "type": "object",
+      "description": "Emit a provenance triple using a standard vocabulary predicate. Sets x-squashage-provenance at schema top level.",
+      "required": ["predicate", "from"],
+      "additionalProperties": false,
+      "properties": {
+        "predicate": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Predicate IRI or curie (e.g. 'dct:source')."
+        },
+        "from": {
+          "type": "string",
+          "minLength": 1,
+          "description": "JSON Pointer into the record to resolve the provenance URL value."
+        }
+      }
+    },
+    "predicateOverride": {
+      "type": "object",
+      "description": "Field name → override predicate IRI or curie. Replaces vocab:<fieldName> with the override predicate for that field's quad. Sets x-squashage-predicate-override at schema top level.",
+      "additionalProperties": { "type": "string", "minLength": 1 }
+    },
+    "inverseOf": {
+      "type": "object",
+      "description": "Forward property name → inverse property name. For every triple emitting vocab:<forwardProp> <object>, also emits <object> vocab:<inverseProp> <subject>. Sets x-squashage-inverse-of at schema top level.",
+      "additionalProperties": { "type": "string", "minLength": 1 }
+    },
+    "parents": {
+      "type": "array",
+      "description": "Parent class names. Each entry becomes an allOf: [{ $ref }] entry pointing at <parentsBase or derived base>/<ClassName>.schema.json.",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "parentsBase": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Override the base URL used to build $ref paths for parent classes. When absent, derived from the draft's $id by stripping /inferred/<leaf>."
+    }
+  }
+}

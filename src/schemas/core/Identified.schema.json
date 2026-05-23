@@ -1,0 +1,14 @@
+{
+  "$id": "https://noocodec.dev/squashage/core/Identified.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Identified",
+  "type": "object",
+  "allOf": [
+    { "$ref": "https://noocodec.dev/squashage/core/Thing.schema.json" }
+  ],
+  "properties": {
+    "id": { "type": "string" }
+  },
+  "additionalProperties": true,
+  "description": "A Thing that carries a stable identifier independent of the subject IRI. Used for entities with their own canonical ID strings."
+}

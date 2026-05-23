@@ -1,12 +1,12 @@
 ---
 layout: doc
 title: Getting Started
-description: Install Squashage from source, run the Pathfinder AONPRD demo pipeline, and open the self-contained cytoscape graph in any browser. No npm package yet.
+description: Install Squashage from source, run the Pathfinder AONPRD demo, and open the self-contained interactive graph in any browser.
 ---
 
 # Getting Started
 
-Squashage is not on npm yet. Clone the repo, install, and build.
+Squashage is not on npm yet. Clone, install, build.
 
 ## Install
 
@@ -17,46 +17,53 @@ npm install
 npm run build
 ```
 
-## Run against the Pathfinder fixture
+## Run a build
 
-The AONPRD fixture lives under `tests/e2e/aonprd/`. To run the full demo
-build (pipeline + cytoscape render):
-
-```bash
-npm run viz:demo
-```
-
-This writes two files:
-
-- `docs/examples/aonprd/aonprd.jsonld`: the raw JSON-LD output
-- `docs/examples/aonprd/aonprd.html`: the self-contained interactive graph
-
-Open `aonprd.html` in any browser. No network required.
-
-## Render any JSON-LD output
+The CLI binary is `squashage-dag`:
 
 ```bash
-squashage viz \
-  --in ./graphs/mybuild.jsonld \
-  --out mybuild.html \
-  --title "My Graph"
-```
-
-## Run a build from config
-
-```bash
-squashage build \
+npx squashage-dag build \
   --target aonprd \
-  --config squashage.config.json \
-  --in ./output/aonprd
+  --config squashage.config.json
 ```
 
-Copy `squashage.config.example.json` as a starting point. The unprefixed
-file is gitignored.
+Or invoke it directly during development:
+
+```bash
+node --import tsx src/cli/dagonizerCli.ts build \
+  --target aonprd \
+  --config squashage.config.json
+```
+
+Three files land in `./graphs/<target>/`:
+
+| File | What's in it |
+|---|---|
+| `<output.path>` | the success graph |
+| `<output.path-stem>.prov.<ext>` | PROV-O activity quads, one `prov:Activity` per node |
+| `quarantine/<bucket>/<id>.json` | one file per failed record (`unknown`, `conflicts`, `projection`, `output`) |
+
+## Build a config
+
+Copy `squashage.config.example.json` as a starting point. The unprefixed file is gitignored.
+
+The shape is described in [Configuration](./usage/configuration).
+
+## Render the JSON-LD as a graph
+
+```bash
+npx squashage-dag viz \
+  --in ./graphs/aonprd.jsonld \
+  --out aonprd
+```
+
+Writes a chunked WebGL graph (sigma + ForceAtlas2) to `./aonprd/` next to the input. Open `aonprd.html` in any browser.
 
 ## Where to look next
 
-- [Architecture](./architecture.md); pipeline phases, package boundaries, output contract
-- [Classifier engines](./classification-engines.md); the six task classes, the predicate language, what was considered and rejected
-- [Configuration](./usage/configuration); full config schema walkthrough
-- [Classifier engines](./classification-engines); the six task classes and the predicate language
+- [Walk-through](./walk-through) — a record's full journey through the DAG.
+- [DAG](./usage/pipeline) — the run-scope + per-record DAGs in full.
+- [Configuration](./usage/configuration) — every config slot.
+- [Classifier cascade](./usage/classifier-cascade) — the ten classifiers + the conflict resolver.
+- [Plugins](./usage/plugins) — how to ship a target-specific squash node.
+- [Architecture](./architecture) — module map + class lineage.

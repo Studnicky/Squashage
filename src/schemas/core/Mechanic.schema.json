@@ -1,0 +1,14 @@
+{
+  "$id": "https://noocodec.dev/squashage/core/Mechanic.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Mechanic",
+  "type": "object",
+  "allOf": [
+    { "$ref": "https://noocodec.dev/squashage/core/Thing.schema.json" }
+  ],
+  "properties": {
+    "effect": { "type": "string" }
+  },
+  "additionalProperties": true,
+  "description": "A rules-text-bearing structure. Used for action mechanics, monster abilities, and other game rules that carry effect text."
+}

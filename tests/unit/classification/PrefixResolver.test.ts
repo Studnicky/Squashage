@@ -39,7 +39,6 @@ function buildTargetConfig(
 ): TargetConfigInterface {
   return {
     input:    './data',
-    pipeline: ['json:read'],
     output:   { kind: 'file', path: './out.ttl' },
     ontology: ontology as Readonly<Record<string, unknown>> | undefined,
   };

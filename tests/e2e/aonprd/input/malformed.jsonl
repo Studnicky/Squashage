@@ -1,2 +1,0 @@
-{"_type":"action","url":"https://2e.aonprd.com/Actions.aspx?ID=89","name":"Strike","rarity":"common","action_cost":"one-action","traits":["attack"],"_source":{"target":"aonprd","path":"malformed.jsonl","url":"https://2e.aonprd.com/Actions.aspx?ID=89","plugin":"aonprd:parse"}}
-{ this is NOT valid json !!!

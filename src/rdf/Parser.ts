@@ -23,7 +23,10 @@
  * @since 2.2.0
  */
 
-import { Parser as N3Parser } from 'n3';
+import { createReadStream } from 'node:fs';
+import type { Readable } from 'node:stream';
+
+import { Parser as N3Parser, StreamParser as N3StreamParser } from 'n3';
 import jsonld from 'jsonld';
 
 import type { Quad } from '@rdfjs/types';
@@ -177,6 +180,43 @@ export class Parser {
       return Parser.parseJsonLd(text, options);
     }
     return Parser.parseN3(text, options);
+  }
+
+  /**
+   * Stream-parse an N3-family file (Turtle, TriG, N-Triples, N-Quads) from disk.
+   *
+   * Yields each parsed `@rdfjs/types` Quad as it arrives — bounded memory
+   * regardless of file size. Quads are emitted in file order. Throws if the
+   * file is missing or syntactically invalid.
+   *
+   * JSON-LD is not streamable through this API; use {@link parse} (or upstream
+   * a streaming JSON-LD parser) for `.jsonld` inputs.
+   *
+   * @param path   - Filesystem path to the source file.
+   * @param format - RDF format. Must be one of `'turtle' | 'trig' | 'ntriples' | 'nquads'`.
+   */
+  public static async *streamFile(
+    path:   string,
+    format: Exclude<RDFFormat, 'jsonld'>,
+  ): AsyncGenerator<Quad, void, void> {
+    const fileStream = createReadStream(path, { encoding: 'utf8' });
+    yield* Parser.streamReadable(fileStream, format);
+  }
+
+  /**
+   * Stream-parse any text-emitting `Readable` (network, pipe, fs) into Quads.
+   * Same constraints as {@link streamFile}.
+   */
+  public static async *streamReadable(
+    stream: Readable,
+    format: Exclude<RDFFormat, 'jsonld'>,
+  ): AsyncGenerator<Quad, void, void> {
+    const n3Format  = N3_FORMAT[format];
+    const parser    = new N3StreamParser({ format: n3Format });
+    const quadStream = stream.pipe(parser);
+    for await (const q of quadStream as AsyncIterable<Quad>) {
+      yield q;
+    }
   }
 
   // ---------------------------------------------------------------------------

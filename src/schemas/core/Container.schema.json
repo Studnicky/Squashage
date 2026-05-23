@@ -1,0 +1,17 @@
+{
+  "$id": "https://noocodec.dev/squashage/core/Container.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Container",
+  "type": "object",
+  "allOf": [
+    { "$ref": "https://noocodec.dev/squashage/core/Thing.schema.json" }
+  ],
+  "properties": {
+    "members": {
+      "type": "array",
+      "items": { "$ref": "https://noocodec.dev/squashage/core/Reference.schema.json" }
+    }
+  },
+  "additionalProperties": true,
+  "description": "A collection that holds references to its member entities. Used for MonsterFamily, Class features, and other aggregation structures."
+}

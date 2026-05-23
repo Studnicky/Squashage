@@ -7,16 +7,6 @@
     "your-target": {
       "input": "./output/your-target",
       "concurrency": 4,
-      "pipeline": [
-        "json:read",
-        "classify:source",
-        "classify:structural",
-        "classify:rules",
-        "classify:ontology",
-        "classify:conflict",
-        "your-target:squash",
-        "rdfjs:finalize"
-      ],
       "graphs": {
         "default": "https://example.com/graph/default"
       },
@@ -26,8 +16,13 @@
           {
             "className": "YourClass",
             "priority": 10,
-            "predicate": { "path": "/_type", "equals": "your-type" },
-            "reasons": ["_type=your-type (structural)"]
+            "predicate": {
+              "path": "/_type",
+              "equals": "your-type"
+            },
+            "reasons": [
+              "_type=your-type (structural)"
+            ]
           }
         ],
         "rules": [
@@ -36,11 +31,20 @@
             "priority": 20,
             "predicate": {
               "all": [
-                { "path": "/_type", "equals": "your-type" },
-                { "path": "/id", "exists": true }
+                {
+                  "path": "/_type",
+                  "equals": "your-type"
+                },
+                {
+                  "path": "/id",
+                  "exists": true
+                }
               ]
             },
-            "reasons": ["_type=your-type", "id present"]
+            "reasons": [
+              "_type=your-type",
+              "id present"
+            ]
           }
         ],
         "ontology": {
@@ -50,7 +54,6 @@
         },
         "conflict": {
           "onConflict": "quarantine",
-          "onUnknown": "quarantine",
           "evidence": true
         }
       },
@@ -65,12 +68,6 @@
     },
     "your-target-bucketed": {
       "input": "./output/your-target",
-      "pipeline": [
-        "json:read",
-        "your-target:squash",
-        "rdfjs:finalize",
-        "catalog:emit"
-      ],
       "output": {
         "kind": "file",
         "path": "./graphs/your-target",

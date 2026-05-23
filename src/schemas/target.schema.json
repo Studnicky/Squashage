@@ -4,14 +4,9 @@
   "title": "Squashage Target Config",
   "type": "object",
   "additionalProperties": false,
-  "required": ["input", "pipeline", "output"],
+  "required": ["input", "output"],
   "properties": {
     "input":          { "type": "string", "minLength": 1 },
-    "pipeline":       {
-      "type": "array",
-      "items": { "type": "string", "minLength": 1 },
-      "minItems": 1
-    },
     "output":         { "$ref": "https://squashage.dev/schemas/output.json" },
     "graphs":         {
       "type": "object",
@@ -85,10 +80,9 @@
         "conflict": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["onConflict", "onUnknown", "evidence"],
+          "required": ["onConflict", "evidence"],
           "properties": {
             "onConflict": { "type": "string", "enum": ["quarantine", "pickPriority"] },
-            "onUnknown":  { "type": "string", "enum": ["quarantine", "skip"] },
             "evidence":   { "type": "boolean" }
           }
         },

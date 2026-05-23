@@ -1,196 +1,85 @@
 ---
 layout: doc
 title: SHACL-shape classifier
-description: classify:shacl-shape validates each record's projected ABox against SHACL NodeShapes and emits one proposal per conforming shape. Sits at priority 45 between schema (30) and ontology (50) classifiers.
+description: classify:shacl-shape projects each record into a SHACL-validatable ABox and emits one proposal per conforming NodeShape.
 ---
 
 # SHACL-shape classifier
 
-The `classify:shacl-shape` task is a deterministic classifier that validates each record's projected ABox against SHACL shapes and emits one proposal per conforming `sh:NodeShape`. It sits between the schema classifier (priority 30) and the ontology classifier (priority 50) in the standard cascade, with a default priority of 45.
+`classify:shacl-shape` validates each record's projected ABox against SHACL NodeShapes. Each shape with `sh:targetClass` or an ontology-derived class identity becomes a class-vote.
 
-## Rules vs schemas vs shapes: when to pick which
+Shapes are loaded once at construction time (Turtle file or `services.ontology.shacl()`); the per-record path builds a tiny per-shape data graph via `sh:path` projection and runs `rdf-validate-shacl` over it.
 
-| Engine | Best for | Signal strength |
-|--------|----------|-----------------|
-| `classify:structural` | Type-discriminator fields (`_type`, `kind`) | Very high when a field is present |
-| `classify:schema` | JSON Schema property validation (AJV) | High, but schema must be manually maintained |
-| `classify:shacl-shape` | Semantic shape conformance via SHACL NodeShapes | High; shapes can be auto-derived from json-tology |
-| `classify:ontology` | Class IRI lookup by derived or mapped class names | Medium; confirms class membership, does not classify by structure |
-| `classify:rules` | Complex multi-field compound predicates | High for narrow conditions; brittle at scale |
+## Config slot
 
-Choose `classify:shacl-shape` when:
-
-- You are already using `engine: "json-tology"` and want auto-emitted shapes to drive classification without writing rules.
-- You have existing SHACL shape files from an ontology governance workflow and want to reuse them as a classification signal.
-- Property-cardinality constraints and `sh:datatype` checks are strong classification signals for your data.
-
-## State machine
-
-```
-                  ┌─────────────────────────────────────────┐
-                  │  ShaclShapeClassifier.execute(state)     │
-                  └───────────────────┬─────────────────────┘
-                                      │
-                shapesFrom === 'ontology' AND jt absent?
-                                      │ YES
-                                      v
-                           next()  [no-op]
-                                      │ NO
-                                      v
-                        Load shapes (jt.shacl() or file)
-                                      │
-                        ┌─────────────v───────────────┐
-                        │   extractNodeShapes(quads)  │
-                        └─────────────┬───────────────┘
-                                      │
-                        For each NodeShape with targetClass:
-                                      │
-                        ┌─────────────v───────────────┐
-                        │  resolveClassName(shape,jt)  │
-                        └─────────────┬───────────────┘
-                                      │
-                        ┌─────────────v───────────────┐
-                        │  buildValidationPair(shape,  │
-                        │    record)                  │
-                        └─────────────┬───────────────┘
-                                      │
-                        ┌─────────────v───────────────┐
-                        │  ShaclGate.run(shapes, data) │
-                        └─────────────┬───────────────┘
-                                      │
-                     report.conforms? │ YES
-                                      v
-                         emit proposal { className, priority:45 }
-                                      │
-                                      v
-                           next()
-```
-
-**ABox projection** uses the shape's `sh:path` property IRIs as predicates. For each path IRI, the classifier looks for a record property whose key matches the last fragment or path segment of the IRI (e.g., `https://squashage.dev/schemas/aonprd/feat#name` maps to `record["name"]`). A synthetic `sh:targetNode` is injected when the shape lacks `sh:targetClass`.
-
-## Plugin contract
-
-`classify:shacl-shape` is a self-registering silo plugin. It installs:
-
-- An `onRunStart` lifecycle hook (registered via `TaskRegistry.registerHook`) that reads `ctx.config['shaclShape']`, validates it via `ctx.ajv.compile(shaclShapeConfigSchema)`, and caches compiled startup state keyed by `ctx.target`. When `ctx.config['shaclShape']` is absent the hook is a no-op.
-- A per-record task (registered via `TaskRegistry.register` with `{ proposesClass: true }`) that reads from the module-private cache.
-
-The plugin declares `proposesClass: true`, so the orchestrator counts it when asserting that `classify:conflict` is registered.
-
-See [Context silo](../context-silo) for the full plugin coordination protocol.
-
-## Config schema
-
-The config namespace is `shaclShape` at the top level of the target config (not under a `classification` wrapper):
+Under `targets[].classification.shaclShape`:
 
 ```json
 {
-  "shaclShape": {
-    "shapesFrom": "ontology",
-    "priority": 45
-  }
-}
-```
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `shapesFrom` | `"ontology"` or string | Yes | Shape source. `"ontology"` uses auto-emitted shapes from json-tology. Any other value is treated as a filesystem path to a Turtle shape file. |
-| `priority` | integer | No (default: 45) | Numeric priority written onto every proposal. |
-
-### Worked example: ontology mode
-
-```jsonc
-{
-  "targets": {
-    "aonprd": {
-      "pipeline": [
-        "json:read",
-        "classify:shacl-shape",
-        "classify:schema",
-        "classify:ontology",
-        "classify:conflict",
-        "aonprd:squash",
-        "rdfjs:finalize"
-      ],
-      "ontology": {
-        "engine":  "json-tology",
-        "baseIRI": "https://squashage.dev/vocabulary/aonprd",
-        "schemas": [
-          { "schemaPath": "./schemas/feat.schema.json" },
-          { "schemaPath": "./schemas/spell.schema.json" }
-        ]
-      },
-      "shaclShape": {
-        "shapesFrom": "ontology",
-        "priority":   45
-      },
-      "schemas": [
-        { "className": "feat",  "priority": 30, "schemaPath": "./schemas/feat.schema.json" },
-        { "className": "spell", "priority": 30, "schemaPath": "./schemas/spell.schema.json" }
-      ],
-      "ontologyClassifier": {
-        "classes": {
-          "feat":  "https://squashage.dev/vocabulary/aonprd#Feat",
-          "spell": "https://squashage.dev/vocabulary/aonprd#Spell"
-        }
-      },
-      "conflict": {
-        "onConflict": "quarantine",
-        "onUnknown":  "quarantine",
-        "evidence":   true
-      }
+  "classification": {
+    "shaclShape": {
+      "shapesFrom": "ontology",
+      "priority":   45
     }
   }
 }
 ```
 
-### Worked example: file-path mode
+| Field | Type | Required | Default | Notes |
+|---|---|---|---|---|
+| `shapesFrom` | string | yes | | `"ontology"` reads shapes from `services.ontology.shacl()`; any other string is a filesystem path to a Turtle shapes file. |
+| `priority` | integer ≥ 0 | no | `45` | Numeric priority written onto every emitted proposal. |
 
-```jsonc
+## Shape sources
+
+| `shapesFrom` value | Source |
+|---|---|
+| `"ontology"` | `services.ontology.shacl()` — auto-emitted shapes from the json-tology engine. When the ontology is absent, the node returns `no-match` silently. |
+| any other path | Filesystem Turtle file resolved relative to `schemasBase`. Loaded + parsed at construction. |
+
+## Class name resolution
+
+For each NodeShape descriptor:
+
+1. `sh:targetClass` IRI's last fragment/segment, when present.
+2. Ontology mode: look up the class whose schema `$id` matches the NodeShape IRI in `services.ontology.classMap()`.
+3. Fallback: the NodeShape IRI's last fragment/segment.
+
+A shape that resolves no name is skipped.
+
+## ABox projection
+
+For each shape, the classifier builds a tiny data graph centred on a synthetic `urn:record:0` subject:
+
+- When the shape has `sh:targetClass`, an `rdf:type` triple satisfies the focus-node selector.
+- When it doesn't, the shape graph is cloned and a synthetic `sh:targetNode <urn:record:0>` is injected.
+- Each `sh:path` IRI's last fragment/segment becomes the property key; the record's value at that key is emitted as a typed literal (`xsd:integer` / `xsd:decimal` / `xsd:boolean` / plain string).
+
+The validation runs through `ShaclGate` (a thin wrapper over `rdf-validate-shacl`). A conformance result emits one proposal per shape:
+
+```json
 {
-  "shaclShape": {
-    "shapesFrom": "./shacl/aonprd-shapes.ttl",
-    "priority":   45
-  }
+  "source":     "classify:shacl-shape",
+  "className":  "Feat",
+  "priority":   45,
+  "confidence": 1,
+  "reasons": [
+    "shacl:targetClass=https://example.org/vocabulary#Feat",
+    "shacl:conforms=true"
+  ]
 }
 ```
 
-The Turtle file must use `sh:targetClass` on each `sh:NodeShape` for the classifier to derive class names:
-
-```turtle
-@prefix sh:  <http://www.w3.org/ns/shacl#> .
-@prefix aon: <https://squashage.dev/vocabulary/aonprd#> .
-@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
-
-aon:FeatShape a sh:NodeShape ;
-  sh:targetClass aon:Feat ;
-  sh:property [
-    sh:path aon:name ;
-    sh:datatype xsd:string ;
-    sh:minCount 1 ;
-  ] .
-```
+The highest-priority conforming shape wins `state.proposals['classify:shacl-shape']`; reasons from every conforming shape are merged.
 
 ## Edge cases
 
-### Shape with no `sh:targetClass`
+- **Empty shapes graph.** `no-match` for every record.
+- **No `NodeShape` quads.** `no-match` for every record.
+- **Validator throws on a shape.** That shape is silently skipped; remaining shapes still evaluate.
+- **Ontology mode + no ontology.** `no-match` silently — consumers of optional `services.ontology` must no-op when it's absent.
 
-In ontology mode (json-tology), NodeShape IRIs are the schema `$id`s (e.g., `https://squashage.dev/schemas/aonprd/feat`). There is no `sh:targetClass` in auto-emitted shapes. The classifier resolves the class name by looking up the schema `$id` in `jt.classMap()` and uses `sh:targetNode` for focus node selection instead.
+## See also
 
-In file-path mode, shapes without `sh:targetClass` fall back to deriving the class name from the last fragment or path segment of the NodeShape IRI. If the IRI yields an empty segment, the shape is skipped.
-
-### Multi-class records
-
-If a record's properties satisfy multiple shapes simultaneously (e.g., both a `Feat` and a `Spell` shape), the classifier emits one proposal per conforming shape. The `classify:conflict` resolver downstream picks the highest-priority proposal or quarantines the record when configured with `onConflict: "quarantine"`.
-
-### Zero-conformance records
-
-Records that fail every shape receive no SHACL proposal. The record continues through the pipeline; downstream classifiers (schema, ontology, rules) may still produce proposals. If no classifier produces a proposal, `classify:conflict` applies `onUnknown` policy.
-
-### Shape file load failure
-
-When `shapesFrom` is a filesystem path and the file is missing or unreadable, `ShaclShapeClassifier.create()` throws an `OutputConfigError` at startup (before any records are processed). This is intentional: missing shape files indicate a config error, not a per-record failure.
-
-### Shape file parse failure
-
-Malformed Turtle in a shape file causes `Parser.parse()` to reject at startup. The error propagates as an unhandled rejection from the async parsing step and surfaces before the pipeline begins processing records.
+- [Classifier cascade](./classifier-cascade)
+- [Ontology (json-tology)](./ontology) — auto-emits SHACL shapes from schemas.

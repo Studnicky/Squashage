@@ -29,6 +29,9 @@
  * @since 2.2.0
  */
 
+import { createWriteStream } from 'node:fs';
+import { mkdir }             from 'node:fs/promises';
+import { dirname }           from 'node:path';
 import { Writer } from 'n3';
 import jsonld from 'jsonld';
 
@@ -144,6 +147,45 @@ export interface SerializeResultInterface {
 }
 
 // ---------------------------------------------------------------------------
+// Streaming writer
+// ---------------------------------------------------------------------------
+
+/**
+ * Handle returned by {@link Serializer.openStream}.
+ *
+ * @remarks
+ * Provides incremental quad writing to an open file stream and a close
+ * method that resolves once the underlying stream has been fully flushed.
+ * Designed for the streaming output path where individual per-record quad
+ * batches are written to disk as they are produced, avoiding accumulation of
+ * the entire quad set in memory.
+ *
+ * @category RDF
+ * @since 2.3.0
+ * @group Types
+ */
+export interface RecordWriterInterface {
+  /**
+   * Serialize `quads` in the configured format and write them to the stream.
+   *
+   * @param quads - The quad batch to write.  Must not contain JSON-LD format
+   *   quads (JSON-LD requires batch serialization; use `Serializer.serialize`
+   *   for that path).
+   * @returns A Promise that resolves once the data has been accepted by the
+   *   writable stream (i.e. the `write()` call did not return `false`, or the
+   *   `'drain'` event was received if it did).
+   */
+  write(quads: ReadonlyArray<Quad>): Promise<void>;
+
+  /**
+   * Flush the write stream and wait for the `'finish'` event.
+   *
+   * @returns A Promise that resolves when the stream is fully closed.
+   */
+  close(): Promise<void>;
+}
+
+// ---------------------------------------------------------------------------
 // Serializer class
 // ---------------------------------------------------------------------------
 
@@ -242,6 +284,120 @@ export class Serializer {
     }
 
     return Serializer.serializeN3(quads, options, n3Format, format);
+  }
+
+  /**
+   * Opens a writable file stream and returns a {@link RecordWriterInterface}
+   * handle for incremental quad writing.
+   *
+   * @remarks
+   * The parent directory of `path` is created with `{ recursive: true }` if
+   * it does not already exist.  Quads are serialized using the same n3.Writer
+   * logic as {@link Serializer.serialize} for line-oriented formats (Turtle,
+   * TriG, N-Triples, N-Quads).  JSON-LD is not supported on this code path
+   * because it requires batch serialization — callers must check and fall back
+   * to the batched path when `format === 'jsonld'`.
+   *
+   * Each {@link RecordWriterInterface.write} call creates a fresh n3.Writer for
+   * the batch, serializes the quads to a string, and pushes that string to the
+   * underlying `WriteStream`.  This avoids holding all quads in memory while
+   * still producing correct line-oriented output.
+   *
+   * @param path    - Absolute or relative file path to write to.
+   * @param format  - Line-oriented RDF format (turtle, trig, ntriples, nquads).
+   *   Passing `'jsonld'` throws an {@link OutputConfigError} immediately.
+   * @param options - Optional prefix map (forwarded to n3.Writer for Turtle/TriG).
+   * @returns A Promise that resolves to the writer handle once the file has
+   *   been opened (directory created, stream open).
+   * @throws {OutputConfigError} When `format === 'jsonld'` or an unrecognised
+   *   format is requested.
+   *
+   * @example
+   * ```ts
+   * const writer = await Serializer.openStream('./graphs/out.nq', 'nquads');
+   * for (const batch of recordBatches) {
+   *   await writer.write(batch);
+   * }
+   * await writer.close();
+   * ```
+   *
+   * @since 2.3.0
+   */
+  public static async openStream(
+    path:    string,
+    format:  Exclude<RDFFormat, 'jsonld'>,
+    options: { prefixes?: Record<string, string> } = {},
+  ): Promise<RecordWriterInterface> {
+    if ((format as string) === 'jsonld') {
+      throw OutputConfigError.create(
+        'Serializer.openStream does not support JSON-LD — JSON-LD requires batch serialization.',
+        { metadata: { format: format as string, path } },
+      );
+    }
+
+    const n3Format = N3_FORMAT[format];
+    if (n3Format === undefined) {
+      throw OutputConfigError.create(
+        `Unsupported RDF format for streaming: "${format}"`,
+        { metadata: { format: format as string, path } },
+      );
+    }
+
+    await mkdir(dirname(path), { recursive: true });
+
+    const stream = createWriteStream(path, { encoding: 'utf8' });
+
+    // Wait for the stream to be ready (open event) or reject on error.
+    await new Promise<void>((resolve, reject) => {
+      stream.once('open', () => resolve());
+      stream.once('error', (err) => reject(err));
+    });
+
+    const writerOptions: { format: string; prefixes?: Record<string, string> } = {
+      format: n3Format,
+    };
+    if (options.prefixes !== undefined) writerOptions.prefixes = options.prefixes;
+
+    return {
+      async write(quads: ReadonlyArray<Quad>): Promise<void> {
+        if (quads.length === 0) return;
+
+        // Serialize the batch to a string via n3.Writer, then push to the stream.
+        const chunk = await new Promise<string>((resolve, reject) => {
+          const batchOptions: { format: string; prefixes?: Record<string, string> } = {
+            format: n3Format,
+          };
+          // Only emit prefix declarations on first batch; subsequent batches
+          // emit raw lines. We omit prefixes from per-batch writers to avoid
+          // repeated @prefix declarations in N-Quads / line-oriented output.
+          const w = new Writer(batchOptions);
+          for (const quad of quads) {
+            w.addQuad(quad);
+          }
+          w.end((error, result) => {
+            if (error !== null) { reject(error); return; }
+            resolve(result as string);
+          });
+        });
+
+        // Write to the stream, respecting back-pressure.
+        const ok = stream.write(chunk);
+        if (!ok) {
+          await new Promise<void>((resolve, reject) => {
+            stream.once('drain', () => resolve());
+            stream.once('error', (err) => reject(err));
+          });
+        }
+      },
+
+      close(): Promise<void> {
+        return new Promise<void>((resolve, reject) => {
+          stream.once('finish', () => resolve());
+          stream.once('error', (err) => reject(err));
+          stream.end();
+        });
+      },
+    };
   }
 
   // ---------------------------------------------------------------------------

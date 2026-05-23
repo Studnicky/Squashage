@@ -1,0 +1,14 @@
+{
+  "$id": "https://noocodec.dev/squashage/core/Provenance.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Provenance",
+  "type": "object",
+  "allOf": [
+    { "$ref": "https://noocodec.dev/squashage/core/Thing.schema.json" }
+  ],
+  "properties": {
+    "source": { "$ref": "https://noocodec.dev/squashage/core/primitives/IriString.schema.json" }
+  },
+  "additionalProperties": true,
+  "description": "A mixin parent for entities that carry a dct:source IRI. Subclasses that need provenance tracking extend both their primary parent and Provenance."
+}

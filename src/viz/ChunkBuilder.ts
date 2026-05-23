@@ -20,6 +20,7 @@
 import { MultiDirectedGraph } from 'graphology';
 import { createRequire } from 'node:module';
 import { mkdir, writeFile } from 'node:fs/promises';
+import { createWriteStream } from 'node:fs';
 import { resolve, join } from 'node:path';
 
 import type { VizPayloadInterface } from './JsonLdGraph.js';
@@ -355,15 +356,11 @@ export class ChunkBuilder {
       if (chunk.nodes.length === 0 && chunk.edges.length === 0) continue;
 
       const file = `chunks/${chunk.slug}.json`;
-      const data: ChunkInterface = {
-        id:    chunk.id,
-        label: chunk.label,
-        slug:  chunk.slug,
-        color: chunk.color,
-        nodes: chunk.nodes,
-        edges: chunk.edges,
-      };
-      await writeFile(join(outDir, file), JSON.stringify(data), 'utf-8');
+      // Stream-write the chunk JSON so we don't allocate one giant string
+      // for the whole `nodes` + `edges` arrays. Large class chunks (e.g.
+      // 90k Monster nodes) blow past V8's ~512MB string-length cap if we
+      // JSON.stringify the whole object.
+      await ChunkBuilder.#writeChunkStreaming(join(outDir, file), chunk);
 
       const entry: ChunkManifestEntryInterface = {
         id:        chunk.id,
@@ -383,6 +380,42 @@ export class ChunkBuilder {
   }
 
   // ---- Internals ----------------------------------------------------------
+
+  /**
+   * Stream-write a chunk JSON to disk without allocating one giant string for
+   * the whole `nodes` + `edges` arrays. Necessary for chunks past ~500k JSON
+   * chars (V8's string-length cap).
+   */
+  static async #writeChunkStreaming(
+    path:  string,
+    chunk: MutableChunkInterface,
+  ): Promise<void> {
+    const out = createWriteStream(path, { encoding: 'utf-8' });
+    const write = (s: string): Promise<void> => new Promise<void>((resolve, reject) => {
+      if (!out.write(s)) out.once('drain', () => resolve());
+      else resolve();
+      out.once('error', reject);
+    });
+
+    await write('{"id":' + JSON.stringify(chunk.id));
+    await write(',"label":' + JSON.stringify(chunk.label));
+    await write(',"slug":' + JSON.stringify(chunk.slug));
+    await write(',"color":' + JSON.stringify(chunk.color));
+    await write(',"nodes":[');
+    for (let i = 0; i < chunk.nodes.length; i++) {
+      if (i > 0) await write(',');
+      await write(JSON.stringify(chunk.nodes[i]));
+    }
+    await write('],"edges":[');
+    for (let i = 0; i < chunk.edges.length; i++) {
+      if (i > 0) await write(',');
+      await write(JSON.stringify(chunk.edges[i]));
+    }
+    await write(']}');
+    await new Promise<void>((resolve, reject) => {
+      out.end((err?: Error | null) => err ? reject(err) : resolve());
+    });
+  }
 
   static #seededRand(seed: string): number {
     let h = 2166136261 >>> 0;

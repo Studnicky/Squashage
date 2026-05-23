@@ -18,7 +18,7 @@
  * @since 0.1.0
  */
 
-import type { InputSourceInterface }   from '../types/PipelineState.js';
+import type { InputSource as InputSourceInterface } from '../state/schemas/InputSource.js';
 import type { TargetConfigInterface }  from '../config/SquashageConfig.js';
 import { OutputConfigError }           from '../errors/OutputConfigError.js';
 import { Logger }                      from '../modules/logger/logger.js';

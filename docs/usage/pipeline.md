@@ -1,196 +1,226 @@
 ---
 layout: doc
-title: Pipeline
-description: Squashage's ordered async middleware queue — task signature, per-record lifecycle, onRunStart hooks, and how the orchestrator chains tasks through the classification and projection stages.
+title: DAG
+description: Squashage's run-scope and per-record DAGs, built on @noocodex/dagonizer. Lifecycle FSM, async-iterable execution, bounded fan-out, PROV-O observation, memory checkpoint resume.
 ---
 
-# Pipeline
+# DAG
 
-The pipeline is an ordered async middleware queue. Each task receives `(next, state)` and calls `next()` to hand off to the next task. That's the whole mechanism.
+Squashage runs on `@noocodex/dagonizer`. One `SquashageDagonizer` per target invocation; two DAGs registered on it:
+
+- **`squashage:run`** — the run-scope DAG. Walks input, processes every record, finalizes, emits the catalog.
+- **`squashage:record`** — the per-record deep-DAG. Reads one record, classifies it, projects it to RDF, writes provenance.
+
+The run DAG invokes the record DAG once per `RecordLocator` via the `process-all-records` node, which dispatches each record through the same `SquashageDagonizer` instance with a bounded concurrency lifted from `targets[].concurrency`.
+
+## State
+
+Two state classes, both extending `NodeStateBase`:
 
 ```ts
-type TaskFnInterface<TState> = (next: () => Promise<void>, state: TState) => Promise<void>
+class SquashageRunState extends NodeStateBase {
+  locators:     RecordLocator[];        // produced by walk-input
+  results:      RecordSummary[];        // appended by process-all-records
+  target:       string;
+  runStartTime: string;
+}
+
+class SquashageRecordState extends NodeStateBase {
+  source:           InputSource;
+  input:            Readonly<Record<string, unknown>>;  // populated by json-read
+  proposals:        Record<string, ClassificationProposal>; // keyed by classifier name
+  classification:   ClassificationEvidence | null;
+  squashedQuads:    readonly Quad[];     // populated by squash
+  quarantineBucket: 'unknown' | 'conflicts' | 'projection' | 'output' | null;
+  recordPath:       string;
+  recordLine:       number;
+}
 ```
 
-`TState` extends `Record<string, unknown>`. Tasks mutate state directly; the same object reference flows through the entire chain.
+Both implement `snapshotData()` / `restoreData()` so a checkpoint round-trips through `Checkpoint.toJson` / `Checkpoint.restore` cleanly.
 
-## Pipeline vs ConcurrentPipeline
+## Services
 
-Two classes:
-
-- `Pipeline`: runs one record at a time, in order.
-- `ConcurrentPipeline`: runs batches of records concurrently, bounded by `concurrency` from the target config.
-
-The orchestrator picks which one based on `targets[].concurrency`. Default is `1`, which gives sequential `Pipeline` behavior.
-
-**Why batching matters**: A single `Pipeline` executes the full task chain once per record. When `concurrency > 1`, `ConcurrentPipeline` fans the record list across multiple concurrent `pipeline.execute()` calls sharing the same task queue, using a semaphore to cap live executions. This keeps memory footprint bounded while parallelizing I/O-heavy tasks (schema validation, file reads, external lookups). Set `concurrency: 4` to run 4 records through the same pipeline at once; set it to `1` for sequential behavior identical to looping.
-
-**Shared state across concurrent runs**: The underlying `Pipeline` instance is read-only during execution; each concurrent `execute()` call gets its own state closure. However, if you wire a shared HTTP cache, logger, or materialized schema into `context`, all concurrent records see the same instance. This is intentional: caches need to be shared to deduplicate work. Your config responsibility is ensuring any shared resource is thread-safe.
-
-## TaskRegistry
-
-Tasks are registered by name and resolved at pipeline build time. Two modes:
-
-**Static (global default)**: call `TaskRegistry.register('name', fn)` at module load time. The orchestrator picks them up automatically.
-
-**Instance (per-run isolation)**: `new TaskRegistry()` gives an isolated map. Pass it to `new Pipeline(config, registry)`. Tasks registered on the instance don't bleed into other concurrent runs.
+Every dispatcher-scoped dependency rides on the typed `SquashageServices` bag. The bag is eagerly built once at `SquashageRun.forTarget(...)` time — no post-construction mutation, no global state.
 
 ```ts
-import { TaskRegistry } from 'squashage/registry/TaskRegistry';
+interface SquashageServices {
+  readonly logger:       LoggerFactory;
+  readonly ajv:          Ajv;
+  readonly factory:      DataFactory;
+  readonly dataset:      DatasetCore;
+  readonly builder:      GraphBuilder;
+  readonly prefixes:     PrefixResolution;
+  readonly graphs:       Readonly<Record<string, NamedNode>>;
+  readonly iri:          NamespaceBuilder;
+  readonly ontology:     JsonTologyOntology | null;
+  readonly quarantine:   QuarantineWriter;
+  readonly output:       OutputConfig;
+  readonly target:       string;
+  readonly outDir:       string;
+  readonly schemasBase:  string;
+  readonly runStartTime: string;
+  readonly targetConfig: TargetConfig;
+}
+```
 
-// Global registration; plugins self-register at import time
-TaskRegistry.register('aonprd:squash', async (next, state) => {
-  // ... emit quads ...
-  await next();
+Nodes read whichever fields they need via `context.services.<x>`.
+
+## Run-scope DAG
+
+```mermaid
+flowchart TB
+  walk[walk-input]
+  process{{process-all-records\nfan-out concurrency=N}}
+  enrich[enrich-entity-link]
+  finalize[rdfjs-finalize]
+  catalog[catalog-emit]
+  END([end])
+
+  walk -->|walked|     process
+  walk -->|empty|      finalize
+  process -->|all-success| enrich
+  process -->|partial|     enrich
+  process -->|all-error|   finalize
+  process -->|empty|       finalize
+  enrich --> finalize
+  finalize -->|written| catalog
+  finalize -->|empty|   END
+  catalog --> END
+```
+
+`process-all-records` is the node that internally drives the per-record deep-DAG. It owns a reference to the dispatcher (captured at construction) and calls `dispatcher.execute('squashage:record', recordState)` for each locator with `Promise.all` capped at `targetConfig.concurrency`.
+
+## Per-record DAG (deep-DAG)
+
+```mermaid
+flowchart TB
+  read[json-read]
+  parallel{{classify-all\nparallel collect}}
+  ont[classify:ontology]
+  narrow[classify:taxonomic-narrowing]
+  gate[record-health-gate]
+  conflict[classify-conflict]
+  squash[squash]
+  prov[output-provenance]
+  q[record-quarantine]
+  END([end])
+
+  read -->|loaded|      parallel
+  read -->|quarantined| q
+  parallel -->|success| ont
+  parallel -->|error|   ont
+  ont      --> narrow
+  narrow   --> gate
+  gate -->|has-proposals| conflict
+  gate -->|none|          q
+  gate -->|errors|        q
+  conflict -->|resolved| squash
+  conflict -->|tie|      q
+  conflict -->|unknown|  q
+  squash -->|squashed|    prov
+  squash -->|quarantined| q
+  prov -->|written| END
+  prov -->|skipped| END
+  q --> END
+```
+
+Parallel members of the `classify-all` placement:
+
+- `classify:source`
+- `classify:url-pattern`
+- `classify:structural`
+- `classify:rules`
+- `classify:schema`
+- `classify:shacl-shape`
+- `classify:property-fingerprint`
+- `classify:winknlp-entities`
+
+Sequential post-parallel classifiers (they read other classifiers' proposals, so they cannot run in parallel):
+
+- `classify:ontology` — validates other classifiers' votes against the configured class map; emits `__validation__` sentinels for unknown class names.
+- `classify:taxonomic-narrowing` — drops supertype proposals when a more-specific subtype is also present, via OWL `subClassOf` transitive closure.
+
+Each classifier writes its proposal to `state.proposals[<classifier-name>]` — a named slot, so parallel writes are race-free. The downstream `classify-conflict` node reduces every non-sentinel proposal into a single winning `state.classification`.
+
+## Quarantine
+
+Quarantine is a real DAG path. Every failure route lands on `record-quarantine`, which calls `services.quarantine.write(...)` to dump the record's input + accumulated errors into `<outDir>/<target>/quarantine/<bucket>/<id>.json`. The buckets are:
+
+- `unknown` — no classifier produced a proposal.
+- `conflicts` — two or more classes tied at the top priority and the policy is `quarantine`.
+- `projection` — `json-read` couldn't parse the record, or `squash` collected an error.
+- `output` — `rdfjs-finalize` rejected the dataset (SHACL validation failure).
+
+## Three output files
+
+`rdfjs-finalize` splits the run's dataset into three on-disk artifacts:
+
+| File | Contents |
+|---|---|
+| `<output.path>` | The success graph. Every quad NOT in the PROV graph. |
+| `<output.path-stem>.prov.<ext>` | The PROV-O graph — one `prov:Activity` per node execution, written by `ProvObserver` into `urn:squashage:prov:<runStartTime>`. |
+| `<outDir>/<target>/quarantine/<bucket>/<id>.json` | One file per failed record, grouped by bucket. |
+
+## Execution
+
+```ts
+import { SquashageRun } from '@studnicky/squashage/SquashageRun';
+
+const run = await SquashageRun.forTarget({
+  target: 'aonprd',
+  targetConfig,
+  output:      targetConfig.output,
+  outDir:      './graphs',
+  schemasBase: './configs',
 });
-```
 
-Plugin files are loaded dynamically via `TaskRegistry.load('./path/to/plugin.js')`. The plugin module's top-level side effect (the `TaskRegistry.register` call) fires on import.
-
-## state.context
-
-`state.context` is `PipelineContextInterface`; populated by the orchestrator before tasks run. It carries everything a task needs to emit quads:
-
-```ts
-interface PipelineContextInterface {
-  target:   string;           // target name from config
-  outDir:   string;           // base output directory
-  config:   Record<string, unknown>;  // the full target config object
-  factory:  DataFactory;      // RDF/JS term factory (namedNode, literal, quad, ...)
-  dataset:  DatasetCore;      // canonical dataset; every plugin writes quads here
-  builder:  GraphBuilder;     // convenience quad-builder with prefix/IRI helpers
-  graphs:   Record<string, NamedNode>;  // named-graph IRIs by lane key
-  iri:      NamespaceBuilder; // Proxy; ctx.iri.MyClass → NamedNode for vocabulary IRI
-  output:   OutputConfigInterface;  // resolved output config
-  prefixes: PrefixResolutionInterface;  // instances/graphs/vocabulary base IRIs
+// Sync-style: await the final summary.
+const result = await run.execute();
+for (const summary of (result.state as SquashageRunState).results) {
+  console.log(summary.recordPath, summary.outcome, summary.className);
 }
-```
 
-### `state.context.prefixes`
-
-`PrefixResolver` derives instance, graph, and vocabulary base IRIs from `_source.url`. You don't hardcode a domain; the pipeline computes it:
-
-```ts
-{
-  instances:  { prefix: 'sq-i:', base: 'https://squashage.dev/instance/aonprd/' },
-  graphs:     { prefix: 'sq-g:', base: 'https://squashage.dev/graph/aonprd/' },
-  vocabulary: { prefix: 'sq-v:', base: 'https://squashage.dev/vocabulary/aonprd#' }
-}
-```
-
-**Resolution flow**: Given `_source.url = 'https://2e.aonprd.com/Feats.aspx?ID=750'`, the resolver applies a priority cascade: (1) check user override in `targets[].ontology.prefixes`; (2) derive from the URL hostname (here, `2e.aonprd.com` becomes the instances base and target name is slugified into `aonprd`); (3) fall back to synthetic `https://squashage.dev/` bases if derivation fails. The same `(_source.url, config)` pair always produces the same prefix resolution; deterministic and reproducible across runs.
-
-### `state.context.builder`
-
-`GraphBuilder` wraps the factory and dataset with helpers for common quad patterns. Use it instead of raw `factory.quad(...)` calls when you want prefix-aware IRI construction. It validates IRIs at emit time and raises on malformed quads before they land in the dataset.
-
-**Rationale**: Mismatched named nodes, invalid literal datatypes, or malformed IRIs are caught immediately at the call site, not silently accepted then discovered during serialization. Factory methods are low-level and permissive; builders enforce correctness.
-
-### `state.context.iri`
-
-`NamespaceBuilder` is a Proxy. Accessing `ctx.iri.MyClass` returns a `NamedNode` for `<vocabulary-base>MyClass`. Accessing `ctx.iri['my-predicate']` returns `<vocabulary-base>my-predicate`. No string concatenation at call sites.
-
-**Why**: Direct IRI construction via string concatenation is error-prone (missing slash, typos in predicate names, inconsistent casing). The Proxy ensures all vocabulary IRIs are minted from the same base, validated at construction time. This prevents invalid IRIs from being emitted.
-
-## PipelineStateInterface
-
-The full state shape:
-
-```ts
-interface PipelineStateInterface extends Record<string, unknown> {
-  readonly targetId:       string;           // target name
-  readonly source:         InputSourceInterface;     // _source metadata
-  readonly input:          Record<string, unknown>;  // parsed JSON record
-  classification:          ClassificationEvidenceInterface | null;  // set by classify:conflict
-  classifications:         ClassificationProposalInterface[];       // accumulates across classify:* tasks
-  output:                  Record<string, unknown> | null;          // set by squash:* tasks
-  context?:                PipelineContextInterface;                // set by orchestrator
-}
-```
-
-Tasks can attach extra keys; the `Record<string, unknown>` index signature allows it. Use this for inter-task communication that doesn't belong on the canonical fields.
-
-## Lifecycle phases
-
-A run proceeds through three phases. Plugins declare which phase they participate in via `TaskRegistry.registerHook`:
-
-| Phase | When | Examples |
-|-------|------|---------|
-| `onRunStart` | Once per target, before any record flows | `context:logger`, `context:ajv`, `context:dataset`, `context:prefixes`, `context:ontology`, `context:run-time`, classifier startup hooks |
-| per-record | Once per input record | `json:read`, `classify:*`, `aonprd:squash`, `output:provenance` |
-| `onRunEnd` | After all records settled, in declaration order | `enrich:entity-link`, `rdfjs:finalize`, `rdfjs:stream` finalize |
-
-`onRunStart` hooks populate the run-wide context (`ctx`). Per-record tasks read context and write per-record state. `onRunEnd` tasks scan or drain the shared dataset before finalization.
-
-See [Context silo](../context-silo) for the full lifecycle protocol and well-known key table.
-
-## Built-in tasks
-
-| Name | What it does |
-|------|-------------|
-| `json:read` | Reads one JSON file, populates `state.input` and `state.source`. |
-| `classify:source` | Emits `__source__` marker proposal from `_source`. Config namespace: `source`. |
-| `classify:structural` | Runs closed-vocab predicate rules, emits class proposals. Config namespace: `structural`. |
-| `classify:rules` | Runs decision-table rules, emits class proposals. Config namespace: `rules`. |
-| `classify:schema` | Runs per-class AJV validators, emits class proposals. Config namespace: `schemas`. |
-| `classify:url-pattern` | Evaluates URL regexes, emits class proposals. Config namespace: `urlPattern`. |
-| `classify:property-fingerprint` | Computes Jaccard fingerprint similarity, emits class proposals. Config namespace: `propertyFingerprint`. |
-| `classify:winknlp-entities` | Runs winkNLP pattern NER on prose fields, emits class proposals. Config namespace: `winknlpEntities`. |
-| `classify:shacl-shape` | Validates against SHACL NodeShapes, emits class proposals. Config namespace: `shaclShape`. |
-| `classify:taxonomic-narrowing` | Collapses supertype proposals using OWL subClassOf closure. Config namespace: `taxonomicNarrowing`. |
-| `classify:ontology` | Validates proposals against ontology class map. Config namespace: `ontologyClassifier`. |
-| `classify:conflict` | Picks winning class; quarantines ties and unknowns. Config namespace: `conflict`. |
-| `enrich:entity-link` | Post-run: scans dataset prose fields and emits entity-link edges. |
-| `output:provenance` | Emits PROV-O metadata quads per classified record. |
-| `rdfjs:finalize` | Serializes dataset to file; runs canonicalization and SHACL validation. |
-| `rdfjs:stream` | Streaming output; writes quads to file as they arrive. |
-
-## Custom task; minimal example
-
-Registers a squasher plugin that emits one quad per record:
-
-```ts
-import { TaskRegistry } from 'squashage/registry/TaskRegistry';
-import type { PipelineStateInterface } from 'squashage/types/PipelineState';
-
-TaskRegistry.register('myproject:squash', async (next, state: PipelineStateInterface) => {
-  const ctx = state.context;
-  if (ctx === undefined || state.classification === null) {
-    await next();
-    return;
+// Streaming-style: observe each node as it completes.
+for await (const nodeResult of run.execute()) {
+  if (nodeResult.nodeName === 'rdfjs-finalize') {
+    // success graph just landed on disk
   }
-
-  const { factory, dataset, prefixes } = ctx;
-
-  // Build subject IRI from source URL
-  const urlPath = new URL(state.input['url'] as string).pathname.slice(1);
-  const subject  = factory.namedNode(`${prefixes.instances.base}${urlPath}`);
-  const graph    = factory.namedNode(`${prefixes.graphs.base}${state.classification.type}`);
-  const RDF_TYPE = factory.namedNode('http://www.w3.org/1999/02/22-rdf-syntax-ns#type');
-  const classIri = factory.namedNode(`${prefixes.vocabulary.base}${state.classification.type}`);
-
-  // Emit rdf:type quad
-  dataset.add(factory.quad(subject, RDF_TYPE, classIri, graph));
-
-  await next();
-});
+}
 ```
 
-Put this in a file that your config references under `plugins[]`. It self-registers when the orchestrator loads the module.
+`run.execute()` returns a dagonizer `Execution<TState>` — both `PromiseLike` and `AsyncIterable`. One generator body runs exactly once regardless of which consumption mode you pick.
 
-## Ordering constraints
+## Cancellation + resume
 
-The pipeline array must be consistent with which tasks exist:
+Pass `signal` and/or `deadlineMs` to halt the run early. The dispatcher composes both into a single `AbortSignal` and propagates it through every node via `context.signal`.
 
-- `json:read` goes first; everything else reads `state.input`.
-- `classify:conflict` must come after all class-proposing tasks (`classify:structural`, `classify:rules`, `classify:schema`).
-- `rdfjs:finalize` goes last; it writes the file.
-- Your `squash:*` task goes after `classify:conflict` and before `rdfjs:finalize`.
+When execution stops with a non-null `result.cursor`, the run is resumable. Squashage uses the dagonizer `MemoryCheckpointStore` only — production deployers implement `CheckpointStore` against their own persistence.
 
-The config loader cross-validates this at startup and rejects invalid orderings.
+```ts
+import { Checkpoint, MemoryCheckpointStore } from '@noocodex/dagonizer/checkpoint';
 
-## Related
+const result = await run.execute();
+if (result.cursor !== null) {
+  const store = new MemoryCheckpointStore();
+  await Checkpoint.persist(store, 'ckpt:aonprd', Checkpoint.from('squashage:run', result));
+  // ... later
+  const recalled = await Checkpoint.recall(store, 'ckpt:aonprd', (snap) => SquashageRunState.restore(snap));
+  await run.dispatcher.resume(recalled!.dagName, recalled!.state, recalled!.cursor);
+}
+```
 
-- [Configuration](./configuration); how to declare a pipeline in config
-- [Classifier cascade](./classifier-cascade); what the classify:* tasks do
-- [Plugins](./plugins); how to write a squasher plugin
+## Provenance
+
+`SquashageDagonizer` extends `Dagonizer` and forwards every lifecycle hook (`onFlowStart`, `onFlowEnd`, `onNodeStart`, `onNodeEnd`, `onError`) to an injected `ProvObserver`. The default observer writes one `prov:Activity` per node into the dedicated PROV graph in `services.dataset`. Swap it for `NullObserver` in tests.
+
+```ts
+const run = await SquashageRun.forTargetWithNullObserver({ ... });   // tests
+```
+
+## See also
+
+- [Configuration](./configuration) — every config slot the new DAG reads.
+- [Classifier cascade](./classifier-cascade) — what each classifier produces and how the conflict resolver picks a winner.
+- [Plugins](./plugins) — how to ship a target-specific squash node.
+- [Architecture](../architecture) — module map + class lineage.

@@ -20,20 +20,21 @@ You feed it JSON. It hands you back a graph. The graph has edges where you'd exp
 
 - **Same JSON in, same graph out.** No `Math.random`, no `Date.now`, no network after startup. Byte-identical across runs and machines.
 - **One file, no fan-out.** A single build produces one serialized RDF file. Auto-derived instance/graph/vocabulary IRIs from `_source.url`. Auto-built JSON-LD `@context` from the produced quad set.
-- **Open the demo offline.** The `squashage viz` CLI emits a self-contained HTML document with cytoscape inlined. Open it in any browser; no network, no `node_modules` required.
+- **Open the demo offline.** The `squashage-dag viz` CLI emits a self-contained HTML document with sigma + WebGL inlined. Open it in any browser; no network, no `node_modules` required.
 
 ## Quick install
 
 ```bash
 git clone https://github.com/Studnicky/Squashage.git
 cd Squashage && npm install && npm run build
-npm run viz:demo    # produces docs/public/examples/aonprd/aonprd.html
+npx squashage-dag build --target aonprd --config squashage.config.json
 ```
 
 ## Where to look next
 
-- [Walk-through](./walk-through); end-to-end example with a real Pathfinder record, config, plugin, and JSON-LD output
-- [Getting started](./getting-started); install and run the demo
-- [Architecture](./architecture); pipeline phases, package boundaries, output contract
-- [Classifier engines](./classification-engines); the six task classes, the predicate language
-- [Live demo](./examples/aonprd); cytoscape graph of the Pathfinder/AONPRD fixture
+- [Getting started](./getting-started) — install and run a build
+- [Walk-through](./walk-through) — one record's full journey through the DAG
+- [DAG](./usage/pipeline) — the run-scope + per-record DAGs in full
+- [Classifier cascade](./usage/classifier-cascade) — the ten classifiers + the conflict resolver
+- [Architecture](./architecture) — module map + class lineage
+- [Live demo](./examples/aonprd) — interactive graph of the AONPRD fixture

@@ -1,170 +1,573 @@
 ---
 layout: doc
 title: Architecture
-description: Squashage's pipeline phases, package boundaries, and output contract. JSON record → classify → normalize → RDF/JS quads → one serialized file per target.
+description: Squashage's module map, layered taxonomic model, classifier cascade, and class lineage. Single SquashageDagonizer per target; one run-scope DAG that fans out the per-record deep-DAG; PROV-O observer writes activity quads into a dedicated graph.
 ---
 
-# Squashage Architecture
+# Architecture
 
-Squashage is a graph reconstitution pipeline. It starts with structured JSON
-records and ends with a single serialized RDF file produced by the build run.
+Squashage is a graph reconstitution pipeline built on `@noocodex/dagonizer`. One `SquashageDagonizer` instance per target invocation owns two registered DAGs: a run-scope DAG and a per-record deep-DAG. State, services, and a swappable observer flow through the dispatcher.
 
 ```text
-Squashage
-  JSON record -> classify -> normalize -> RDF/JS quads -> serialized file
-                                                          (turtle | trig | nquads | ntriples | jsonld
-                                                           rdfxml + n3: deferred; no maintained streaming serializer on npm)
+JSON records → walk-input → fan-out (record DAG) → enrich → finalize → catalog
+                              │
+                              └─ json-read → classify (8 parallel + 2 sequential)
+                                          → conflict → squash → output-provenance
+                                          (any failure → record-quarantine → end)
 ```
 
-RDF/JS is the **internal canonical product** of the build; the shape every
-plugin emits into and the serializer reads from. It is not the output. The
-output is the file. To load the file into a graph store, hand it to
-downstream graph-store loaders separately; Squashage does not load stores.
+Three artifacts land on disk per run:
 
-**Why this ordering**: The pipeline isolates failure modes by stage. Classify-and-fail (unknown class, SHACL violation, schema mismatch) produces quarantine artifacts without corrupting the dataset. Normalize failures are contained to that record and later stages skip it cleanly. Project failures write the bad record to quarantine and don't emit partial quads. This ordering means a config mistake doesn't corrupt valid data that's already been emitted.
+| File | Contents |
+|---|---|
+| `<output.path>` | the success graph |
+| `<output.path-stem>.prov.<ext>` | PROV-O activity graph (one `prov:Activity` per node) |
+| `<outDir>/<target>/quarantine/<bucket>/<id>.json` | one file per failed record, grouped by bucket |
 
-## Package Boundaries
+## Composition root
 
-Squashage *uses* a thin `src/rdf/*` and `src/shacl/*` wrapper layer over
-permissive open-source RDF libraries (`@rdfjs/data-model`, `@rdfjs/dataset`,
-`@rdfjs/namespace`, `n3`, `jsonld`, `rdf-canonize`, `rdf-validate-shacl`)
-for every RDF/JS implementation detail. It does not vendor those
-implementations directly into application code, and it does not own
-graph-store loading. The boundary is the `src/rdf/*` / `src/shacl/*` wrapper, not a specific underlying package.
+`SquashageRun.forTarget(...)` is the only constructor. In one async call it:
 
-| Package | Owns | Does Not Own |
-|---------|------|--------------|
-| Squashage | classification, normalization, projection of records into RDF/JS, pipeline + task registry, single-file output and quarantine reports | RDF/JS implementations (factory, dataset), parser/serializer code, graph-store loading, format → format translation |
-| Semantics | RDF/JS factories and datasets, parse/serialize for all supported formats, store adapters (in-memory, embedded, remote), canonicalization, validation, vocabulary, IRI utilities, reasoning, format and store CLIs | source extraction, source-specific classification |
-| aonprd plugin | ontology conventions and runtime graph usage that consumes squashage output | source extraction, generic classification framework |
+1. Builds the `SquashageServices` bag from the target config and CLI options (logger, AJV, RDF factory + dataset, builder, prefix resolution, IRI namespace, named-graph map, optional ontology, quarantine writer, runStartTime).
+2. Wires a `ProvObserver` (or accepts a swap-in observer) bound to `services.dataset`.
+3. Instantiates `SquashageDagonizer` with the services bag + observer.
+4. Constructs every per-record classifier instance from its config slot; substitutes `NoOpClassifierNode` for every slot that's absent.
+5. Calls `registerRecordNodes(dispatcher, instances)` and `registerRunNodes(dispatcher)`.
+6. Builds the run-scope DAG inline (so per-target `concurrency` can be baked into the `process-all-records` placement at build time).
+7. Registers both DAGs.
 
-## Core Concepts
+`run.execute()` returns the dagonizer `Execution<TState>` — both `PromiseLike` (await for the final summary) and `AsyncIterable` (`for await` to observe each node).
 
-### Input Record
+## Module map
 
-An input record is a single JSON object. It should include optional `_source`
-metadata to make classification reproducible and attribution tractable:
+```text
+src/
+  SquashageRun.ts              composition root
+  cli/dagonizerCli.ts          `squashage-dag build` entry point
+  state/
+    SquashageRunState.ts       NodeStateBase + locators[], results[], target, runStartTime
+    SquashageRecordState.ts    NodeStateBase + source, input, proposals{}, classification, squashedQuads
+    schemas/                   JSON Schema 2020-12 + FromSchema-derived types
+  services/
+    SquashageServices.ts       eagerly-built services bag
+  observer/
+    ProvObserver.ts            writes prov:Activity per node into urn:squashage:prov:<runId>
+    ProvObserverInterface.ts   detached observer contract
+    NullObserver.ts            no-op for tests
+    ProvVocabulary.ts          PROV-O + dag: + xsd term factories
+  dispatcher/
+    SquashageDagonizer.ts      extends Dagonizer; forwards hooks to ProvObserver
+  dag/
+    runDag.ts                  (run DAG built inline in SquashageRun)
+    recordDag.ts               static export — references nodes by name
+    recordDagClassifierMembers.ts  parallel + sequential member name lists
+    registerRecordNodes.ts     molecular helper
+    registerRunNodes.ts        molecular helper
+  nodes/
+    run/                       walkInput, processAllRecords, enrichEntityLink, rdfjsFinalize, catalogEmit
+    record/                    jsonRead, classifyConflict, recordHealthGate, squashNode, outputProvenance, recordQuarantine
+    record/classifiers/        Discriminator (primary), Source, UrlPattern, Structural, Rules, Schema, ShaclShape, PropertyFingerprint, WinknlpEntities, Ontology, TaxonomicNarrowing, NoOp
+  induction/
+    SchemaInducer.ts           accumulates ShapeObservations → draft JSON Schema documents
+    RefinementApplier.ts       applies .refine.json DSL (15 ops, deterministic order)
+    TaxonomicInheritanceEnricher.ts  materializes ancestor rdf:type quads at build time
+    VocabEnricher.ts           vocabulary-class-specific quad enrichment
+    ShapeObservation.ts        per-property observation accumulator
+    SubjectIriPolicy.ts        policy-resolved subject IRI derivation
+  classification/
+    PrefixResolver.ts          target → (instance, graph, vocabulary) base IRIs
+    predicates/Predicate.ts    compile / evaluate JSON-pointer predicates
+    tasks/ShaclShapeClassifier.ts  SHACL machinery (kept; called by the classifier node adapter)
+  config/                      AJV-validated target config + output config
+  rdf/                         DataFactory, Dataset, GraphBuilder, Namespaces, Parser, Vocab
+  shacl/                       ShaclGate (rdf-validate-shacl wrapper)
+  output/                      FileOutput, FormatResolver, OutputReport — used by rdfjs-finalize
+  quarantine/                  QuarantineWriter
+  ontology/                    JsonTologyOntology + adapters
+  errors/                      BaseError + every subclass; every throw is one of these
+  modules/logger/              Logger.forComponent
+  viz/                         JsonLdGraph, ChunkBuilder, SigmaGraphRenderer (used by `squashage-dag viz`)
+  schemas/                     JSON Schema 2020-12 sources (squashage-config, target, refinement, predicate, output)
+  schemas/core/                squashage-core upper ontology (10 classes — Thing through Container)
+```
+
+## Run-scope DAG
+
+The diagrams below are emitted by [`scripts/render-dags.ts`](https://github.com/Studnicky/Squashage/blob/main/scripts/render-dags.ts) via `MermaidRenderer.render(dag)` from `@noocodex/dagonizer/viz`. They regenerate on every `docs:build` from the exact DAG objects the dispatcher executes — what you see here is what runs.
+
+<DagDiagram name="squashage-run" caption="Run-scope DAG">
+
+<!--@include: ./architecture/dags/squashage-run.md{7,-2}-->
+
+</DagDiagram>
+
+`process-all-records` closes over the dispatcher and invokes `dispatcher.execute('squashage:record', recordState)` for each `RecordLocator`, capped at `targetConfig.concurrency`. The per-record results are appended into `state.results` as `RecordSummary` entries.
+
+## Per-record DAG (deep-DAG, registered as `squashage:record`)
+
+<DagDiagram name="squashage-record" caption="Per-record DAG">
+
+<!--@include: ./architecture/dags/squashage-record.md{7,-2}-->
+
+</DagDiagram>
+
+<!-- legacy inline diagram preserved for context but rendered Mermaid above is canonical -->
+<details>
+<summary>Inline reference (legacy)</summary>
+
+```mermaid
+flowchart TB
+  read[json-read]
+  parallel{{classify-all parallel collect}}
+  ont[classify:ontology]
+  narrow[classify:taxonomic-narrowing]
+  gate[record-health-gate]
+  conflict[classify-conflict]
+  squash[squash]
+  prov[output-provenance]
+  q[record-quarantine]
+  END([end])
+  read -->|loaded| parallel
+  read -->|quarantined| q
+  parallel -->|success| ont
+  parallel -->|error|   ont
+  ont --> narrow
+  narrow --> gate
+  gate -->|has-proposals| conflict
+  gate -->|none|          q
+  gate -->|errors|        q
+  conflict -->|resolved| squash
+  conflict -->|tie|      q
+  conflict -->|unknown|  q
+  squash -->|squashed| prov
+  squash -->|quarantined| q
+  prov -->|written| END
+  prov -->|skipped| END
+  q --> END
+```
+
+</details>
+
+## Class lineage
+
+| Base | Subclass | Where |
+|---|---|---|
+| `Dagonizer` (dagonizer) | `SquashageDagonizer` | `src/dispatcher/SquashageDagonizer.ts` |
+| `NodeStateBase` (dagonizer) | `SquashageRunState`, `SquashageRecordState` | `src/state/` |
+| `BaseError` | `OutputConfigError`, `SquashageConfigError`, `FileOutputError`, `ExternalSchemaError`, `QuarantineError`, `ShaclValidationError` | `src/errors/` |
+| `ProvObserverInterface` | `ProvObserver`, `NullObserver` | `src/observer/` |
+
+One level of inheritance everywhere. The dispatcher subclass forwards five lifecycle hooks to an injected observer — no other extension mechanism.
+
+## Substrate
+
+| Concern | Substrate | Notes |
+|---|---|---|
+| Logging | `Logger.forComponent(name)` | every module-level log is component-scoped |
+| Errors | `BaseError` subclass | no bare `throw new Error`; every throw carries a code |
+| RDF | `@rdfjs/data-model`, `@rdfjs/dataset`, `n3`, `rdf-canonize` | wrapped behind `src/rdf/` |
+| SHACL | `rdf-validate-shacl` | wrapped behind `src/shacl/ShaclGate` |
+| Schema validation | `ajv` (one instance per run) | lives on `services.ajv` |
+| Workflow | `@noocodex/dagonizer` | dispatcher + state + observer hooks |
+
+## Determinism
+
+Same target config + same input directory + same node modules ⇒ byte-identical success graph and byte-identical PROV graph (timestamps are sourced from `services.runStartTime`, a single frozen ISO string per run).
+
+The PROV observer uses `Date()` for `prov:startedAtTime` / `prov:endedAtTime` on individual node activities — these vary across runs by design (different wall-clock per execution) but every other quad is content-determined.
+
+---
+
+## Layered taxonomic model
+
+Squashage generalizes across targets through a two-layer schema architecture. No domain-tailored classifier code is needed to add a new target — inheritance and classification are fully config-driven.
+
+### Layer 0 — squashage-core (framework-generic)
+
+Ten classes bundled in `src/schemas/core/` form the reusable upper ontology. Their `$id` base is `https://noocodec.dev/squashage/core/`. Every entity produced by any target is at minimum a `Thing`.
+
+```mermaid
+classDiagram
+  direction TB
+  class Thing { <<core>> }
+  class NamedThing { +name: string }
+  class Identified { +id: string }
+  class Provenance { +source: IriString }
+  class DocumentSegment { +text: string }
+  class ContentEntry { +description: string ~~ +rarity: string }
+  class Vocabulary { +category: string|null }
+  class Reference { +href: IriString }
+  class Mechanic { +effect: string }
+  class Container { +members: Reference[] }
+
+  Thing <|-- NamedThing
+  Thing <|-- Identified
+  Thing <|-- Provenance
+  Thing <|-- Reference
+  Thing <|-- Mechanic
+  Thing <|-- Container
+  NamedThing <|-- DocumentSegment
+  NamedThing <|-- ContentEntry
+  NamedThing <|-- Vocabulary
+```
+
+### Layer N — per-target leaf classes
+
+Each target authors leaf schemas that extend one or more core classes via native JSON Schema `allOf + $ref`. The leaf schemas live in the plugin directory alongside the target config.
+
+Example: `aonprd.Feat` extends both `core.ContentEntry` and `core.Mechanic`:
 
 ```json
 {
-  "_type": "feat",
-  "name": "Power Attack",
-  "level": 1,
-  "rarity": "common",
-  "traits": ["flourish"],
-  "_source": {
-    "target": "aonprd",
-    "path": "feat-power-attack.json",
-    "url": "https://2e.aonprd.com/Feats.aspx?ID=750",
-    "plugin": "aonprd:parse"
-  }
-}
-```
-
-**Determinism contract**: The entire classification and projection pipeline is deterministic. No `Math.random`, no `Date.now()` inside the build path, no network calls, no filesystem reads after config load. Same record and same config produce byte-identical quads and exit codes across runs and machines. This is what lets you compare output bit-for-bit in CI.
-
-### Classification
-
-Classification identifies the ontology class or projection lane for an input record. It is not just a label; it is a decision with evidence.
-
-```json
-{
-  "type": "feat",
-  "confidence": 1,
-  "engine": "schema+rules",
-  "reasons": [
-    "_type=feat",
-    "level present",
-    "schema:feat matched"
+  "$id": "https://2e.aonprd.com/Feat",
+  "allOf": [
+    { "$ref": "https://noocodec.dev/squashage/core/ContentEntry.schema.json" },
+    { "$ref": "https://noocodec.dev/squashage/core/Mechanic.schema.json" }
   ]
 }
 ```
 
-**Per-record state machine**: Each record flows through: (1) input (parsed JSON + source); (2) classify (zero or more proposals accumulated on `state.classifications`); (3) conflict resolution (one winner picked by `classify:conflict`, written to `state.classification`, or quarantine); (4) project (emit quads using the winning class) or skip (unknown + onUnknown: skip); (5) output (final dataset serialized) or quarantine (SHACL failure).
+The `allOf + $ref` entries are emitted by the `refine` phase when the refinement file specifies `parents`. See [Taxonomy — parents DSL](./usage/taxonomy) for the full field reference.
 
-**Silo-driven classifiers**: Each classifier is a self-registering plugin that declares `proposesClass: true | false` in its registration manifest and reads its config from `ctx.config[<namespace>]`. There is no central `ClassificationFactory` mediating between them. The orchestrator counts `proposesClass: true` registrations and asserts `classify:conflict` is registered when that count is two or more. See [Context silo](./context-silo) for the full plugin coordination contract.
+### Open-world design
 
-### RDF/JS As Internal Canonical Product
+A new `_type` value in an incoming record is classified without requiring any enumeration to be updated. The `DiscriminatorClassifierNode` reads the literal string at the configured JSON Pointer and uses it directly as the class name (after optional sanitization). Adding a new class to a target means:
 
-Plugins emit RDF/JS terms and quads into a shared dataset. The canonical
-factory and dataset come from `src/rdf/DataFactory.ts` and
-`src/rdf/Dataset.ts` (v0.x backed by `@rdfjs/data-model` and
-`@rdfjs/dataset`); convenience builders come from `src/rdf/GraphBuilder.ts`
-(vendored from semantics/rdf-builder). Plugins do not write Turtle,
-JSON-LD, or any other format directly; they emit quads, and the finalize
-step serializes the canonical dataset to the configured output file via
-`src/rdf/Serializer.ts`.
+1. Author a leaf schema for the class.
+2. Register the schema path in the ontology block.
+3. Write a `.refine.json` for the class with the appropriate `parents`.
 
-**Why RDF/JS**: RDF/JS is a standard interface contract, not a concrete implementation. This lets you test plugins in isolation by passing a mock dataset that collects what was added, then swap to the real factory/dataset at run time. Serializers and validators also accept any RDF/JS-compliant dataset, so output format becomes a plugin detail, not a structural constraint. If a future plugin needs to emit into both Turtle and JSON-LD, it writes to RDF/JS once and the serializer picks the format.
+No code changes. No re-enumeration.
 
-`PipelineStateInterface` and `PipelineContextInterface` keep their existing
-names from `src/types/PipelineState.ts`; their fields adapt to the
-graph-reconstitution domain. The full type definitions live in
-`src/types/PipelineState.ts` and are documented inline; plan 13 carries
-the rationale and the `ClassificationProposalInterface` /
-`ClassificationEvidenceInterface` shapes the cascade populates.
+### Multiple inheritance
 
-### File Output
+A leaf class may extend multiple parents. The `allOf` array carries one `$ref` per parent. `TaxonomicInheritanceEnricher` traverses the full ancestor chain and materializes `rdf:type` quads for every ancestor so consumers receive the complete type chain without an OWL reasoner.
 
-The output is a single serialized RDF file in one of the formats
-squashage's `src/rdf/Serializer.ts` supports. Turtle, TriG, N-Triples, N-Quads, JSON-LD are supported now. RDF/XML and N3 output are deferred; no maintained streaming serializer exists on npm and that is not Squashage's problem to solve. Format defaults from the file extension via
-`src/rdf/Formats.ts`.
+---
 
-A target must declare an `output` block. To produce more than one file,
-re-run the build with a different `--out`. To translate between formats
-or load into a graph store, use any RDF format converter or graph-store
-loader of your choice on the produced file; neither is squashage's
-job. See
-`src/schemas/output.schema.json` and `src/rdf/Serializer.ts` define the output interface and configuration.
+## Classifier cascade — open-world model
 
-Programmatic callers can also consume the in-process dataset directly
-through the build API; that is not an output, just the API return value.
+The per-record DAG runs up to 11 classifier nodes. The primary classification path for targets that carry a discriminator field is `classify:discriminator`. The legacy enumerative classifiers remain available as fallbacks.
 
-## Pipeline Phases
+```mermaid
+flowchart TD
+  subgraph parallel["classify-all (parallel)"]
+    disc["classify:discriminator\n(primary — reads /_type, priority 80)"]
+    url["classify:url-pattern\n(fallback, priority 35)"]
+    struct["classify:structural\n(fallback, priority 20)"]
+    rules["classify:rules\n(fallback, priority 20)"]
+    schema["classify:schema\n(fallback, priority 30)"]
+    shacl["classify:shacl-shape\n(fallback, priority 45)"]
+    fp["classify:property-fingerprint\n(fallback, priority 32)"]
+    nlp["classify:winknlp-entities\n(fallback, priority 28)"]
+    src["classify:source\n(metadata marker)"]
+  end
+  ont["classify:ontology\n(sequential — validates class names)"]
+  narrow["classify:taxonomic-narrowing\n(sequential — drops supertypes)"]
+  conflict["classify-conflict\n(picks highest-priority winner)"]
 
-1. `json:read`: load one JSON object and attach source metadata.
-2. `classify:*`: determine candidate and final class with evidence.
-3. `normalize:*`: canonicalize labels, slugs, numbers, dates, and IDs.
-4. `squash:*`: project the record into RDF/JS quads using
-   `src/rdf/GraphBuilder.ts` against the canonical dataset.
-5. `rdfjs:finalize`: serialize the canonical dataset to the configured
-   output file via `src/rdf/Serializer.ts`, run any configured
-   canonicalization (`src/rdf/Canonicalize.ts`) and SHACL validation
-   (`src/shacl/ShaclGate.ts`), and write the output report.
+  parallel --> ont --> narrow --> conflict
+```
 
-## Failure Policy
+### `classify:discriminator` — the primary path
 
-Failures land as explicit artifacts on disk:
+**Source:** `src/nodes/record/classifiers/DiscriminatorClassifierNode.ts`
 
-- Unknown class: `./graphs/<target>/quarantine/unknown/<id>.json`.
-- Classification conflict: `./graphs/<target>/quarantine/conflicts/<id>.json`
-  with the tied candidates preserved.
-- Projection failure (parse error in `json:read`, throw in a `squash:*`
-  task): `./graphs/<target>/quarantine/projection/<id>.json`.
-- Pre-write SHACL failure: `./graphs/<target>/quarantine/output/validation.report.{txt,ttl}`.
-  The destination output file is not written.
-- Atomic-write failure: a `<output.path>.partial` artifact alongside the
-  intended destination, plus the run's `output.report.json`.
+Reads a configured JSON Pointer (default `/_type`) from the record. Uses the resolved string as the `className` proposal. No per-class enumeration required — any value classifies.
 
-Quarantine is a *graceful* path. `json:read` and the classifier tasks
-short-circuit with a quarantine write rather than throwing, so the
-per-record pipeline registers no failure and the build exit code stays
-`0`. Quarantine artifacts on disk are how the caller learns which
-records were rejected. Exit codes:
+Config slot: `classification.discriminator`
 
-- `0`: every record either projected cleanly or landed in quarantine
-  gracefully.
-- `1`: a per-record task threw, or `rdfjs:finalize` threw (output,
-  validation, atomic-write).
-- `2`: config / schema / startup error before any record processed.
+```json
+{
+  "discriminator": {
+    "from":     "/_type",
+    "sanitize": "pascalCase",
+    "priority": 80
+  }
+}
+```
 
-## Implementation History
+| Field | Type | Default | Description |
+|---|---|---|---|
+| `from` | string | required | JSON Pointer (RFC 6901) into the record. |
+| `fallback` | string | — | Pointer used when `from` resolves to undefined or non-string. |
+| `priority` | number | 50 | Proposal priority. |
+| `sanitize` | string | `"verbatim"` | `"verbatim"` — use as-is; `"pascalCase"` — split on `[-_\s]+`, capitalize each segment; `"kebabToPascal"` — same as pascalCase. |
 
-The scraper layer (HtmlScraper, MediaWikiScraper, LinkLister,
-ScrapeOrchestrator, the cache, the rate limiter, the retry executor)
-was deleted during the initial bootstrap. `PipelineStateInterface` and
-`PipelineContextInterface` kept their names but redefined their fields
-for the graph-reconstitution domain. Built-in classification tasks live
-in `src/classification/tasks/`; the predicate engine in
-`src/classification/predicates/`; configuration in
-`src/schemas/*.json`. The full implementation record is in `src/classification/tasks/` and `src/schemas/`.
+When the pointer resolves to a non-empty string, a proposal is emitted with `confidence: 1.0`. When the pointer is absent or resolves to a non-string, the node outputs `no-match`.
+
+### Legacy classifiers — fallback roles
+
+The enumerative classifiers (`urlPattern`, `structural`, `rules`, `schema`, `shaclShape`, `propertyFingerprint`, `winknlpEntities`) remain available for:
+
+- Records missing a `_type` field (legacy compat with unstructured dumps).
+- Targets that cannot add a discriminator field to their records.
+- Additional confidence signals when `evidence: true` is enabled.
+
+When a discriminator is configured at priority 80 and a urlPattern rule fires at priority 35, `classify-conflict` picks the discriminator proposal — priority wins.
+
+### Conflict resolution
+
+`classify-conflict` runs after `record-health-gate` confirms at least one non-sentinel proposal exists.
+
+1. Filter sentinels (`__source__`, `__validation__`, `__narrowing_applied__`).
+2. If all surviving proposals agree on one className — that class wins.
+3. If multiple classes propose, find the highest priority. Single winner → it wins. Tie → `onConflict`:
+   - `quarantine` — route to `record-quarantine` under bucket `'conflicts'`.
+   - `pickPriority` — lexicographically first className wins; `candidates` lists all tied classes.
+
+See [Classifier cascade](./usage/classifier-cascade) for the full sentinel and config reference.
+
+---
+
+## Induction → refine → build pipeline
+
+Squashage models the schema lifecycle as three sequential phases. Each phase is a separate DAG registered on the dispatcher.
+
+```mermaid
+flowchart LR
+  src[(JSON dump)]
+  induce["induce\n(SchemaInducer)"]
+  review["author\n.refine.json files"]
+  refine["refine\n(RefinementApplier)"]
+  build["build\n(ontologyProjectionNode)"]
+  graph[(RDF graph)]
+
+  src --> induce --> review --> refine --> build --> graph
+```
+
+### Phase 1 — induce
+
+**DAG:** `src/dag/induceDag.ts`  
+**Core module:** `src/induction/SchemaInducer.ts`
+
+`induce` walks the dump and accumulates `ShapeObservation` data per classified class. `SchemaInducer.materialize()` produces draft schemas (`*.draft.json`) that are strict-graph-compliant:
+
+- Constrained primitives (enum, min/max, IRI-candidate) are extracted to named sibling schemas under `schemas/inferred/primitives/`.
+- Inline nested objects are extracted to named sibling schemas under `schemas/inferred/objects/`.
+- Structurally identical shapes share one named schema (deduplication). Distinct shapes with the same semantic name get `_2`, `_3` suffixes (collision avoidance).
+- Output is key-sorted and deterministic: same observation set → byte-identical draft on every run.
+
+### Phase 2 — refine
+
+**DAG:** `src/dag/refineDag.ts`  
+**Core module:** `src/induction/RefinementApplier.ts`
+
+The operator authors one `.refine.json` per leaf class discovered in the draft output. `RefinementApplier.apply()` processes 15 operations in a fixed, deterministic order:
+
+| # | Operation | What it does |
+|---|---|---|
+| 1 | `drop` | Remove properties from the schema |
+| 2 | `rename` | Rename property keys |
+| 3 | `closedEnum` | Mark property as `x-squashage-closed-enum: true` |
+| 4 | `openVocabulary` | Remove enum constraints; mark `x-squashage-open-vocab: true` |
+| 5 | `promoteIri` | Mark property as IRI reference (`format: 'iri'`, `x-squashage-iri-promotion: true`) |
+| 6 | `range` | Attach a range class name to a property (`x-squashage-range`) |
+| 7 | `rdfsLabel` | Bind a property to `rdfs:label` |
+| 8 | `rdfsComment` | Bind a property to `rdfs:comment` |
+| 9 | `subjectIriPolicy` | Override the subject IRI policy for this class |
+| 10 | `arrayEnumIri` | Emit IRI-promoted edges for array-of-string enum properties |
+| 11 | `skolemSubject` | Mint a skolem IRI for a sub-resource field |
+| 12 | `provenanceIri` | Emit a `dct:source` (or other) provenance triple |
+| 13 | `predicateOverride` | Replace a field's default predicate IRI |
+| 14 | `inverseOf` | Emit inverse edges alongside forward triples |
+| 15 | `parents` | Emit `allOf: [{ $ref }]` entries linking to core parent schemas |
+
+Warn-loud, write-anyway semantics: when a rule references a property not found in the draft, a `RefineWarning` is appended and processing continues.
+
+### Phase 3 — build
+
+**DAG:** `src/dag/recordDag.ts` (the standard per-record DAG)  
+**Squash node:** `src/nodes/record/ontologyProjection.ts`
+
+`ontologyProjectionNode` is the generic squash node used when `ontology.engine: json-tology` is configured. It:
+
+1. Resolves the classified class name to the registered schema `$id`.
+2. Calls `services.ontology.toQuads(schema.$id, record)` — json-tology projects the record to RDF quads per the schema.
+3. Rebinds the minted subject to the policy-resolved IRI (`SubjectIriPolicy`).
+4. Rebinds every quad's graph to `services.graphs['default']`.
+5. Calls `TaxonomicInheritanceEnricher.enrich()` to append ancestor `rdf:type` quads.
+6. Calls `VocabEnricher.enrich()` for vocabulary-class-specific enrichment.
+7. Writes all quads to `state.squashedQuads` and `services.dataset`.
+
+**Streaming serialization:** `rdfjs-finalize` streams per-record projected quads directly to disk via an async-iterable execution over the dataset. This avoids the V8 string-length wall that blocked large graph serialization in earlier versions.
+
+**CURIE expansion:** the wrapper post-processes `toQuads()` output to expand any compact CURIEs (e.g. `rdf:type`) that json-tology emits — only fully-resolved IRI terms reach the dataset.
+
+---
+
+## Onboarding a new target
+
+A complete recipe for adding a new domain dump to Squashage.
+
+### Step 1 — configure
+
+Create `plugins/<target>/<target>.config.json`. The minimum shape:
+
+```json
+{
+  "input":   { "basePath": "./output", "format": "json" },
+  "targets": {
+    "<target>": {
+      "input":  "./output/<target>",
+      "output": { "kind": "file", "path": "./graphs/<target>.nq", "format": "nquads" },
+      "concurrency": 8,
+      "graphs": { "default": "https://<target>.example.org/graph/default" },
+      "ontology": {
+        "engine":  "json-tology",
+        "baseIRI": "https://<target>.example.org/",
+        "schemas": []
+      },
+      "classification": {
+        "conflict":      { "onConflict": "pickPriority", "evidence": true },
+        "discriminator": { "from": "/_type", "sanitize": "pascalCase", "priority": 80 }
+      }
+    }
+  }
+}
+```
+
+### Step 2 — induce
+
+Run the inducer against the dump to discover classes and generate draft schemas:
+
+```bash
+squashage-dag induce --target <target> --config plugins/<target>/<target>.config.json
+```
+
+This writes `plugins/<target>/schemas/inferred/` with one `*.draft.json` per discovered class plus extracted primitive and object schemas.
+
+### Step 3 — author refinements
+
+Review the draft schemas. For each discovered class, create `plugins/<target>/schemas/refinements/<ClassName>.refine.json`:
+
+```json
+{
+  "$schema": "https://squashage.dev/schemas/refinement.schema.json",
+  "appliesTo": "Feat",
+  "rdfsLabel":   "name",
+  "rdfsComment": "description_text",
+  "promoteIri":  ["/url"],
+  "closedEnum":  ["rarity"],
+  "range":       { "rarity": "Rarity" },
+  "drop":        ["/raw_fields", "/trait_ids"],
+  "subjectIriPolicy": { "from": "/url", "sanitize": "url-tail", "fallback": "/name" },
+  "arrayEnumIri": { "traits": "Trait" },
+  "provenanceIri": { "predicate": "dct:source", "from": "/url" },
+  "parents":    ["ContentEntry", "Mechanic"],
+  "parentsBase": "https://noocodec.dev/squashage/core"
+}
+```
+
+Choose `parents` from the core inventory based on what the class represents:
+
+| If the class is... | Extend |
+|---|---|
+| A catalog entry with name, description, rarity | `ContentEntry` |
+| A rules-bearing structure with effect text | `Mechanic` |
+| An entry with both catalog metadata and rules text | `ContentEntry`, `Mechanic` |
+| A closed-vocabulary term (trait, action cost) | `Vocabulary` |
+| Structured prose text (rule sections, chapters) | `DocumentSegment` |
+| A collection (monster families, feature lists) | `Container` |
+| An entity with a stable internal ID | `Identified` |
+| Anything else | `Thing` or `NamedThing` |
+
+### Step 4 — refine
+
+Apply the refinements to materialize final schemas:
+
+```bash
+squashage-dag refine --target <target> --config plugins/<target>/<target>.config.json
+```
+
+Final schemas land in `plugins/<target>/schemas/`. Register each schema path in the `ontology.schemas` array of the target config.
+
+### Step 5 — build
+
+Project the dump into the graph:
+
+```bash
+squashage-dag build --target <target> --config plugins/<target>/<target>.config.json
+```
+
+The output lands at the path specified in `output.path`.
+
+---
+
+## AONPRD — production state
+
+AONPRD (Archives of Nethys, Pathfinder 2nd Edition) is the primary production target and the reference implementation for the layered model.
+
+| Metric | Value |
+|---|---|
+| Records | 13,572 |
+| Success rate | 100% |
+| Leaf classes | 18 (17 with core inheritance + `Unknown`) |
+| Success quads | ~578k |
+| Ontology quads (TBox + SHACL) | ~14k |
+| Avg quads per record | ~42 |
+
+### AONPRD leaf class inheritance table
+
+| aonprd class | core parents | Notes |
+|---|---|---|
+| `Action` | `ContentEntry`, `Mechanic` | Game actions with effect text |
+| `Ancestry` | `ContentEntry` | Playable ancestries |
+| `Armor` | `ContentEntry` | Armor items |
+| `Background` | `ContentEntry` | Character backgrounds |
+| `Class` | `ContentEntry`, `Container` | Character classes (aggregates features) |
+| `Condition` | `ContentEntry`, `Mechanic` | Status conditions with mechanical effects |
+| `Equipment` | `ContentEntry` | General equipment items |
+| `Feat` | `ContentEntry`, `Mechanic` | Character feats with prerequisites and effect text |
+| `Generic` | `ContentEntry` | Catch-all for catalog entries without a dedicated type |
+| `Hazard` | `ContentEntry`, `Mechanic` | Environmental hazards |
+| `Monster` | `ContentEntry` | Bestiary monsters |
+| `MonsterFamily` | `Container` | Monster family groupings (members → monster IRIs) |
+| `Rule` | `ContentEntry`, `DocumentSegment` | Core rulebook sections and rule entries |
+| `Shield` | `ContentEntry` | Shield items |
+| `Spell` | `ContentEntry`, `Mechanic` | Spells with effect text |
+| `Trait` | `Vocabulary` | Closed-vocabulary classification tags |
+| `Weapon` | `ContentEntry` | Weapon items |
+| `Unknown` | — | Fallback for records with unrecognized `_type`; no core inheritance |
+
+The `rule` class was added with zero changes to the classifier: the discriminator read `_type: "rule"`, sanitized to `Rule`, and resolved to `Rule.schema.json` automatically.
+
+### AONPRD config excerpt
+
+```json
+{
+  "classification": {
+    "conflict":      { "onConflict": "pickPriority", "evidence": true },
+    "discriminator": { "from": "/_type", "sanitize": "pascalCase", "priority": 80 },
+    "urlPattern": {
+      "patterns": [
+        { "className": "Feat",  "match": "/Feats\\.aspx",  "priority": 35 },
+        { "className": "Spell", "match": "/Spells\\.aspx", "priority": 35 }
+      ]
+    }
+  }
+}
+```
+
+URL-pattern and structural classifiers remain configured as lower-priority fallbacks for records missing `_type`.
+
+---
+
+## Known limitations
+
+### json-tology issue #126 — cross-schema `$ref` drops nested object properties
+
+Cross-schema `$ref` resolution in json-tology's ABox projection currently drops properties from nested (extracted) object schemas. This is why the average quad density is ~42 quads/record rather than the theoretical full projection. Properties defined directly on the leaf schema are projected correctly; properties on linked sibling schemas are not.
+
+Tracked upstream: [https://github.com/Studnicky/json-tology/issues/126](https://github.com/Studnicky/json-tology/issues/126)
+
+Quad density will recover automatically when the upstream fix ships. No squashage-side changes are needed.
+
+---
+
+## See also
+
+- [Taxonomy — upper ontology and parents DSL](./usage/taxonomy)
+- [Classifier cascade](./usage/classifier-cascade)
+- [Configuration](./usage/configuration)
+- [DAG](./usage/pipeline)

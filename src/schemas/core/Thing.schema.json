@@ -1,0 +1,9 @@
+{
+  "$id": "https://noocodec.dev/squashage/core/Thing.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Thing",
+  "type": "object",
+  "properties": {},
+  "additionalProperties": true,
+  "description": "The most general class. Every entity in a squashage graph is at minimum a Thing."
+}

@@ -1,0 +1,8 @@
+{
+  "$id": "https://noocodec.dev/squashage/core/primitives/IriString.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "IriString",
+  "type": "string",
+  "format": "iri",
+  "description": "A string value constrained to IRI format. Used as the canonical primitive for IRI-valued properties in core schemas."
+}

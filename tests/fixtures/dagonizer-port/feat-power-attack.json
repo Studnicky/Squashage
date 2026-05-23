@@ -1,0 +1,10 @@
+{
+  "_type": "feat",
+  "name": "Power Attack",
+  "level": 1,
+  "_source": {
+    "target": "aonprd",
+    "plugin": "aonprd:parse",
+    "url": "https://2e.aonprd.com/Feats.aspx?ID=1"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "$id": "https://squashage.test/schemas/TestEntry",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "TestEntry",
+  "type": "object",
+  "properties": {
+    "name": { "type": "string" }
+  },
+  "additionalProperties": true,
+  "description": "A minimal test schema used to exercise SquashageServices.forTarget with the json-tology engine."
+}

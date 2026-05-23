@@ -12,28 +12,265 @@
  * - {@link JsonTologyOntology.shacl}: async SHACL shape quad extraction.
  * - {@link JsonTologyOntology.toQuads}: async ABox projection per record.
  *
- * Class IRIs are derived from `${baseIRI}#${className}` where `className` comes
- * from the schema's `title` field, falling back to the last `$id` segment.
+ * Class IRIs are derived as `${baseIRI}/${className}` (path-form, no fragment)
+ * where `className` comes from the schema's `title` field, falling back to the
+ * last `$id` segment.
  * Validation is eager: missing titles + non-derivable `$id`s raise at construction.
  *
- * The integration uses json-tology's {@link OntologyBuilder}-based `jsonLd()` /
- * `shaclObject()` outputs and converts them into `@rdfjs/types` quads through
- * Squashage's existing {@link Parser}, keeping a single source of truth for
- * RDF parsing across the pipeline.
+ * Every output path delegates directly to json-tology's spec-conformant
+ * `@rdfjs/types` Quads:
+ *   - `toQuads(schemaId, instance)` → `JsonTology#toQuads`
+ *   - `tbox()`  → `OntologyBuilder.quads()`
+ *   - `shacl()` → `OntologyBuilder.shaclQuads()`
+ *
+ * No JSON-LD round-trip; no adapter layer.
  *
  * @module
  * @category Ontology
  * @since 0.5.0
  */
 
-import { JsonTology, OntologyBuilder } from 'json-tology';
+import { JsonTology, Curie } from 'json-tology';
 
-import type { Quad } from '@rdfjs/types';
-import { Parser } from '../rdf/Parser.js';
+import type { Quad, NamedNode, Literal } from '@rdfjs/types';
+import { dataFactory } from '../rdf/DataFactory.js';
 import { OutputConfigError } from '../errors/OutputConfigError.js';
 import { Logger } from '../modules/logger/logger.js';
 
 const logger = Logger.forComponent('JsonTologyOntology');
+
+// ---------------------------------------------------------------------------
+// $ref denormalization helpers (transient workaround)
+// ---------------------------------------------------------------------------
+
+/**
+ * TRANSIENT WORKAROUND for json-tology issue #126.
+ * (https://github.com/Studnicky/json-tology/issues/126)
+ *
+ * json-tology 0.14.0's ABox projection silently drops object properties
+ * referenced via cross-schema $ref. We inline-resolve $refs ourselves into
+ * a denormalized schema set used ONLY for toQuads() calls. TBox + SHACL
+ * emission stays on the original strict-graph schemas (those work correctly).
+ *
+ * REMOVE when json-tology #126 ships a fix. After removal, toQuads can route
+ * through #jt directly like tbox()/shacl() already do.
+ */
+
+/** Keys to strip when inlining a referenced schema's body into a property slot. */
+const SCHEMA_META_KEYS = new Set(['$id', '$schema', 'title']);
+
+/**
+ * Returns a deep clone of `value`, pruning top-level keys listed in `omit`
+ * when `value` is a plain object.
+ *
+ * @internal
+ */
+function cloneOmitting(
+  value: unknown,
+  omit: ReadonlySet<string>,
+): unknown {
+  if (value === null || typeof value !== 'object') return value;
+  if (Array.isArray(value)) return value.map(item => cloneOmitting(item, omit));
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+    if (omit.has(k)) continue;
+    out[k] = cloneOmitting(v, new Set()); // only strip meta at top level
+  }
+  return out;
+}
+
+/**
+ * Deep-clones an arbitrary value with full recursion (no key stripping).
+ *
+ * @internal
+ */
+function deepClone(value: unknown): unknown {
+  if (value === null || typeof value !== 'object') return value;
+  if (Array.isArray(value)) return value.map(deepClone);
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+    out[k] = deepClone(v);
+  }
+  return out;
+}
+
+/**
+ * Inline-resolves a single property body.
+ *
+ * Handles three forms:
+ *
+ * 1. `{ "$ref": "<id>" }` — pure $ref: inline the target schema's body.
+ * 2. `{ "items": { "$ref": "<id>" }, "type": "array" }` — array with $ref items:
+ *    inline the items $ref so nested object properties flow through projection.
+ * 3. Anything else: return the body unchanged (deep-cloned at the call site).
+ *
+ * For pure-$ref inlining: the target body is cloned minus `$id`/`$schema`/`title`,
+ * sibling annotations from the original body are merged in (non-overwriting),
+ * and the result is recursed to inline its own nested `$ref` properties.
+ *
+ * Uses `visited` to prevent cycles. Caps recursion at `maxDepth` (depth 4).
+ * Returns the body unchanged when: not a recognizable $ref form, target not
+ * found, or depth cap hit.
+ *
+ * @internal
+ */
+function inlinePropertyBody(
+  body: Record<string, unknown>,
+  schemasById: Readonly<Record<string, Record<string, unknown> & { readonly '$id': string }>>,
+  visited: ReadonlySet<string>,
+  depth: number,
+  maxDepth: number,
+): Record<string, unknown> {
+  if (depth >= maxDepth) return body;
+
+  const ref = body['$ref'];
+
+  // ── Case 1: pure $ref property ────────────────────────────────────────────
+  if (typeof ref === 'string') {
+    // Strip fragment (#...) when resolving — the $id is the base IRI.
+    const targetId = ref.split('#')[0] ?? ref;
+    const target = schemasById[targetId];
+
+    if (target === undefined || visited.has(targetId)) {
+      return body;
+    }
+
+    // Build the inlined body from the target schema, stripping meta-keys.
+    const inlined = cloneOmitting(target, SCHEMA_META_KEYS) as Record<string, unknown>;
+
+    // Copy sibling annotations from the original body (e.g. x-squashage-*, format).
+    for (const [k, v] of Object.entries(body)) {
+      if (k !== '$ref' && !(k in inlined)) {
+        inlined[k] = deepClone(v);
+      }
+    }
+
+    // Recurse into the inlined properties.
+    const nextVisited = new Set(visited).add(targetId);
+    return recurseProperties(inlined, schemasById, nextVisited, depth + 1, maxDepth);
+  }
+
+  // ── Case 2: array schema with items.$ref ──────────────────────────────────
+  const items = body['items'];
+  if (
+    body['type'] === 'array' &&
+    items !== null && typeof items === 'object' && !Array.isArray(items)
+  ) {
+    const itemsObj = items as Record<string, unknown>;
+    const itemsRef = itemsObj['$ref'];
+    if (typeof itemsRef === 'string') {
+      const inlinedItems = inlinePropertyBody(itemsObj, schemasById, visited, depth, maxDepth);
+      if (inlinedItems !== itemsObj) {
+        // Return a new property body with inlined items.
+        return { ...body, items: inlinedItems };
+      }
+    }
+  }
+
+  return body;
+}
+
+/**
+ * Walks the `properties` map of a schema object and inline-resolves any
+ * `$ref` property bodies. Also handles `items.$ref` in array properties
+ * and `allOf` entries that are pure `$ref`s (merges parent properties one
+ * level deep).
+ *
+ * Returns a new schema object (deep clone with substitutions applied).
+ *
+ * @internal
+ */
+function recurseProperties(
+  schema: Record<string, unknown>,
+  schemasById: Readonly<Record<string, Record<string, unknown> & { readonly '$id': string }>>,
+  visited: ReadonlySet<string>,
+  depth: number,
+  maxDepth: number,
+): Record<string, unknown> {
+  const out: Record<string, unknown> = { ...schema };
+
+  // ── Inline $ref properties ────────────────────────────────────────────────
+  const props = schema['properties'];
+  if (props !== null && typeof props === 'object' && !Array.isArray(props)) {
+    const newProps: Record<string, unknown> = {};
+    for (const [propName, propBody] of Object.entries(props as Record<string, unknown>)) {
+      if (propBody !== null && typeof propBody === 'object' && !Array.isArray(propBody)) {
+        newProps[propName] = inlinePropertyBody(
+          propBody as Record<string, unknown>,
+          schemasById,
+          visited,
+          depth,
+          maxDepth,
+        );
+      } else {
+        newProps[propName] = deepClone(propBody);
+      }
+    }
+    out['properties'] = newProps;
+  }
+
+  // ── Inline items.$ref for arrays ──────────────────────────────────────────
+  const items = schema['items'];
+  if (items !== null && typeof items === 'object' && !Array.isArray(items)) {
+    const itemsObj = items as Record<string, unknown>;
+    if (typeof itemsObj['$ref'] === 'string') {
+      out['items'] = inlinePropertyBody(itemsObj, schemasById, visited, depth, maxDepth);
+    }
+  }
+
+  // ── Merge allOf $ref parent properties (one level) ───────────────────────
+  const allOf = schema['allOf'];
+  if (Array.isArray(allOf)) {
+    for (const entry of allOf) {
+      if (entry === null || typeof entry !== 'object' || Array.isArray(entry)) continue;
+      const entryObj = entry as Record<string, unknown>;
+      const ref = entryObj['$ref'];
+      if (typeof ref !== 'string') continue;
+      const targetId = ref.split('#')[0] ?? ref;
+      const parent = schemasById[targetId];
+      if (parent === undefined || visited.has(targetId)) continue;
+      const parentProps = parent['properties'];
+      if (parentProps !== null && typeof parentProps === 'object' && !Array.isArray(parentProps)) {
+        const existingProps = (out['properties'] ?? {}) as Record<string, unknown>;
+        const mergedProps: Record<string, unknown> = {};
+        // Parent properties provide the base; child properties win on collision.
+        for (const [k, v] of Object.entries(parentProps as Record<string, unknown>)) {
+          if (!(k in existingProps)) {
+            mergedProps[k] = deepClone(v);
+          }
+        }
+        out['properties'] = { ...existingProps, ...mergedProps };
+      }
+    }
+  }
+
+  return out;
+}
+
+/**
+ * Builds a denormalized schema: a deep clone of `schema` where every
+ * `properties.<name>.$ref` pointing to a known `schemasById` entry is
+ * replaced with the target schema's body (minus `$id`/`$schema`/`title`).
+ *
+ * The `$id` and `title` of the root schema are preserved so json-tology can
+ * still identify and mint IRIs for it.
+ *
+ * Recursion is capped at depth 4. Cycles are prevented via a `visited` Set.
+ *
+ * @internal
+ */
+function buildDenormalizedSchema(
+  schema: Record<string, unknown> & { readonly '$id': string },
+  schemasById: Readonly<Record<string, Record<string, unknown> & { readonly '$id': string }>>,
+): Record<string, unknown> & { readonly '$id': string } {
+  const MAX_DEPTH = 4;
+  const visited = new Set<string>([schema.$id]);
+  const result = recurseProperties(schema, schemasById, visited, 0, MAX_DEPTH);
+  // Preserve $id and title on the root so json-tology can identify the schema.
+  result['$id']   = schema.$id;
+  if ('title' in schema) result['title'] = schema['title'];
+  return result as Record<string, unknown> & { readonly '$id': string };
+}
 
 // ---------------------------------------------------------------------------
 // Public types
@@ -66,7 +303,7 @@ export interface JsonTologySchemaInputInterface {
  * @group Types
  */
 export interface JsonTologyOntologyOptionsInterface {
-  /** Target's base IRI; class IRIs are derived as `${baseIRI}#${className}`. */
+  /** Target's base IRI; class IRIs are derived as `${baseIRI}/${className}`. */
   readonly baseIRI: string;
   /** Pre-loaded schemas (loader resolves files; constructor stays pure). */
   readonly schemas: ReadonlyArray<JsonTologySchemaInputInterface>;
@@ -101,17 +338,22 @@ function deriveClassName(schema: Record<string, unknown> & { readonly '$id': str
 
 /**
  * Builds the canonical class IRI for a className under a base IRI, using
- * `${baseIRI}#${className}` (with at most one `#` separator).
+ * path-form: `<baseIRI>/<className>` (with exactly one `/` separator).
+ *
+ * Path-form ensures json-tology can mint property IRIs as
+ * `<classIRI>#<propertyName>` (a single `#` fragment separator, RFC 3987
+ * compliant). Fragment-form `<base>#<className>` would cause json-tology to
+ * produce double-hash IRIs `<base>#<className>#<propertyName>` which are invalid.
  *
  * @internal
  */
 function buildClassIri(baseIRI: string, className: string): string {
-  // Strip a trailing '#' or '/' before concatenation so we don't double up.
+  // Strip any trailing '#' or '/' before appending the class name segment.
   let trimmed = baseIRI;
   while (trimmed.endsWith('#') || trimmed.endsWith('/')) {
     trimmed = trimmed.slice(0, -1);
   }
-  return `${trimmed}#${className}`;
+  return `${trimmed}/${className}`;
 }
 
 // ---------------------------------------------------------------------------
@@ -149,6 +391,146 @@ function buildClassIri(baseIRI: string, className: string): string {
  * @group Core
  */
 export class JsonTologyOntology {
+  // ── Standard prefix map for CURIE expansion ──────────────────────────────
+
+  /**
+   * Standard RDF/OWL/SHACL/XSD prefix map used to expand compact CURIEs that
+   * json-tology occasionally emits instead of fully-resolved IRIs.
+   *
+   * @see {@link JsonTologyOntology.#expandQuad}
+   */
+  static readonly #STANDARD_PREFIXES: Readonly<Record<string, string>> = Object.freeze({
+    rdf:    'http://www.w3.org/1999/02/22-rdf-syntax-ns#',
+    rdfs:   'http://www.w3.org/2000/01/rdf-schema#',
+    owl:    'http://www.w3.org/2002/07/owl#',
+    xsd:    'http://www.w3.org/2001/XMLSchema#',
+    dct:    'http://purl.org/dc/terms/',
+    skos:   'http://www.w3.org/2004/02/skos/core#',
+    sh:     'http://www.w3.org/ns/shacl#',
+    schema: 'https://schema.org/',
+    prov:   'http://www.w3.org/ns/prov#',
+  });
+
+  /**
+   * Expands a single Quad's terms in place: any NamedNode whose `.value` is a
+   * compact CURIE (e.g. `rdf:type`, `xsd:string`) is replaced with its fully
+   * expanded IRI. Literal datatypes are expanded by the same logic.
+   *
+   * Detection: a value is treated as a compact CURIE when it contains `:` but
+   * NOT `://` — this correctly excludes `http://`, `https://`, and `urn:` IRIs
+   * while matching `rdf:type`, `xsd:string`, etc.
+   *
+   * Returns the original quad reference when no terms changed (no allocation).
+   *
+   * @internal
+   */
+  static #expandQuad(quad: Quad, curie: Curie): Quad {
+    const s = JsonTologyOntology.#expandNamedNode(quad.subject as NamedNode, curie);
+    const p = JsonTologyOntology.#expandNamedNode(quad.predicate as NamedNode, curie);
+    const o = JsonTologyOntology.#expandObject(quad.object, curie);
+    const g = JsonTologyOntology.#expandNamedNode(quad.graph as NamedNode, curie);
+
+    if (s === quad.subject && p === quad.predicate && o === quad.object && g === quad.graph) {
+      return quad;
+    }
+    return dataFactory.quad(
+      s as Quad['subject'],
+      p as Quad['predicate'],
+      o as Quad['object'],
+      g as Quad['graph'],
+    );
+  }
+
+  /**
+   * Expands a NamedNode's value if it looks like a compact CURIE.
+   * Non-NamedNode terms and already-expanded IRIs are returned unchanged.
+   *
+   * @internal
+   */
+  static #expandNamedNode(term: NamedNode, curie: Curie): NamedNode {
+    if (term.termType !== 'NamedNode') return term;
+    let v = term.value;
+    // Already an absolute IRI if it contains "://"
+    if (v.includes('://')) {
+      const sanitized = JsonTologyOntology.#sanitizeIri(v);
+      return sanitized === v ? term : dataFactory.namedNode(sanitized);
+    }
+    // A compact CURIE must have a colon after one or more lowercase letters
+    if (!/^[a-z][a-z0-9]*:/.test(v)) return term;
+    v = curie.expand(v);
+    const sanitized = JsonTologyOntology.#sanitizeIri(v);
+    if (sanitized === term.value) return term;
+    return dataFactory.namedNode(sanitized);
+  }
+
+  /**
+   * Enforce the "no spaces / no controls / no <>{}|\\^`" invariant on every
+   * IRI squashage emits. Spaces are percent-encoded; other illegal chars
+   * (controls, the small set RFC 3987 forbids) are also percent-encoded.
+   *
+   * Upstream source: json-tology mints property IRIs from JSON Schema
+   * property names, which originate from source-data object keys. When those
+   * keys carry spaces (e.g. `"Class DC"` in Pathfinder data), the resulting
+   * IRI is malformed. Sanitization here is the canonical squashage boundary —
+   * no IRI emitted by `toQuads`, `tbox`, or `shacl` ever carries an illegal
+   * character.
+   *
+   * @internal
+   */
+  static #sanitizeIri(iri: string): string {
+    let needsFix = false;
+    for (let i = 0; i < iri.length; i++) {
+      const c = iri.charCodeAt(i);
+      if (JsonTologyOntology.#isIriForbidden(c)) { needsFix = true; break; }
+    }
+    if (!needsFix) return iri;
+    let out = '';
+    for (let i = 0; i < iri.length; i++) {
+      const c = iri.charCodeAt(i);
+      if (JsonTologyOntology.#isIriForbidden(c)) {
+        out += '%' + c.toString(16).padStart(2, '0').toUpperCase();
+      } else {
+        out += iri[i];
+      }
+    }
+    return out;
+  }
+
+  // RFC 3987 forbids inside an IRI: any char <= 0x20 (controls + space),
+  // 0x7F (DEL), and explicit `<` `>` `"` `{` `}` `|` `\` `^` backtick.
+  static #isIriForbidden(c: number): boolean {
+    if (c <= 0x20) return true;
+    if (c === 0x7F) return true;
+    if (c === 0x3C || c === 0x3E) return true;        // < >
+    if (c === 0x22) return true;                       // "
+    if (c === 0x7B || c === 0x7D) return true;        // { }
+    if (c === 0x7C) return true;                       // |
+    if (c === 0x5C) return true;                       // backslash
+    if (c === 0x5E) return true;                       // ^
+    if (c === 0x60) return true;                       // backtick
+    return false;
+  }
+
+  /**
+   * Expands the object term: NamedNodes are expanded via `#expandNamedNode`,
+   * Literal datatypes are expanded if they carry a compact CURIE datatype IRI.
+   * BlankNode, DefaultGraph, Variable: pass through unchanged.
+   *
+   * @internal
+   */
+  static #expandObject(term: Quad['object'], curie: Curie): Quad['object'] {
+    if (term.termType === 'NamedNode') {
+      return JsonTologyOntology.#expandNamedNode(term, curie);
+    }
+    if (term.termType === 'Literal') {
+      const lit = term as Literal;
+      const expandedDt = JsonTologyOntology.#expandNamedNode(lit.datatype, curie);
+      if (expandedDt === lit.datatype) return term;
+      return dataFactory.literal(lit.value, expandedDt);
+    }
+    return term;
+  }
+
   /**
    * Builds a {@link JsonTologyOntology} instance from a baseIRI and a list of
    * pre-loaded schemas.
@@ -180,6 +562,25 @@ export class JsonTologyOntology {
           { metadata: { schemaPath: entry.schemaPath } },
         );
       }
+
+      // Always register by $id so $ref resolution works for every schema.
+      if (!(id in schemasById)) {
+        schemasById[id] = entry.schema;
+      }
+
+      // Extracted primitive/object schemas (identified by their path containing
+      // `/primitives/` or `/objects/`) are $ref targets, not OWL classes.
+      // Exclude them from `classMap` and `schemasByClassName` so they don't
+      // clash with same-titled core primitives (e.g. both core and AONPRD-
+      // extracted schemas may carry title: "IriString").
+      const isExtracted =
+        entry.schemaPath.includes('/primitives/') ||
+        entry.schemaPath.includes('/objects/') ||
+        id.includes('/inferred/primitives/') ||
+        id.includes('/inferred/objects/');
+
+      if (isExtracted) continue;
+
       const className = deriveClassName(entry.schema);
       const iri = buildClassIri(options.baseIRI, className);
 
@@ -189,23 +590,53 @@ export class JsonTologyOntology {
           { metadata: { className, schemaPath: entry.schemaPath } },
         );
       }
-      classMap[className]               = iri;
-      schemasByClassName[className]     = entry.schema;
-      schemasById[id]                   = entry.schema;
+      classMap[className] = iri;
+      schemasByClassName[className] = entry.schema;
     }
 
-    // Construct the underlying json-tology registry once with all schemas.
+    // ── TBox / SHACL instance (original strict-graph schemas) ─────────────
+    // Cross-schema $ref works correctly for TBox + SHACL emission. Route
+    // tbox() and shacl() through this instance.
     const jt = JsonTology.create({
-      baseIRI: options.baseIRI,
-      schemas: options.schemas.map(entry => entry.schema) as unknown as ReadonlyArray<{ readonly '$id': string }>,
+      baseIRI:           options.baseIRI,
+      enableStrictGraph: false,
+      schemas:           options.schemas.map(entry => entry.schema) as unknown as ReadonlyArray<{ readonly '$id': string }>,
     });
+
+    // ── ABox instance (denormalized schemas — TRANSIENT, issue #126) ───────
+    // Build a denormalized copy of every schema where cross-schema $ref
+    // properties are inlined. The inlined schemas violate strict-graph by
+    // definition, so this instance runs with enableStrictGraph: false.
+    // Only toQuads() routes through this instance; tbox()/shacl() stay on #jt.
+    const denormalizedSchemas = options.schemas.map(entry =>
+      buildDenormalizedSchema(entry.schema, schemasById),
+    );
+    const abox = JsonTology.create({
+      baseIRI:           options.baseIRI,
+      enableStrictGraph: false,
+      schemas:           denormalizedSchemas as unknown as ReadonlyArray<{ readonly '$id': string }>,
+    });
+
+    // Build the id→denormalized schema map for toQuads lookup.
+    const denormalizedById: Record<string, Record<string, unknown> & { readonly '$id': string }> = {};
+    for (const s of denormalizedSchemas) {
+      denormalizedById[s.$id] = s;
+    }
 
     logger.debug('create', 'JsonTologyOntology constructed', {
       baseIRI:    options.baseIRI,
       classCount: Object.keys(classMap).length,
     });
 
-    return new JsonTologyOntology(options.baseIRI, classMap, schemasByClassName, schemasById, jt);
+    return new JsonTologyOntology(
+      options.baseIRI,
+      classMap,
+      schemasByClassName,
+      schemasById,
+      jt,
+      abox,
+      denormalizedById,
+    );
   }
 
   // ── Instance fields ─────────────────────────────────────────────────────
@@ -214,9 +645,16 @@ export class JsonTologyOntology {
   readonly #classMap:           Readonly<Record<string, string>>;
   readonly #schemasByClassName: Readonly<Record<string, Record<string, unknown> & { readonly '$id': string }>>;
   readonly #schemasById:        Readonly<Record<string, Record<string, unknown> & { readonly '$id': string }>>;
+  /** TBox + SHACL instance: original strict-graph schemas. */
   readonly #jt:                 ReturnType<typeof JsonTology.create>;
-  #tboxCache:  ReadonlyArray<Quad> | null = null;
-  #shaclCache: ReadonlyArray<Quad> | null = null;
+  /** ABox-only instance: denormalized schemas (TRANSIENT — issue #126). */
+  readonly #abox:               ReturnType<typeof JsonTology.create>;
+  /** Map of $id → denormalized schema used by toQuads (TRANSIENT — issue #126). */
+  readonly #denormalizedById:   Readonly<Record<string, Record<string, unknown> & { readonly '$id': string }>>;
+  readonly #curie:              Curie;
+  #tboxCache:        ReadonlyArray<Quad> | null = null;
+  #shaclCache:       ReadonlyArray<Quad> | null = null;
+  #ancestorsCache:   Map<string, ReadonlyArray<string>> | null = null;
 
   private constructor(
     baseIRI:            string,
@@ -224,12 +662,18 @@ export class JsonTologyOntology {
     schemasByClassName: Record<string, Record<string, unknown> & { readonly '$id': string }>,
     schemasById:        Record<string, Record<string, unknown> & { readonly '$id': string }>,
     jt:                 ReturnType<typeof JsonTology.create>,
+    abox:               ReturnType<typeof JsonTology.create>,
+    denormalizedById:   Record<string, Record<string, unknown> & { readonly '$id': string }>,
   ) {
     this.#baseIRI             = baseIRI;
     this.#classMap            = Object.freeze({ ...classMap });
     this.#schemasByClassName  = Object.freeze({ ...schemasByClassName });
     this.#schemasById         = Object.freeze({ ...schemasById });
     this.#jt                  = jt;
+    this.#abox                = abox;
+    this.#denormalizedById    = Object.freeze({ ...denormalizedById });
+    this.#curie               = new Curie(JsonTologyOntology.#STANDARD_PREFIXES);
+    this.#ancestorsCache      = null;
   }
 
   // ── Public surface ─────────────────────────────────────────────────────
@@ -261,43 +705,137 @@ export class JsonTologyOntology {
   }
 
   /**
+   * Returns the transitive ancestor class IRIs for `className` in BFS order
+   * (immediate parent first, root last).
+   *
+   * Walks each schema's `allOf` array — P19b emits entries of the form
+   * `{ $ref: '<absolute-id>' }` for every parent class. For each `$ref`, the
+   * corresponding schema is looked up in `#schemasById`; its `className` is
+   * derived, and its own ancestors are collected recursively.
+   *
+   * A visited set prevents infinite loops when a schema accidentally references
+   * itself transitively.
+   *
+   * Result is cached per `className` after the first traversal.
+   *
+   * @param className - The class name to look up (matches the `title` or last
+   *                    `$id` segment of a registered schema).
+   * @returns BFS-ordered ancestor class IRIs, or `[]` when the class has no
+   *          ancestors or is not registered.
+   */
+  public ancestorIris(className: string): ReadonlyArray<string> {
+    // Lazy-init the cache map on first call.
+    if (this.#ancestorsCache === null) {
+      this.#ancestorsCache = new Map<string, ReadonlyArray<string>>();
+    }
+
+    const cached = this.#ancestorsCache.get(className);
+    if (cached !== undefined) return cached;
+
+    const result = this.#collectAncestors(className, new Set<string>());
+    this.#ancestorsCache.set(className, result);
+    return result;
+  }
+
+  /**
+   * Recursive BFS helper for {@link ancestorIris}.
+   *
+   * @internal
+   */
+  #collectAncestors(
+    className: string,
+    visited:   Set<string>,
+  ): ReadonlyArray<string> {
+    if (visited.has(className)) return [];
+    visited.add(className);
+
+    const schema = this.#schemasByClassName[className];
+    if (schema === undefined) return [];
+
+    const allOf = schema['allOf'];
+    if (!Array.isArray(allOf) || allOf.length === 0) return [];
+
+    const immediateParents: string[] = [];
+
+    for (const entry of allOf) {
+      if (entry === null || typeof entry !== 'object' || Array.isArray(entry)) continue;
+      const ref = (entry as Record<string, unknown>)['$ref'];
+      if (typeof ref !== 'string' || ref.length === 0) continue;
+
+      // Strip fragment if present and look up by absolute $id.
+      const schemaId    = ref.split('#')[0] ?? ref;
+      const parentSchema = this.#schemasById[schemaId];
+      if (parentSchema === undefined) continue;
+
+      const parentName = deriveClassName(parentSchema);
+      const parentIri  = buildClassIri(this.#baseIRI, parentName);
+      if (!visited.has(parentName)) {
+        immediateParents.push(parentIri);
+      }
+    }
+
+    // BFS: emit immediate parents first, then recurse for grandparents.
+    const result: string[] = [...immediateParents];
+    for (const parentIri of immediateParents) {
+      // Derive the parentName back from the IRI so we can recurse.
+      // Class IRIs use path-form (<base>/vocab/<ClassName>), so extract the
+      // last path segment rather than a fragment.  Fallback: if a '#' is
+      // present (legacy or external schemas), slice after it.
+      const hashIdx = parentIri.lastIndexOf('#');
+      const classNameFromIri = hashIdx >= 0
+        ? parentIri.slice(hashIdx + 1)
+        : parentIri.slice(parentIri.lastIndexOf('/') + 1);
+      const grandParents = this.#collectAncestors(classNameFromIri, visited);
+      for (const gp of grandParents) {
+        if (!result.includes(gp)) result.push(gp);
+      }
+    }
+
+    return result;
+  }
+
+  /**
    * Returns the OWL TBox quads (class declarations, property declarations,
    * domain/range, cardinality) derived from every registered schema.
    *
-   * @remarks
-   * Computed once on first call and cached for the lifetime of the instance.
-   * The conversion path is `jt.toTbox().jsonLd()` → JSON-LD string →
-   * {@link Parser} → `@rdfjs/types` Quads, so the returned quads are fully
-   * compatible with Squashage's existing serialization pipeline.
+   * Cached on first call. Reads directly from `OntologyBuilder.quads()`
+   * (json-tology 0.14.0+) — no JSON-LD serialization round-trip.
    */
   public async tbox(): Promise<ReadonlyArray<Quad>> {
     if (this.#tboxCache !== null) return this.#tboxCache;
-    const builder = this.#jt.toTbox();
-    const text    = builder.jsonLd();
-    const parsed  = await Parser.parse(text, { format: 'jsonld' });
-    this.#tboxCache = parsed.quads;
-    return parsed.quads;
+    const raw = this.#jt.toTbox().quads();
+    this.#tboxCache = raw.map(q => JsonTologyOntology.#expandQuad(q, this.#curie));
+    return this.#tboxCache;
   }
 
   /**
    * Returns the SHACL shape quads (NodeShape + property shape constraints)
    * derived from every registered schema.
    *
-   * @remarks
-   * Computed once on first call and cached. Same conversion path as
-   * {@link JsonTologyOntology.tbox} but reads from `jt.toShacl()`.
+   * Cached on first call. Reads directly from `OntologyBuilder.shaclQuads()`
+   * (json-tology 0.14.0+) — no JSON-LD serialization round-trip.
    */
   public async shacl(): Promise<ReadonlyArray<Quad>> {
     if (this.#shaclCache !== null) return this.#shaclCache;
-    const builder = this.#jt.toShacl();
-    const text    = JSON.stringify(builder.shaclObject(), null, 2);
-    const parsed  = await Parser.parse(text, { format: 'jsonld' });
-    this.#shaclCache = parsed.quads;
-    return parsed.quads;
+    const raw = this.#jt.toShacl().shaclQuads();
+    this.#shaclCache = raw.map(q => JsonTologyOntology.#expandQuad(q, this.#curie));
+    return this.#shaclCache;
   }
 
   /**
    * Projects a single instance to ABox quads for the given schema.
+   *
+   * @remarks
+   * Routes through the denormalized ABox instance (`#abox`) to work around
+   * json-tology issue #126 — cross-schema `$ref` properties were silently
+   * dropped during ABox projection in 0.14.0. The denormalized schema has
+   * all `$ref` properties inlined so json-tology can walk them directly.
+   *
+   * TBox (`tbox()`) and SHACL (`shacl()`) continue to route through `#jt`
+   * which holds the original strict-graph schemas.
+   *
+   * REMOVE the `#abox` routing when json-tology #126 is fixed; then route
+   * through `this.#jt.toQuads(schema, instance)` directly.
    *
    * @param schemaId - The `$id` of a schema registered at construction time.
    * @param instance - Instance data conforming to the schema.
@@ -305,6 +843,7 @@ export class JsonTologyOntology {
    * @throws {OutputConfigError} When `schemaId` is not registered.
    */
   public async toQuads(schemaId: string, instance: unknown): Promise<ReadonlyArray<Quad>> {
+    // Guard on original registry — authoritative source of registered schemas.
     const schema = this.#schemasById[schemaId];
     if (schema === undefined) {
       throw OutputConfigError.create(
@@ -312,21 +851,11 @@ export class JsonTologyOntology {
         { metadata: { schemaId, registered: Object.keys(this.#schemasById) } },
       );
     }
-    // toQuads on the JsonTology instance returns json-tology QuadInterface[];
-    // we re-encode to JSON-LD via a fresh ABox-only OntologyBuilder so the
-    // returned quads contain only the instance projection (no TBox/SHACL).
-    const jtQuads = this.#jt.toQuads(schema, instance);
-    if (jtQuads.length === 0) return [];
 
-    // Cast to OntologyBuilder's expected QuadInterface[]; they're the same shape
-    // structurally; the type-import boundary is what's tight.
-    const aboxBuilder = new OntologyBuilder({
-      baseIRI:      this.#baseIRI,
-      graphSources: [],
-      prefixes:     {},
-    }).addQuads(jtQuads as unknown as Parameters<typeof OntologyBuilder.prototype.addQuads>[0]);
-    const text   = JSON.stringify(aboxBuilder.jsonLdObject(), null, 2);
-    const parsed = await Parser.parse(text, { format: 'jsonld' });
-    return parsed.quads;
+    // Route through the ABox instance which holds denormalized (inlined) schemas.
+    // TRANSIENT: remove when json-tology #126 is resolved.
+    const denormalized = this.#denormalizedById[schemaId] ?? schema;
+    const raw = this.#abox.toQuads(denormalized, instance);
+    return raw.map(q => JsonTologyOntology.#expandQuad(q, this.#curie));
   }
 }
