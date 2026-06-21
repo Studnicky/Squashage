@@ -14,6 +14,9 @@ jobs:
   check:
     name: ${{ matrix.os }} · node ${{ matrix.node }}
     runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+      packages: read
     strategy:
       fail-fast: false
       matrix:
@@ -29,9 +32,13 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
           cache: npm
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@studnicky'
 
       - name: Install dependencies
         run: npm ci
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Typecheck
         run: npm run typecheck
@@ -48,9 +55,9 @@ jobs:
       - name: Verify dist artifacts
         shell: bash
         run: |
-          test -f dist/cli/cli.js
-          test -f dist/pipeline/Pipeline.js
-          test -f dist/orchestrators/SquashageOrchestrator.js
+          test -f dist/cli/dagonizerCli.js
+          test -f dist/SquashageRun.js
+          test -f dist/dag/squashage-run.dag.jsonld
           test -f dist/output/FileOutput.js
 
       - name: Audit production deps

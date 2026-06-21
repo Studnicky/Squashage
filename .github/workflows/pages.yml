@@ -9,6 +9,7 @@ permissions:
   contents: read
   pages: write
   id-token: write
+  packages: read
 
 concurrency:
   group: pages
@@ -21,8 +22,14 @@ jobs:
       - uses: actions/checkout@v6
         with: { fetch-depth: 0 }
       - uses: actions/setup-node@v4
-        with: { node-version: 24, cache: npm }
+        with:
+          node-version: 24
+          cache: npm
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@studnicky'
       - run: npm ci
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - run: npm run docs:build
       - uses: actions/configure-pages@v5
         with:
