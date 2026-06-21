@@ -4,6 +4,7 @@ import { mkdtemp, mkdir, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
+import { Batch } from '@studnicky/dagonizer';
 import { walkDraftsNode } from '../../../../src/nodes/run/walkDrafts.js';
 import { SquashageRefineRunState } from '../../../../src/state/SquashageRefineRunState.js';
 import type { SquashageServices } from '../../../../src/services/SquashageServices.js';
@@ -26,11 +27,24 @@ function makeContext(inferredDir: string, refinementsDir: string): { services: S
   };
 }
 
+async function runNode(
+  state: SquashageRefineRunState,
+  context: { services: SquashageServices },
+): Promise<string> {
+  const result = await walkDraftsNode.execute(
+    Batch.of(state),
+    context as unknown as Parameters<typeof walkDraftsNode.execute>[1],
+  );
+  const keys = [...result.keys()];
+  if (keys.length === 0) throw new Error('node produced no output port');
+  return keys[0] as string;
+}
+
 describe('walkDraftsNode — missing inferred directory', () => {
   it('returns empty when directory does not exist', async () => {
-    const state   = new SquashageRefineRunState('test', new Date().toISOString());
-    const result  = await walkDraftsNode.execute(state, makeContext('/nonexistent/dir', '/nonexistent/ref'));
-    assert.equal(result.output, 'empty');
+    const state  = new SquashageRefineRunState('test', new Date().toISOString());
+    const output = await runNode(state, makeContext('/nonexistent/dir', '/nonexistent/ref'));
+    assert.equal(output, 'empty');
     assert.deepEqual(state.drafts, []);
   });
 });
@@ -42,8 +56,8 @@ describe('walkDraftsNode — empty inferred directory', () => {
       const inferredDir = join(tmp, 'inferred');
       await mkdir(inferredDir, { recursive: true });
       const state  = new SquashageRefineRunState('test', new Date().toISOString());
-      const result = await walkDraftsNode.execute(state, makeContext(inferredDir, join(tmp, 'ref')));
-      assert.equal(result.output, 'empty');
+      const output = await runNode(state, makeContext(inferredDir, join(tmp, 'ref')));
+      assert.equal(output, 'empty');
       assert.deepEqual(state.drafts, []);
     } finally {
       await rm(tmp, { recursive: true, force: true });
@@ -68,9 +82,9 @@ describe('walkDraftsNode — walks drafts, pairs refinements', () => {
       await writeFile(join(refinementsDir, 'Feat.refine.json'), '{}', 'utf8');
 
       const state  = new SquashageRefineRunState('test', new Date().toISOString());
-      const result = await walkDraftsNode.execute(state, makeContext(inferredDir, refinementsDir));
+      const output = await runNode(state, makeContext(inferredDir, refinementsDir));
 
-      assert.equal(result.output, 'walked');
+      assert.equal(output, 'walked');
       assert.equal(state.drafts.length, 3);
 
       // Should be sorted by draftPath (lexicographic).
@@ -100,9 +114,9 @@ describe('walkDraftsNode — walks drafts, pairs refinements', () => {
       await writeFile(join(inferredDir, 'Feat.schema.json'),'{}', 'utf8');
 
       const state  = new SquashageRefineRunState('test', new Date().toISOString());
-      const result = await walkDraftsNode.execute(state, makeContext(inferredDir, join(tmp, 'ref')));
+      const output = await runNode(state, makeContext(inferredDir, join(tmp, 'ref')));
 
-      assert.equal(result.output, 'walked');
+      assert.equal(output, 'walked');
       assert.equal(state.drafts.length, 1);
       assert.equal(state.drafts[0]!.className, 'Feat');
     } finally {

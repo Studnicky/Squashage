@@ -1,6 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
+import { Batch } from '@studnicky/dagonizer';
 import { applyRefinementNode } from '../../../../src/nodes/refine/applyRefinement.js';
 import { SquashageRefineState } from '../../../../src/state/SquashageRefineState.js';
 import type { SquashageServices } from '../../../../src/services/SquashageServices.js';
@@ -18,6 +19,19 @@ function makeContext(): { services: SquashageServices } {
   return { services: { logger: noopLogger } as unknown as SquashageServices };
 }
 
+async function runNode(
+  state: SquashageRefineState,
+  context: { services: SquashageServices },
+): Promise<string> {
+  const result = await applyRefinementNode.execute(
+    Batch.of(state),
+    context as unknown as Parameters<typeof applyRefinementNode.execute>[1],
+  );
+  const keys = [...result.keys()];
+  if (keys.length === 0) throw new Error('node produced no output port');
+  return keys[0] as string;
+}
+
 function makeState(
   draftJson:      Record<string, unknown> | null,
   refinementJson: Record<string, unknown> | null,
@@ -31,15 +45,15 @@ function makeState(
 describe('applyRefinementNode — null inputs', () => {
   it('returns error when draftJson is null', async () => {
     const state  = makeState(null, { $schema: 'x', appliesTo: 'Feat' });
-    const result = await applyRefinementNode.execute(state, makeContext());
-    assert.equal(result.output, 'error');
+    const output = await runNode(state, makeContext());
+    assert.equal(output, 'error');
     assert.ok(state.errors.length > 0);
   });
 
   it('returns error when refinementJson is null', async () => {
     const state  = makeState({ type: 'object', properties: {} }, null);
-    const result = await applyRefinementNode.execute(state, makeContext());
-    assert.equal(result.output, 'error');
+    const output = await runNode(state, makeContext());
+    assert.equal(output, 'error');
     assert.ok(state.errors.length > 0);
   });
 });
@@ -58,8 +72,8 @@ describe('applyRefinementNode — happy path', () => {
       drop:      ['/raw_html'],
     };
     const state  = makeState(draft, refinement);
-    const result = await applyRefinementNode.execute(state, makeContext());
-    assert.equal(result.output, 'applied');
+    const output = await runNode(state, makeContext());
+    assert.equal(output, 'applied');
     assert.ok(state.finalJson !== null);
     const props = state.finalJson['properties'] as Record<string, unknown>;
     assert.ok(!Object.prototype.hasOwnProperty.call(props, 'raw_html'));

@@ -3,31 +3,27 @@
  *
  * Topology:
  *
- *   induce (deep-dag squashage:induce)
+ *   induce (embeddedDAG squashage:induce)
  *     ──success──► refine-required-gate
  *     ──error   ──► bootstrap-end
  *
  *   refine-required-gate
- *     ──refinements-present──► refine (deep-dag squashage:refine)
+ *     ──refinements-present──► refine (embeddedDAG squashage:refine)
  *     ──refinements-absent ──► bootstrap-end   ← operator halt, not an error
  *
- *   refine (deep-dag squashage:refine)
+ *   refine (embeddedDAG squashage:refine)
  *     ──success──► build-ready-gate
  *     ──error  ──► bootstrap-end
  *
  *   build-ready-gate
- *     ──schemas-present──► build (deep-dag squashage:run)
+ *     ──schemas-present──► build (embeddedDAG squashage:run)
  *     ──schemas-absent ──► bootstrap-end
  *
- *   build (deep-dag squashage:run)
+ *   build (embeddedDAG squashage:run)
  *     ──success──► bootstrap-end
  *     ──error  ──► bootstrap-end
  *
- *   bootstrap-end ──► END (null)
- *
- * Note: dagonizer does not allow deep-DAG placements to route directly to
- * null (END). All routes from deep-DAG placements must target parent
- * placements. The `bootstrap-end` no-op single node owns the null route.
+ *   bootstrap-end ──► end
  *
  * stateMapping.output lifts summary fields from each child state into
  * SquashageBootstrapState via DottedPathAccessor dot-paths.
@@ -35,38 +31,92 @@
  * the child state and writes to `parentKey` on the parent state.
  */
 
-import type { DAG } from '@noocodex/dagonizer/entities';
-import type { NodeInterface } from '@noocodex/dagonizer';
-import { DAGBuilder } from '@noocodex/dagonizer/builder';
+import type { DAGType } from '@studnicky/dagonizer';
+import { MonadicNode, ScalarNode, NodeOutputBuilder } from '@studnicky/dagonizer';
+import type { Batch, NodeContextType, RoutedBatchType, NodeInterface, NodeOutputType } from '@studnicky/dagonizer';
+import { DAGBuilder } from '@studnicky/dagonizer/builder';
 
 import type { SquashageBootstrapState } from '../state/SquashageBootstrapState.js';
+import type { SquashageServices } from '../services/SquashageServices.js';
 
 type EndOutput = 'done';
 
 /**
- * No-op terminal node that owns the null (END) route for the bootstrap DAG.
+ * No-op terminal node that owns the bootstrap-end route.
  *
  * Exported so `registerBootstrapNodes` can register it on the dispatcher.
  * dagonizer requires every SingleNode placement to reference a registered node.
+ * Routes every batch item to 'done' unchanged.
  */
-export const bootstrapEndNode: NodeInterface<SquashageBootstrapState, EndOutput> = {
-  name:    'bootstrap-end',
-  outputs: ['done'],
-  async execute(): Promise<{ output: EndOutput }> {
-    return { output: 'done' };
-  },
-};
+class BootstrapEndNodeImpl extends ScalarNode<SquashageBootstrapState, EndOutput, SquashageServices> {
+  public readonly name    = 'bootstrap-end';
+  public readonly outputs = ['done'] as const;
 
-export const bootstrapDag: DAG = new DAGBuilder('squashage:bootstrap', '1.0')
-  .deepDAG(
+  public override get outputSchema(): Record<EndOutput, { type: 'object' }> {
+    return { done: { type: 'object' } };
+  }
+
+  protected override async executeOne(
+    _state:   SquashageBootstrapState,
+    _context: NodeContextType<SquashageServices>,
+  ): Promise<NodeOutputType<EndOutput>> {
+    return NodeOutputBuilder.of('done');
+  }
+}
+
+/**
+ * Stub for inline gate nodes within this file — they are registered on the
+ * dispatcher by registerBootstrapNodes (via bootstrapEndNode), but the
+ * refine-required-gate and build-ready-gate nodes are registered from their
+ * own module files imported in registerBootstrapNodes.
+ */
+function stubBootstrap<TOutput extends string>(
+  stubName: string,
+  stubOutputs: readonly TOutput[],
+): NodeInterface<SquashageBootstrapState, TOutput, SquashageServices> {
+  class Stub extends MonadicNode<SquashageBootstrapState, TOutput, SquashageServices> {
+    public readonly name    = stubName;
+    public readonly outputs = stubOutputs;
+    public override get outputSchema(): Record<TOutput, { type: 'object' }> {
+      return Object.fromEntries(stubOutputs.map((o) => [o, { type: 'object' }])) as Record<TOutput, { type: 'object' }>;
+    }
+    public override async execute(
+      _b: Batch<SquashageBootstrapState>,
+      _c: NodeContextType<SquashageServices>,
+    ): Promise<RoutedBatchType<TOutput, SquashageBootstrapState>> {
+      throw new Error(`stub '${stubName}' called; register the real node on the dispatcher`);
+    }
+  }
+  return new Stub();
+}
+
+export const bootstrapEndNode = new BootstrapEndNodeImpl();
+
+// A real no-op instance for use inside the DAGBuilder inline node position —
+// the dispatcher will resolve the name at execution time.
+class BootstrapEndStubImpl extends MonadicNode<SquashageBootstrapState, EndOutput, SquashageServices> {
+  public readonly name    = 'bootstrap-end';
+  public readonly outputs = ['done'] as const;
+  public override get outputSchema(): Record<EndOutput, { type: 'object' }> {
+    return { done: { type: 'object' } };
+  }
+  public override async execute(
+    _b: Batch<SquashageBootstrapState>,
+    _c: NodeContextType<SquashageServices>,
+  ): Promise<RoutedBatchType<EndOutput, SquashageBootstrapState>> {
+    throw new Error('bootstrap-end stub called; register the real node on the dispatcher');
+  }
+}
+
+// Inline node used in .node() placement — resolved by name at runtime.
+const bootstrapEndStub = new BootstrapEndStubImpl();
+
+export const bootstrapDag: DAGType = new DAGBuilder('squashage:bootstrap', '1.0')
+  .embeddedDAG(
     'induce',
     'squashage:induce',
     { success: 'refine-required-gate', error: 'bootstrap-end' },
     {
-      // dagonizer 0.10 renamed stateMapping.output → flat `outputs`.
-      // Flat key mappings — DottedPathAccessor requires the parent field to
-      // be non-null for dot-path writes. We use flat keys; induceResult is
-      // derived in executeBootstrap from these flat fields.
       outputs: {
         'discoveredClasses': 'discoveredClasses',
         'draftsWritten':     'draftsWritten',
@@ -77,23 +127,18 @@ export const bootstrapDag: DAG = new DAGBuilder('squashage:bootstrap', '1.0')
 
   .node(
     'refine-required-gate',
-    {
-      name:    'refine-required-gate',
-      outputs: ['refinements-present', 'refinements-absent'] as const,
-      async execute() { throw new Error('stub'); },
-    },
+    stubBootstrap('refine-required-gate', ['refinements-present', 'refinements-absent'] as const),
     {
       'refinements-present': 'refine',
       'refinements-absent':  'bootstrap-end',
     },
   )
 
-  .deepDAG(
+  .embeddedDAG(
     'refine',
     'squashage:refine',
     { success: 'build-ready-gate', error: 'bootstrap-end' },
     {
-      // dagonizer 0.10 renamed stateMapping.output → flat `outputs`.
       outputs: {
         'refinedCount':     'refinedCount',
         'passthroughCount': 'passthroughCount',
@@ -103,24 +148,21 @@ export const bootstrapDag: DAG = new DAGBuilder('squashage:bootstrap', '1.0')
 
   .node(
     'build-ready-gate',
-    {
-      name:    'build-ready-gate',
-      outputs: ['schemas-present', 'schemas-absent'] as const,
-      async execute() { throw new Error('stub'); },
-    },
+    stubBootstrap('build-ready-gate', ['schemas-present', 'schemas-absent'] as const),
     {
       'schemas-present': 'build',
       'schemas-absent':  'bootstrap-end',
     },
   )
 
-  .deepDAG(
+  .embeddedDAG(
     'build',
     'squashage:run',
     { success: 'bootstrap-end', error: 'bootstrap-end' },
   )
 
-  .node('bootstrap-end', bootstrapEndNode, { done: null })
+  .node('bootstrap-end', bootstrapEndStub, { done: 'end' })
 
+  .terminal('end')
   .entrypoint('induce')
   .build();

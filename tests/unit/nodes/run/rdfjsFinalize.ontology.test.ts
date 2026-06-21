@@ -28,6 +28,7 @@ import dataFactory    from '@rdfjs/data-model';
 import datasetFactory from '@rdfjs/dataset';
 import type { DatasetCore, Quad } from '@rdfjs/types';
 
+import { Batch } from '@studnicky/dagonizer';
 import { rdfjsFinalizeNode }  from '../../../../src/nodes/run/rdfjsFinalize.js';
 import { ontologyGraphIri }   from '../../../../src/nodes/run/ontologyEmit.js';
 import { SquashageRunState }  from '../../../../src/state/SquashageRunState.js';
@@ -91,6 +92,19 @@ function makeState(): SquashageRunState {
   return new SquashageRunState(TARGET, new Date().toISOString());
 }
 
+async function runNode(
+  state:   SquashageRunState,
+  context: { services: SquashageServices },
+): Promise<string> {
+  const result = await rdfjsFinalizeNode.execute(
+    Batch.of(state),
+    context as unknown as Parameters<typeof rdfjsFinalizeNode.execute>[1],
+  );
+  const keys = [...result.keys()];
+  if (keys.length === 0) throw new Error('node produced no output port');
+  return keys[0] as string;
+}
+
 // ---------------------------------------------------------------------------
 // Quad fixtures
 //
@@ -143,12 +157,9 @@ describe('rdfjsFinalize:ontology-partition:empty-dataset', () => {
     const dataset  = buildDataset([]);
     const services = makeServices(dataset, outPath, runDir);
 
-    const result = await rdfjsFinalizeNode.execute(
-      makeState(),
-      { services: services as unknown as SquashageServices },
-    );
+    const output = await runNode(makeState(), { services: services as unknown as SquashageServices });
 
-    assert.equal(result.output, 'empty');
+    assert.equal(output, 'empty');
   });
 });
 
@@ -168,12 +179,9 @@ describe('rdfjsFinalize:ontology-partition:success-only', () => {
     const dataset     = buildDataset([successQuad()]);
     const services    = makeServices(dataset, outPath, runDir);
 
-    const result = await rdfjsFinalizeNode.execute(
-      makeState(),
-      { services: services as unknown as SquashageServices },
-    );
+    const output = await runNode(makeState(), { services: services as unknown as SquashageServices });
 
-    assert.equal(result.output, 'written');
+    assert.equal(output, 'written');
     assert.ok(await exists(outPath),        'success file must exist');
     assert.ok(!(await exists(sidecarPath)), 'ontology sidecar must NOT exist when partition is empty');
   });
@@ -195,12 +203,9 @@ describe('rdfjsFinalize:ontology-partition:mixed-dataset', () => {
     const dataset      = buildDataset([successQuad(), ontologyQuad(), provQuad()]);
     const services     = makeServices(dataset, outPath, runDir);
 
-    const result = await rdfjsFinalizeNode.execute(
-      makeState(),
-      { services: services as unknown as SquashageServices },
-    );
+    const output = await runNode(makeState(), { services: services as unknown as SquashageServices });
 
-    assert.equal(result.output, 'written');
+    assert.equal(output, 'written');
     assert.ok(await exists(outPath),      'success file must exist');
     assert.ok(await exists(ontologyPath), 'ontology sidecar must exist');
   });
@@ -211,10 +216,7 @@ describe('rdfjsFinalize:ontology-partition:mixed-dataset', () => {
     const dataset  = buildDataset([successQuad(), ontologyQuad(), provQuad()]);
     const services = makeServices(dataset, outPath, runDir);
 
-    await rdfjsFinalizeNode.execute(
-      makeState(),
-      { services: services as unknown as SquashageServices },
-    );
+    await runNode(makeState(), { services: services as unknown as SquashageServices });
 
     const content   = await readFile(outPath, 'utf8');
     const { quads } = await Parser.parse(content, { format: 'nquads' });
@@ -236,10 +238,7 @@ describe('rdfjsFinalize:ontology-partition:mixed-dataset', () => {
     const dataset     = buildDataset([successQuad(), ontologyQuad(), provQuad()]);
     const services    = makeServices(dataset, outPath, runDir);
 
-    await rdfjsFinalizeNode.execute(
-      makeState(),
-      { services: services as unknown as SquashageServices },
-    );
+    await runNode(makeState(), { services: services as unknown as SquashageServices });
 
     const content   = await readFile(sidecarPath, 'utf8');
     assert.ok(content.length > 0, 'ontology sidecar must be non-empty');
@@ -280,13 +279,10 @@ describe('rdfjsFinalize:ontology-partition:ontology-only', () => {
     const dataset     = buildDataset([ontologyQuad()]);
     const services    = makeServices(dataset, outPath, runDir);
 
-    const result = await rdfjsFinalizeNode.execute(
-      makeState(),
-      { services: services as unknown as SquashageServices },
-    );
+    const output = await runNode(makeState(), { services: services as unknown as SquashageServices });
 
     // The total dataset is non-empty, so we expect 'written'.
-    assert.equal(result.output, 'written');
+    assert.equal(output, 'written');
     assert.ok(await exists(sidecarPath), 'ontology sidecar must be written');
   });
 });

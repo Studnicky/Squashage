@@ -9,7 +9,8 @@
 
 import { createHash } from 'node:crypto';
 
-import type { NodeInterface } from '@noocodex/dagonizer';
+import { ScalarNode, NodeOutputBuilder } from '@studnicky/dagonizer';
+import type { NodeContextType, NodeOutputType } from '@studnicky/dagonizer';
 
 import type { SquashageServices } from '../../services/SquashageServices.js';
 import type { SquashageRecordState } from '../../state/SquashageRecordState.js';
@@ -21,17 +22,21 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-function computeId(path: string, line: number): string {
-  return createHash('sha1').update(`${path}#${String(line)}`).digest('hex');
-}
+class RecordQuarantineNodeImpl extends ScalarNode<SquashageRecordState, Output, SquashageServices> {
+  public readonly name    = 'record-quarantine';
+  public readonly outputs = ['recorded'] as const;
 
-export const recordQuarantineNode: NodeInterface<SquashageRecordState, Output, SquashageServices> = {
-  name:    'record-quarantine',
-  outputs: ['recorded'],
-  async execute(state, context) {
+  public override get outputSchema(): Record<Output, { type: 'object' }> {
+    return { recorded: { type: 'object' } };
+  }
+
+  protected override async executeOne(
+    state:   SquashageRecordState,
+    context: NodeContextType<SquashageServices>,
+  ): Promise<NodeOutputType<Output>> {
     const log = context.services.logger.forComponent('record-quarantine');
     const bucket: QuarantineBucket = state.quarantineBucket ?? 'projection';
-    const id = computeId(state.recordPath, state.recordLine);
+    const id = RecordQuarantineNodeImpl.computeId(state.recordPath, state.recordLine);
 
     const firstError = state.errors[0];
     const errorPayload = firstError !== undefined
@@ -49,9 +54,15 @@ export const recordQuarantineNode: NodeInterface<SquashageRecordState, Output, S
       timestamp:      new Date().toISOString(),
     });
 
-    log.info('execute', 'record quarantined', {
+    log.info('executeOne', 'record quarantined', {
       bucket, id, recordPath: state.recordPath, recordLine: state.recordLine,
     });
-    return { output: 'recorded' };
-  },
-};
+    return NodeOutputBuilder.of('recorded');
+  }
+
+  private static computeId(path: string, line: number): string {
+    return createHash('sha1').update(`${path}#${String(line)}`).digest('hex');
+  }
+}
+
+export const recordQuarantineNode = new RecordQuarantineNodeImpl();

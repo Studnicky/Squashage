@@ -1,5 +1,5 @@
-import { NodeStateBase } from '@noocodex/dagonizer';
-import type { JsonObject, JsonValue } from '@noocodex/dagonizer/types';
+import { NodeStateBase } from '@studnicky/dagonizer';
+import type { JsonObjectType, JsonValueType } from '@studnicky/dagonizer/entities';
 
 import type { RecordLocator } from './schemas/RecordLocator.js';
 import type { RecordSummary } from './schemas/RecordSummary.js';
@@ -111,8 +111,8 @@ export class SquashageBootstrapState extends NodeStateBase {
     this._dispatchedItems = [];
   }
 
-  override clone(): SquashageBootstrapState {
-    const base = super.clone() as SquashageBootstrapState;
+  override clone() {
+    const base = super.clone() as this;
     base.target            = this.target;
     base.runStartTime      = this.runStartTime;
     base.induceResult      = this.induceResult === null ? null : { ...this.induceResult };
@@ -132,28 +132,28 @@ export class SquashageBootstrapState extends NodeStateBase {
     return base;
   }
 
-  protected override snapshotData(): JsonObject {
+  protected override snapshotData(): JsonObjectType {
     return {
       target:            this.target,
       runStartTime:      this.runStartTime,
-      induceResult:      this.induceResult      as unknown as JsonValue,
-      refineResult:      this.refineResult      as unknown as JsonValue,
-      buildResult:       this.buildResult       as unknown as JsonValue,
-      locators:          this.locators          as unknown as JsonValue,
+      induceResult:      this.induceResult      as unknown as JsonValueType,
+      refineResult:      this.refineResult      as unknown as JsonValueType,
+      buildResult:       this.buildResult       as unknown as JsonValueType,
+      locators:          this.locators          as unknown as JsonValueType,
       observedRecords:   this.observedRecords,
-      discoveredClasses: this.discoveredClasses as unknown as JsonValue,
-      inducedSchemas:    this.inducedSchemas    as unknown as JsonValue,
+      discoveredClasses: this.discoveredClasses as unknown as JsonValueType,
+      inducedSchemas:    this.inducedSchemas    as unknown as JsonValueType,
       draftsWritten:     this.draftsWritten,
-      drafts:            this.drafts            as unknown as JsonValue,
+      drafts:            this.drafts            as unknown as JsonValueType,
       refinedCount:      this.refinedCount,
       passthroughCount:  this.passthroughCount,
-      runErrors:         this.runErrors         as unknown as JsonValue,
-      results:           this.results           as unknown as JsonValue,
-      _dispatchedItems:  this._dispatchedItems  as unknown as JsonValue,
+      runErrors:         this.runErrors         as unknown as JsonValueType,
+      results:           this.results           as unknown as JsonValueType,
+      _dispatchedItems:  this._dispatchedItems  as unknown as JsonValueType,
     };
   }
 
-  protected override restoreData(snap: JsonObject): void {
+  protected override restoreData(snap: JsonObjectType): void {
     const target = snap['target'];
     if (typeof target === 'string') this.target = target;
 

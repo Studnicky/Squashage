@@ -1,0 +1,158 @@
+{
+  "@context": {
+    "@version": 1.1,
+    "name": {
+      "@id": "https://noocodex.dev/ontology/dag/name"
+    },
+    "version": {
+      "@id": "https://noocodex.dev/ontology/dag/version"
+    },
+    "entrypoint": {
+      "@id": "https://noocodex.dev/ontology/dag/entrypoint"
+    },
+    "nodes": {
+      "@id": "https://noocodex.dev/ontology/dag/nodes",
+      "@container": "@set"
+    },
+    "outputs": {
+      "@id": "https://noocodex.dev/ontology/dag/outputs"
+    },
+    "node": {
+      "@id": "https://noocodex.dev/ontology/dag/node"
+    },
+    "dag": {
+      "@id": "https://noocodex.dev/ontology/dag/dag"
+    },
+    "body": {
+      "@id": "https://noocodex.dev/ontology/dag/body"
+    },
+    "source": {
+      "@id": "https://noocodex.dev/ontology/dag/source"
+    },
+    "itemKey": {
+      "@id": "https://noocodex.dev/ontology/dag/itemKey"
+    },
+    "concurrency": {
+      "@id": "https://noocodex.dev/ontology/dag/concurrency"
+    },
+    "gather": {
+      "@id": "https://noocodex.dev/ontology/dag/gather"
+    },
+    "reducer": {
+      "@id": "https://noocodex.dev/ontology/dag/reducer"
+    },
+    "outcome": {
+      "@id": "https://noocodex.dev/ontology/dag/outcome"
+    },
+    "phase": {
+      "@id": "https://noocodex.dev/ontology/dag/phase"
+    },
+    "stateMapping": {
+      "@id": "https://noocodex.dev/ontology/dag/stateMapping"
+    },
+    "container": {
+      "@id": "https://noocodex.dev/ontology/dag/container"
+    },
+    "DAG": {
+      "@id": "https://noocodex.dev/ontology/dag/DAG"
+    },
+    "Placement": {
+      "@id": "https://noocodex.dev/ontology/dag/Placement"
+    },
+    "SingleNode": {
+      "@id": "https://noocodex.dev/ontology/dag/SingleNode"
+    },
+    "ScatterNode": {
+      "@id": "https://noocodex.dev/ontology/dag/ScatterNode"
+    },
+    "EmbeddedDAGNode": {
+      "@id": "https://noocodex.dev/ontology/dag/EmbeddedDAGNode"
+    },
+    "TerminalNode": {
+      "@id": "https://noocodex.dev/ontology/dag/TerminalNode"
+    },
+    "PhaseNode": {
+      "@id": "https://noocodex.dev/ontology/dag/PhaseNode"
+    }
+  },
+  "@id": "urn:noocodex:dag:squashage:refine-one",
+  "@type": "DAG",
+  "name": "squashage:refine-one",
+  "version": "1.0",
+  "entrypoint": "refine-init",
+  "nodes": [
+    {
+      "@id": "urn:noocodex:dag:squashage:refine-one/node/refine-init",
+      "@type": "SingleNode",
+      "name": "refine-init",
+      "node": "refine-init",
+      "outputs": {
+        "done": "read-draft"
+      }
+    },
+    {
+      "@id": "urn:noocodex:dag:squashage:refine-one/node/read-draft",
+      "@type": "SingleNode",
+      "name": "read-draft",
+      "node": "read-draft",
+      "outputs": {
+        "loaded": "read-refinement",
+        "error": "refine-summary-collect"
+      }
+    },
+    {
+      "@id": "urn:noocodex:dag:squashage:refine-one/node/read-refinement",
+      "@type": "SingleNode",
+      "name": "read-refinement",
+      "node": "read-refinement",
+      "outputs": {
+        "loaded": "apply-refinement",
+        "missing": "refinement-missing-warn",
+        "error": "refine-summary-collect"
+      }
+    },
+    {
+      "@id": "urn:noocodex:dag:squashage:refine-one/node/apply-refinement",
+      "@type": "SingleNode",
+      "name": "apply-refinement",
+      "node": "apply-refinement",
+      "outputs": {
+        "applied": "write-final",
+        "error": "refine-summary-collect"
+      }
+    },
+    {
+      "@id": "urn:noocodex:dag:squashage:refine-one/node/refinement-missing-warn",
+      "@type": "SingleNode",
+      "name": "refinement-missing-warn",
+      "node": "refinement-missing-warn",
+      "outputs": {
+        "done": "write-final"
+      }
+    },
+    {
+      "@id": "urn:noocodex:dag:squashage:refine-one/node/write-final",
+      "@type": "SingleNode",
+      "name": "write-final",
+      "node": "write-final",
+      "outputs": {
+        "written": "refine-summary-collect"
+      }
+    },
+    {
+      "@id": "urn:noocodex:dag:squashage:refine-one/node/refine-summary-collect",
+      "@type": "SingleNode",
+      "name": "refine-summary-collect",
+      "node": "refine-summary-collect",
+      "outputs": {
+        "done": "end"
+      }
+    },
+    {
+      "@id": "urn:noocodex:dag:squashage:refine-one/node/end",
+      "@type": "TerminalNode",
+      "name": "end",
+      "outcome": "completed"
+    }
+  ]
+}

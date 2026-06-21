@@ -1,6 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
+import { Batch } from '@studnicky/dagonizer';
 import { mergeShapeCacheNode } from '../../../../src/nodes/run/mergeShapeCache.js';
 import { SquashageInduceRunState } from '../../../../src/state/SquashageInduceRunState.js';
 import { ShapeObservationAccumulator } from '../../../../src/induction/ShapeObservation.js';
@@ -26,15 +27,25 @@ function makeServices(shapeCache: Map<string, ReturnType<typeof ShapeObservation
   };
 }
 
+async function runNode(
+  state:   SquashageInduceRunState,
+  context: { services: SquashageServices },
+): Promise<string> {
+  const result = await mergeShapeCacheNode.execute(
+    Batch.of(state),
+    context as unknown as Parameters<typeof mergeShapeCacheNode.execute>[1],
+  );
+  const keys = [...result.keys()];
+  if (keys.length === 0) throw new Error('node produced no output port');
+  return keys[0] as string;
+}
+
 describe('mergeShapeCacheNode — empty cache', () => {
   it('returns merged; state.observedRecords is 0', async () => {
     const state    = makeState();
     const services = makeServices(new Map());
-    const result   = await mergeShapeCacheNode.execute(
-      state,
-      { services: services as unknown as SquashageServices },
-    );
-    assert.equal(result.output,          'merged');
+    const output   = await runNode(state, { services: services as unknown as SquashageServices });
+    assert.equal(output,                 'merged');
     assert.equal(state.observedRecords,  0);
     assert.deepEqual(state.discoveredClasses, []);
   });
@@ -55,12 +66,9 @@ describe('mergeShapeCacheNode — populated cache', () => {
 
     const state    = makeState();
     const services = makeServices(shapeCache);
-    const result   = await mergeShapeCacheNode.execute(
-      state,
-      { services: services as unknown as SquashageServices },
-    );
+    const output   = await runNode(state, { services: services as unknown as SquashageServices });
 
-    assert.equal(result.output,         'merged');
+    assert.equal(output,                'merged');
     assert.equal(state.observedRecords, 3);   // 2 Feat + 1 Spell
   });
 
@@ -72,10 +80,7 @@ describe('mergeShapeCacheNode — populated cache', () => {
 
     const state    = makeState();
     const services = makeServices(shapeCache);
-    await mergeShapeCacheNode.execute(
-      state,
-      { services: services as unknown as SquashageServices },
-    );
+    await runNode(state, { services: services as unknown as SquashageServices });
 
     assert.deepEqual(state.discoveredClasses, ['Feat', 'Item', 'Spell']);
   });

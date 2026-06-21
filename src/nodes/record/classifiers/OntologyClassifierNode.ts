@@ -9,7 +9,8 @@
  * votes. Never proposes a class — the conflict resolver filters sentinels.
  */
 
-import type { NodeInterface } from '@noocodex/dagonizer';
+import { ScalarNode, NodeOutputBuilder } from '@studnicky/dagonizer';
+import type { NodeContextType, NodeOutputType } from '@studnicky/dagonizer';
 
 import type { SquashageServices } from '../../../services/SquashageServices.js';
 import type { ClassificationProposal } from '../../../state/schemas/ClassificationProposal.js';
@@ -23,24 +24,28 @@ type Output = 'validated' | 'no-match';
 
 const SENTINELS = new Set<string>(['__source__', '__validation__', '__narrowing_applied__', 'unknown']);
 
-export class OntologyClassifierNode
-  implements NodeInterface<SquashageRecordState, Output, SquashageServices> {
+export class OntologyClassifierNode extends ScalarNode<SquashageRecordState, Output, SquashageServices> {
 
-  readonly name    = 'classify:ontology';
-  readonly outputs = ['validated', 'no-match'] as const;
+  public readonly name    = 'classify:ontology';
+  public readonly outputs = ['validated', 'no-match'] as const;
   readonly #classes: Readonly<Record<string, string>>;
 
   constructor(config: OntologyClassifierConfigInterface) {
+    super();
     if (Object.keys(config.classes).length === 0) {
       throw new Error('classify:ontology: classes map must contain at least one entry');
     }
     this.#classes = Object.freeze({ ...config.classes });
   }
 
-  async execute(
+  public override get outputSchema(): Record<Output, { type: 'object' }> {
+    return { validated: { type: 'object' }, 'no-match': { type: 'object' } };
+  }
+
+  protected override async executeOne(
     state:    SquashageRecordState,
-    _context: { readonly services: SquashageServices },
-  ): Promise<{ output: Output }> {
+    _context: NodeContextType<SquashageServices>,
+  ): Promise<NodeOutputType<Output>> {
     const unknownReasons: string[] = [];
 
     for (const [classifierName, proposal] of Object.entries(state.proposals)) {
@@ -50,7 +55,7 @@ export class OntologyClassifierNode
       }
     }
 
-    if (unknownReasons.length === 0) return { output: 'no-match' };
+    if (unknownReasons.length === 0) return NodeOutputBuilder.of('no-match');
 
     const proposal: ClassificationProposal = {
       source:     'classify:ontology',
@@ -60,6 +65,6 @@ export class OntologyClassifierNode
       reasons:    unknownReasons,
     };
     state.proposals['classify:ontology'] = proposal;
-    return { output: 'validated' };
+    return NodeOutputBuilder.of('validated');
   }
 }

@@ -1,5 +1,5 @@
-import { NodeStateBase } from '@noocodex/dagonizer';
-import type { JsonObject, JsonValue } from '@noocodex/dagonizer/types';
+import { NodeStateBase } from '@studnicky/dagonizer';
+import type { JsonObjectType, JsonValueType } from '@studnicky/dagonizer/entities';
 
 import type { DraftLocator } from './schemas/DraftLocator.js';
 
@@ -59,8 +59,8 @@ export class SquashageRefineRunState extends NodeStateBase {
     this.runStartTime     = runStartTime;
   }
 
-  override clone(): SquashageRefineRunState {
-    const base = super.clone() as SquashageRefineRunState;
+  override clone() {
+    const base = super.clone() as this;
     base.drafts           = [...this.drafts];
     base._dispatchedItems = [...this._dispatchedItems];
     base.refinedCount     = this.refinedCount;
@@ -71,19 +71,19 @@ export class SquashageRefineRunState extends NodeStateBase {
     return base;
   }
 
-  protected override snapshotData(): JsonObject {
+  protected override snapshotData(): JsonObjectType {
     return {
-      drafts:           this.drafts           as unknown as JsonValue,
-      _dispatchedItems: this._dispatchedItems as unknown as JsonValue,
+      drafts:           this.drafts           as unknown as JsonValueType,
+      _dispatchedItems: this._dispatchedItems as unknown as JsonValueType,
       refinedCount:     this.refinedCount,
       passthroughCount: this.passthroughCount,
-      runErrors:        this.runErrors         as unknown as JsonValue,
+      runErrors:        this.runErrors         as unknown as JsonValueType,
       target:           this.target,
       runStartTime:     this.runStartTime,
     };
   }
 
-  protected override restoreData(snap: JsonObject): void {
+  protected override restoreData(snap: JsonObjectType): void {
     const drafts = snap['drafts'];
     if (Array.isArray(drafts)) this.drafts = drafts as unknown as DraftLocator[];
 

@@ -21,7 +21,8 @@
 import { access, readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 
-import type { NodeInterface } from '@noocodex/dagonizer';
+import { ScalarNode, NodeOutputBuilder } from '@studnicky/dagonizer';
+import type { NodeContextType, NodeOutputType } from '@studnicky/dagonizer';
 
 import type { SquashageServices } from '../../services/SquashageServices.js';
 import type { SquashageRefineRunState } from '../../state/SquashageRefineRunState.js';
@@ -63,8 +64,8 @@ async function collectDrafts(
   const locators: DraftLocator[] = [];
 
   for (const filename of draftFiles) {
-    const className     = filename.slice(0, -DRAFT_SUFFIX.length);
-    const draftPath     = join(dir, filename);
+    const className = filename.slice(0, -DRAFT_SUFFIX.length);
+    const draftPath = join(dir, filename);
 
     // Extracted schemas in subdirs do not have refinement files.
     let refinementPath: string | null = null;
@@ -86,11 +87,21 @@ async function collectDrafts(
   return locators;
 }
 
-export const walkDraftsNode: NodeInterface<SquashageRefineRunState, Output, SquashageServices> = {
-  name:    'walk-drafts',
-  outputs: ['walked', 'empty'],
+class WalkDraftsNodeImpl extends ScalarNode<SquashageRefineRunState, Output, SquashageServices> {
+  public readonly name    = 'walk-drafts';
+  public readonly outputs = ['walked', 'empty'] as const;
 
-  async execute(state, context): Promise<{ output: Output }> {
+  public override get outputSchema(): Record<Output, { type: 'object' }> {
+    return {
+      walked: { type: 'object' },
+      empty:  { type: 'object' },
+    };
+  }
+
+  protected override async executeOne(
+    state:   SquashageRefineRunState,
+    context: NodeContextType<SquashageServices>,
+  ): Promise<NodeOutputType<Output>> {
     const log            = context.services.logger.forComponent('walk-drafts');
     const inferredDir    = context.services.schemaPaths.inferred;
     const refinementsDir = context.services.schemaPaths.refinements;
@@ -99,11 +110,11 @@ export const walkDraftsNode: NodeInterface<SquashageRefineRunState, Output, Squa
     const topLevel = await collectDrafts(inferredDir, refinementsDir, undefined);
 
     if (topLevel.length === 0 && !(await fileExists(inferredDir))) {
-      log.info('execute', 'inferred directory absent or unreadable; no drafts', {
+      log.info('executeOne', 'inferred directory absent or unreadable; no drafts', {
         inferredDir,
       });
       state.drafts = [];
-      return { output: 'empty' };
+      return NodeOutputBuilder.of('empty');
     }
 
     // Collect extracted-schema drafts from subdirs.
@@ -117,9 +128,9 @@ export const walkDraftsNode: NodeInterface<SquashageRefineRunState, Output, Squa
     const locators = [...topLevel, ...extracted];
 
     if (locators.length === 0) {
-      log.info('execute', 'no draft files found', { inferredDir });
+      log.info('executeOne', 'no draft files found', { inferredDir });
       state.drafts = [];
-      return { output: 'empty' };
+      return NodeOutputBuilder.of('empty');
     }
 
     // Sort lexicographically by draftPath for determinism.
@@ -127,7 +138,7 @@ export const walkDraftsNode: NodeInterface<SquashageRefineRunState, Output, Squa
 
     state.drafts = locators;
 
-    log.info('execute', 'walk-drafts complete', {
+    log.info('executeOne', 'walk-drafts complete', {
       inferredDir,
       draftCount:       locators.length,
       classCount:       topLevel.length,
@@ -136,6 +147,8 @@ export const walkDraftsNode: NodeInterface<SquashageRefineRunState, Output, Squa
       passthroughCount: locators.filter((l) => l.refinementPath === null).length,
     });
 
-    return { output: 'walked' };
-  },
-};
+    return NodeOutputBuilder.of('walked');
+  }
+}
+
+export const walkDraftsNode = new WalkDraftsNodeImpl();

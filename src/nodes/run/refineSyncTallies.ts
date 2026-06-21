@@ -13,23 +13,34 @@
  *   - CLI output (`finalState.refinedCount`, `finalState.runErrors`) is accurate.
  */
 
-import type { NodeInterface } from '@noocodex/dagonizer';
+import { ScalarNode, NodeOutputBuilder } from '@studnicky/dagonizer';
+import type { NodeContextType, NodeOutputType } from '@studnicky/dagonizer';
 
 import type { SquashageServices } from '../../services/SquashageServices.js';
 import type { SquashageRefineRunState } from '../../state/SquashageRefineRunState.js';
 
 type Output = 'synced';
 
-export const refineSyncTalliesNode: NodeInterface<SquashageRefineRunState, Output, SquashageServices> = {
-  name:    'refine-sync-tallies',
-  outputs: ['synced'],
-  async execute(state, context) {
+class RefineSyncTalliesNodeImpl extends ScalarNode<SquashageRefineRunState, Output, SquashageServices> {
+  public readonly name    = 'refine-sync-tallies';
+  public readonly outputs = ['synced'] as const;
+
+  public override get outputSchema(): Record<Output, { type: 'object' }> {
+    return { synced: { type: 'object' } };
+  }
+
+  protected override async executeOne(
+    state:   SquashageRefineRunState,
+    context: NodeContextType<SquashageServices>,
+  ): Promise<NodeOutputType<Output>> {
     const { refinedCount, passthroughCount, runErrors } = context.services.refineSummaries;
     state.refinedCount     = refinedCount;
     state.passthroughCount = passthroughCount;
     for (const msg of runErrors) {
       state.runErrors.push(msg);
     }
-    return { output: 'synced' };
-  },
-};
+    return NodeOutputBuilder.of('synced');
+  }
+}
+
+export const refineSyncTalliesNode = new RefineSyncTalliesNodeImpl();

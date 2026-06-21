@@ -11,19 +11,30 @@
 
 import { readFile } from 'node:fs/promises';
 
-import type { NodeInterface } from '@noocodex/dagonizer';
-import type { JsonObject } from '@noocodex/dagonizer/types';
+import { ScalarNode, NodeOutputBuilder, NodeErrorBuilder } from '@studnicky/dagonizer';
+import type { NodeContextType, NodeOutputType } from '@studnicky/dagonizer';
+import type { JsonObjectType } from '@studnicky/dagonizer/entities';
 
 import type { SquashageServices } from '../../services/SquashageServices.js';
 import type { SquashageRefineState } from '../../state/SquashageRefineState.js';
 
 type Output = 'loaded' | 'error';
 
-export const readDraftNode: NodeInterface<SquashageRefineState, Output, SquashageServices> = {
-  name:    'read-draft',
-  outputs: ['loaded', 'error'],
+class ReadDraftNodeImpl extends ScalarNode<SquashageRefineState, Output, SquashageServices> {
+  public readonly name    = 'read-draft';
+  public readonly outputs = ['loaded', 'error'] as const;
 
-  async execute(state, context): Promise<{ output: Output }> {
+  public override get outputSchema(): Record<Output, { type: 'object' }> {
+    return {
+      loaded: { type: 'object' },
+      error:  { type: 'object' },
+    };
+  }
+
+  protected override async executeOne(
+    state:   SquashageRefineState,
+    context: NodeContextType<SquashageServices>,
+  ): Promise<NodeOutputType<Output>> {
     const log = context.services.logger.forComponent('read-draft');
 
     let text: string;
@@ -31,15 +42,11 @@ export const readDraftNode: NodeInterface<SquashageRefineState, Output, Squashag
       text = await readFile(state.draftPath, 'utf8');
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      log.error('execute', 'failed to read draft file', { draftPath: state.draftPath, message });
-      state.collectError({
-        code:        'READ_DRAFT_IO',
-        message,
-        operation:   'read-draft.execute',
-        recoverable: false,
-        timestamp:   new Date().toISOString(),
-      });
-      return { output: 'error' };
+      log.error('executeOne', 'failed to read draft file', { draftPath: state.draftPath, message });
+      state.collectError(NodeErrorBuilder.from(
+        'READ_DRAFT_IO', message, 'read-draft.executeOne', false, new Date().toISOString(),
+      ));
+      return NodeOutputBuilder.of('error');
     }
 
     let parsed: unknown;
@@ -47,32 +54,26 @@ export const readDraftNode: NodeInterface<SquashageRefineState, Output, Squashag
       parsed = JSON.parse(text);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      log.error('execute', 'failed to parse draft JSON', { draftPath: state.draftPath, message });
-      state.collectError({
-        code:        'READ_DRAFT_PARSE',
-        message,
-        operation:   'read-draft.execute',
-        recoverable: false,
-        timestamp:   new Date().toISOString(),
-      });
-      return { output: 'error' };
+      log.error('executeOne', 'failed to parse draft JSON', { draftPath: state.draftPath, message });
+      state.collectError(NodeErrorBuilder.from(
+        'READ_DRAFT_PARSE', message, 'read-draft.executeOne', false, new Date().toISOString(),
+      ));
+      return NodeOutputBuilder.of('error');
     }
 
     if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
       const message = 'draft is not a JSON object';
-      log.error('execute', message, { draftPath: state.draftPath });
-      state.collectError({
-        code:        'READ_DRAFT_NOT_OBJECT',
-        message,
-        operation:   'read-draft.execute',
-        recoverable: false,
-        timestamp:   new Date().toISOString(),
-      });
-      return { output: 'error' };
+      log.error('executeOne', message, { draftPath: state.draftPath });
+      state.collectError(NodeErrorBuilder.from(
+        'READ_DRAFT_NOT_OBJECT', message, 'read-draft.executeOne', false, new Date().toISOString(),
+      ));
+      return NodeOutputBuilder.of('error');
     }
 
-    state.draftJson = parsed as JsonObject;
-    log.debug('execute', 'draft loaded', { className: state.className });
-    return { output: 'loaded' };
-  },
-};
+    state.draftJson = parsed as JsonObjectType;
+    log.debug('executeOne', 'draft loaded', { className: state.className });
+    return NodeOutputBuilder.of('loaded');
+  }
+}
+
+export const readDraftNode = new ReadDraftNodeImpl();

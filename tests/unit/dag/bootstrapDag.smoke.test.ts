@@ -72,7 +72,7 @@ test('bootstrapDag smoke — halts at gate when no refinements', async (t) => {
       const result     = await run.executeBootstrap();
       const finalState = result.state as unknown as SquashageBootstrapState;
 
-      assert.equal(finalState.lifecycle.kind, 'completed');
+      assert.equal(finalState.lifecycle.variant, 'completed');
       assert.ok(
         finalState.induceResult !== null,
         'induceResult should be populated after induce phase',
@@ -159,7 +159,7 @@ test('bootstrapDag smoke — proceeds past gate with refinements', async (t) => 
       const result     = await run2.executeBootstrap();
       const finalState = result.state as unknown as SquashageBootstrapState;
 
-      assert.equal(finalState.lifecycle.kind, 'completed');
+      assert.equal(finalState.lifecycle.variant, 'completed');
 
       assert.ok(
         finalState.induceResult !== null,

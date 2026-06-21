@@ -7,7 +7,8 @@
  * the highest-priority match and writes it into `state.proposals[name]`.
  */
 
-import type { NodeInterface } from '@noocodex/dagonizer';
+import { ScalarNode, NodeOutputBuilder } from '@studnicky/dagonizer';
+import type { NodeContextType, NodeOutputType } from '@studnicky/dagonizer';
 
 import {
   Predicate,
@@ -34,14 +35,14 @@ interface CompiledRuleInterface {
 
 type Output = 'proposed' | 'no-match';
 
-export class RulesClassifierNode
-  implements NodeInterface<SquashageRecordState, Output, SquashageServices> {
+export class RulesClassifierNode extends ScalarNode<SquashageRecordState, Output, SquashageServices> {
 
-  readonly name    = 'classify:rules';
-  readonly outputs = ['proposed', 'no-match'] as const;
+  public readonly name    = 'classify:rules';
+  public readonly outputs = ['proposed', 'no-match'] as const;
   readonly #rules: ReadonlyArray<CompiledRuleInterface>;
 
   constructor(rules: ReadonlyArray<RawRulesEntryInterface>) {
+    super();
     this.#rules = Object.freeze(rules.map((rule) => ({
       className: rule.className,
       priority:  rule.priority,
@@ -50,17 +51,21 @@ export class RulesClassifierNode
     })));
   }
 
-  async execute(
+  public override get outputSchema(): Record<Output, { type: 'object' }> {
+    return { proposed: { type: 'object' }, 'no-match': { type: 'object' } };
+  }
+
+  protected override async executeOne(
     state:    SquashageRecordState,
-    _context: { readonly services: SquashageServices },
-  ): Promise<{ output: Output }> {
+    _context: NodeContextType<SquashageServices>,
+  ): Promise<NodeOutputType<Output>> {
     const matches: CompiledRuleInterface[] = [];
     for (const rule of this.#rules) {
       if (Predicate.evaluate(rule.predicate, state.input)) {
         matches.push(rule);
       }
     }
-    if (matches.length === 0) return { output: 'no-match' };
+    if (matches.length === 0) return NodeOutputBuilder.of('no-match');
 
     let winner = matches[0] as CompiledRuleInterface;
     for (let i = 1; i < matches.length; i++) {
@@ -77,6 +82,6 @@ export class RulesClassifierNode
       reasons,
     };
     state.proposals['classify:rules'] = proposal;
-    return { output: 'proposed' };
+    return NodeOutputBuilder.of('proposed');
   }
 }

@@ -12,7 +12,8 @@ import { readFileSync } from 'node:fs';
 import { resolve as resolvePath } from 'node:path';
 
 import type { Ajv, ValidateFunction } from 'ajv';
-import type { NodeInterface } from '@noocodex/dagonizer';
+import { ScalarNode, NodeOutputBuilder } from '@studnicky/dagonizer';
+import type { NodeContextType, NodeOutputType } from '@studnicky/dagonizer';
 
 import type { SquashageServices } from '../../../services/SquashageServices.js';
 import type { ClassificationProposal } from '../../../state/schemas/ClassificationProposal.js';
@@ -32,11 +33,10 @@ interface CompiledEntryInterface {
 
 type Output = 'proposed' | 'no-match';
 
-export class SchemaClassifierNode
-  implements NodeInterface<SquashageRecordState, Output, SquashageServices> {
+export class SchemaClassifierNode extends ScalarNode<SquashageRecordState, Output, SquashageServices> {
 
-  readonly name    = 'classify:schema';
-  readonly outputs = ['proposed', 'no-match'] as const;
+  public readonly name    = 'classify:schema';
+  public readonly outputs = ['proposed', 'no-match'] as const;
   readonly #entries: ReadonlyArray<CompiledEntryInterface>;
 
   constructor(
@@ -44,6 +44,7 @@ export class SchemaClassifierNode
     ajv:         Ajv,
     schemasBase: string,
   ) {
+    super();
     if (entries.length === 0) {
       throw new Error('classify:schema requires at least one entry');
     }
@@ -56,17 +57,21 @@ export class SchemaClassifierNode
     }));
   }
 
-  async execute(
+  public override get outputSchema(): Record<Output, { type: 'object' }> {
+    return { proposed: { type: 'object' }, 'no-match': { type: 'object' } };
+  }
+
+  protected override async executeOne(
     state:    SquashageRecordState,
-    _context: { readonly services: SquashageServices },
-  ): Promise<{ output: Output }> {
+    _context: NodeContextType<SquashageServices>,
+  ): Promise<NodeOutputType<Output>> {
     const matches: CompiledEntryInterface[] = [];
     for (const entry of this.#entries) {
       if (entry.validate(state.input)) {
         matches.push(entry);
       }
     }
-    if (matches.length === 0) return { output: 'no-match' };
+    if (matches.length === 0) return NodeOutputBuilder.of('no-match');
 
     let winner = matches[0] as CompiledEntryInterface;
     for (let i = 1; i < matches.length; i++) {
@@ -83,6 +88,6 @@ export class SchemaClassifierNode
       reasons,
     };
     state.proposals['classify:schema'] = proposal;
-    return { output: 'proposed' };
+    return NodeOutputBuilder.of('proposed');
   }
 }

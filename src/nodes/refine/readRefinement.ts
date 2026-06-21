@@ -19,8 +19,9 @@ import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
-import type { NodeInterface } from '@noocodex/dagonizer';
-import type { JsonObject } from '@noocodex/dagonizer/types';
+import { ScalarNode, NodeOutputBuilder, NodeErrorBuilder } from '@studnicky/dagonizer';
+import type { NodeContextType, NodeOutputType } from '@studnicky/dagonizer';
+import type { JsonObjectType } from '@studnicky/dagonizer/entities';
 
 import type { SquashageServices } from '../../services/SquashageServices.js';
 import type { SquashageRefineState } from '../../state/SquashageRefineState.js';
@@ -29,29 +30,40 @@ type Output = 'loaded' | 'missing' | 'error';
 
 const REFINEMENT_SCHEMA_ID = 'https://squashage.dev/schemas/refinement.schema.json';
 
-/**
- * Load the refinement meta-schema from `src/schemas/refinement.schema.json`.
- * Uses a require-derived path so it resolves correctly from any cwd.
- */
-function loadRefinementSchema(): Record<string, unknown> {
-  const require = createRequire(import.meta.url);
-  const schemaPath = join(
-    dirname(fileURLToPath(import.meta.url)),
-    '../../schemas/refinement.schema.json',
-  );
-  return require(schemaPath) as Record<string, unknown>;
-}
+class ReadRefinementNodeImpl extends ScalarNode<SquashageRefineState, Output, SquashageServices> {
+  public readonly name    = 'read-refinement';
+  public readonly outputs = ['loaded', 'missing', 'error'] as const;
 
-export const readRefinementNode: NodeInterface<SquashageRefineState, Output, SquashageServices> = {
-  name:    'read-refinement',
-  outputs: ['loaded', 'missing', 'error'],
+  public override get outputSchema(): Record<Output, { type: 'object' }> {
+    return {
+      loaded:  { type: 'object' },
+      missing: { type: 'object' },
+      error:   { type: 'object' },
+    };
+  }
 
-  async execute(state, context): Promise<{ output: Output }> {
+  /**
+   * Load the refinement meta-schema from `src/schemas/refinement.schema.json`.
+   * Uses a require-derived path so it resolves correctly from any cwd.
+   */
+  static loadSchema(): Record<string, unknown> {
+    const require = createRequire(import.meta.url);
+    const schemaPath = join(
+      dirname(fileURLToPath(import.meta.url)),
+      '../../schemas/refinement.schema.json',
+    );
+    return require(schemaPath) as Record<string, unknown>;
+  }
+
+  protected override async executeOne(
+    state:   SquashageRefineState,
+    context: NodeContextType<SquashageServices>,
+  ): Promise<NodeOutputType<Output>> {
     const log = context.services.logger.forComponent('read-refinement');
 
     if (state.refinementPath === null) {
-      log.debug('execute', 'no refinement file for class', { className: state.className });
-      return { output: 'missing' };
+      log.debug('executeOne', 'no refinement file for class', { className: state.className });
+      return NodeOutputBuilder.of('missing');
     }
 
     let text: string;
@@ -59,18 +71,14 @@ export const readRefinementNode: NodeInterface<SquashageRefineState, Output, Squ
       text = await readFile(state.refinementPath, 'utf8');
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      log.error('execute', 'failed to read refinement file', {
+      log.error('executeOne', 'failed to read refinement file', {
         refinementPath: state.refinementPath,
         message,
       });
-      state.collectError({
-        code:        'READ_REFINEMENT_IO',
-        message,
-        operation:   'read-refinement.execute',
-        recoverable: false,
-        timestamp:   new Date().toISOString(),
-      });
-      return { output: 'error' };
+      state.collectError(NodeErrorBuilder.from(
+        'READ_REFINEMENT_IO', message, 'read-refinement.executeOne', false, new Date().toISOString(),
+      ));
+      return NodeOutputBuilder.of('error');
     }
 
     let parsed: unknown;
@@ -78,31 +86,23 @@ export const readRefinementNode: NodeInterface<SquashageRefineState, Output, Squ
       parsed = JSON.parse(text);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      log.error('execute', 'failed to parse refinement JSON', {
+      log.error('executeOne', 'failed to parse refinement JSON', {
         refinementPath: state.refinementPath,
         message,
       });
-      state.collectError({
-        code:        'READ_REFINEMENT_PARSE',
-        message,
-        operation:   'read-refinement.execute',
-        recoverable: false,
-        timestamp:   new Date().toISOString(),
-      });
-      return { output: 'error' };
+      state.collectError(NodeErrorBuilder.from(
+        'READ_REFINEMENT_PARSE', message, 'read-refinement.executeOne', false, new Date().toISOString(),
+      ));
+      return NodeOutputBuilder.of('error');
     }
 
     if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
       const message = 'refinement is not a JSON object';
-      log.error('execute', message, { refinementPath: state.refinementPath });
-      state.collectError({
-        code:        'READ_REFINEMENT_NOT_OBJECT',
-        message,
-        operation:   'read-refinement.execute',
-        recoverable: false,
-        timestamp:   new Date().toISOString(),
-      });
-      return { output: 'error' };
+      log.error('executeOne', message, { refinementPath: state.refinementPath });
+      state.collectError(NodeErrorBuilder.from(
+        'READ_REFINEMENT_NOT_OBJECT', message, 'read-refinement.executeOne', false, new Date().toISOString(),
+      ));
+      return NodeOutputBuilder.of('error');
     }
 
     // Validate against the refinement JSON Schema.
@@ -113,7 +113,7 @@ export const readRefinementNode: NodeInterface<SquashageRefineState, Output, Squ
     const ajv = context.services.ajv;
     let validate = ajv.getSchema(REFINEMENT_SCHEMA_ID);
     if (validate === undefined) {
-      const rawSchema = loadRefinementSchema();
+      const rawSchema = ReadRefinementNodeImpl.loadSchema();
       const schema: Record<string, unknown> = Object.fromEntries(
         Object.entries(rawSchema).filter(([k]) => k !== '$schema'),
       );
@@ -125,19 +125,17 @@ export const readRefinementNode: NodeInterface<SquashageRefineState, Output, Squ
       const errs = validate.errors ?? [];
       const summary = errs.map((e) => `${e.instancePath ?? ''} ${e.message ?? ''}`).join('; ');
       const message = `refinement validation failed: ${summary}`;
-      log.error('execute', message, { refinementPath: state.refinementPath });
-      state.collectError({
-        code:        'READ_REFINEMENT_INVALID',
-        message,
-        operation:   'read-refinement.execute',
-        recoverable: false,
-        timestamp:   new Date().toISOString(),
-      });
-      return { output: 'error' };
+      log.error('executeOne', message, { refinementPath: state.refinementPath });
+      state.collectError(NodeErrorBuilder.from(
+        'READ_REFINEMENT_INVALID', message, 'read-refinement.executeOne', false, new Date().toISOString(),
+      ));
+      return NodeOutputBuilder.of('error');
     }
 
-    state.refinementJson = parsed as JsonObject;
-    log.debug('execute', 'refinement loaded', { className: state.className });
-    return { output: 'loaded' };
-  },
-};
+    state.refinementJson = parsed as JsonObjectType;
+    log.debug('executeOne', 'refinement loaded', { className: state.className });
+    return NodeOutputBuilder.of('loaded');
+  }
+}
+
+export const readRefinementNode = new ReadRefinementNodeImpl();

@@ -11,7 +11,8 @@
 import { readFileSync } from 'node:fs';
 import { resolve as resolvePath } from 'node:path';
 
-import type { NodeInterface } from '@noocodex/dagonizer';
+import { ScalarNode, NodeOutputBuilder } from '@studnicky/dagonizer';
+import type { NodeContextType, NodeOutputType } from '@studnicky/dagonizer';
 
 import type { SquashageServices } from '../../../services/SquashageServices.js';
 import type { ClassificationProposal } from '../../../state/schemas/ClassificationProposal.js';
@@ -31,23 +32,15 @@ interface CompiledFingerprintInterface {
 
 type Output = 'proposed' | 'no-match';
 
-function jaccard(a: ReadonlySet<string>, b: ReadonlySet<string>): number {
-  if (a.size === 0 && b.size === 0) return 0;
-  let intersect = 0;
-  for (const key of b) if (a.has(key)) intersect += 1;
-  const union = a.size + b.size - intersect;
-  return union === 0 ? 0 : intersect / union;
-}
+export class PropertyFingerprintClassifierNode extends ScalarNode<SquashageRecordState, Output, SquashageServices> {
 
-export class PropertyFingerprintClassifierNode
-  implements NodeInterface<SquashageRecordState, Output, SquashageServices> {
-
-  readonly name    = 'classify:property-fingerprint';
-  readonly outputs = ['proposed', 'no-match'] as const;
+  public readonly name    = 'classify:property-fingerprint';
+  public readonly outputs = ['proposed', 'no-match'] as const;
   readonly #fingerprints: ReadonlyArray<CompiledFingerprintInterface>;
   readonly #minMatchScore: number;
 
   constructor(config: PropertyFingerprintConfigInterface, schemasBase: string) {
+    super();
     const absPath  = resolvePath(schemasBase, config.fingerprintsFrom);
     const priority = config.priority ?? 32;
     const threshold = config.minMatchScore ?? 0.85;
@@ -81,10 +74,14 @@ export class PropertyFingerprintClassifierNode
     this.#minMatchScore = threshold;
   }
 
-  async execute(
+  public override get outputSchema(): Record<Output, { type: 'object' }> {
+    return { proposed: { type: 'object' }, 'no-match': { type: 'object' } };
+  }
+
+  protected override async executeOne(
     state:    SquashageRecordState,
-    _context: { readonly services: SquashageServices },
-  ): Promise<{ output: Output }> {
+    _context: NodeContextType<SquashageServices>,
+  ): Promise<NodeOutputType<Output>> {
     const recordKeys = new Set(Object.keys(state.input).filter((k) => k !== '_source'));
 
     let bestMatch: CompiledFingerprintInterface | null = null;
@@ -92,7 +89,7 @@ export class PropertyFingerprintClassifierNode
     const matchedReasons: string[] = [];
 
     for (const fp of this.#fingerprints) {
-      const score = jaccard(recordKeys, fp.keySet);
+      const score = PropertyFingerprintClassifierNode.jaccard(recordKeys, fp.keySet);
       if (score >= this.#minMatchScore) {
         matchedReasons.push(`fingerprint:${fp.className} jaccard=${score.toFixed(3)}`);
         if (bestMatch === null || fp.priority > bestMatch.priority || score > bestScore) {
@@ -102,7 +99,7 @@ export class PropertyFingerprintClassifierNode
       }
     }
 
-    if (bestMatch === null) return { output: 'no-match' };
+    if (bestMatch === null) return NodeOutputBuilder.of('no-match');
 
     const proposal: ClassificationProposal = {
       source:     'classify:property-fingerprint',
@@ -112,6 +109,14 @@ export class PropertyFingerprintClassifierNode
       reasons:    matchedReasons,
     };
     state.proposals['classify:property-fingerprint'] = proposal;
-    return { output: 'proposed' };
+    return NodeOutputBuilder.of('proposed');
+  }
+
+  private static jaccard(a: ReadonlySet<string>, b: ReadonlySet<string>): number {
+    if (a.size === 0 && b.size === 0) return 0;
+    let intersect = 0;
+    for (const key of b) if (a.has(key)) intersect += 1;
+    const union = a.size + b.size - intersect;
+    return union === 0 ? 0 : intersect / union;
   }
 }

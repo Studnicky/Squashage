@@ -1,6 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
+import { Batch } from '@studnicky/dagonizer';
 import { induceSchemasNode } from '../../../../src/nodes/run/induceSchemas.js';
 import { SquashageInduceRunState } from '../../../../src/state/SquashageInduceRunState.js';
 import { ShapeObservationAccumulator } from '../../../../src/induction/ShapeObservation.js';
@@ -35,15 +36,25 @@ function makeServices(shapeCache: SquashageServices['shapeCache']): Partial<Squa
   };
 }
 
+async function runNode(
+  state:   SquashageInduceRunState,
+  context: { services: SquashageServices },
+): Promise<string> {
+  const result = await induceSchemasNode.execute(
+    Batch.of(state),
+    context as unknown as Parameters<typeof induceSchemasNode.execute>[1],
+  );
+  const keys = [...result.keys()];
+  if (keys.length === 0) throw new Error('node produced no output port');
+  return keys[0] as string;
+}
+
 describe('induceSchemasNode — empty cache', () => {
   it('returns empty output; state.inducedSchemas stays null', async () => {
     const state    = makeState();
     const services = makeServices(new Map());
-    const result   = await induceSchemasNode.execute(
-      state,
-      { services: services as SquashageServices },
-    );
-    assert.equal(result.output,          'empty');
+    const output   = await runNode(state, { services: services as SquashageServices });
+    assert.equal(output,                 'empty');
     assert.equal(state.inducedSchemas,   null);
   });
 });
@@ -57,12 +68,9 @@ describe('induceSchemasNode — populated cache', () => {
 
     const state    = makeState();
     const services = makeServices(shapeCache as SquashageServices['shapeCache']);
-    const result   = await induceSchemasNode.execute(
-      state,
-      { services: services as SquashageServices },
-    );
+    const output   = await runNode(state, { services: services as SquashageServices });
 
-    assert.equal(result.output, 'induced');
+    assert.equal(output, 'induced');
     assert.ok(state.inducedSchemas !== null, 'inducedSchemas should be set');
     assert.equal(state.inducedSchemas.classes.length, 1);
     assert.equal(state.inducedSchemas.classes[0]?.className, 'Feat');
@@ -83,11 +91,8 @@ describe('induceSchemasNode — populated cache', () => {
       shapeCache:   shapeCache as SquashageServices['shapeCache'],
       targetConfig: { input: '/tmp', output: {} } as unknown as TargetConfigInterface,
     };
-    const result   = await induceSchemasNode.execute(
-      state,
-      { services: noOntology as unknown as SquashageServices },
-    );
-    assert.equal(result.output,  'induced');
+    const output   = await runNode(state, { services: noOntology as unknown as SquashageServices });
+    assert.equal(output,  'induced');
     assert.ok(state.inducedSchemas !== null, 'inducedSchemas should be set');
     assert.equal(state.inducedSchemas.classes.length, 1);
     // $id should use the fallback base

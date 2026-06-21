@@ -4,6 +4,7 @@ import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
+import { Batch } from '@studnicky/dagonizer';
 import { buildReadyGateNode } from '../../../../src/nodes/run/buildReadyGate.js';
 import { SquashageBootstrapState } from '../../../../src/state/SquashageBootstrapState.js';
 import type { SquashageServices } from '../../../../src/services/SquashageServices.js';
@@ -30,11 +31,24 @@ function makeState(): SquashageBootstrapState {
   return new SquashageBootstrapState('test', new Date().toISOString());
 }
 
+async function runNode(
+  state:   SquashageBootstrapState,
+  context: { services: SquashageServices },
+): Promise<string> {
+  const result = await buildReadyGateNode.execute(
+    Batch.of(state),
+    context as unknown as Parameters<typeof buildReadyGateNode.execute>[1],
+  );
+  const keys = [...result.keys()];
+  if (keys.length === 0) throw new Error('node produced no output port');
+  return keys[0] as string;
+}
+
 test('buildReadyGate — missing directory', async (t) => {
   await t.test('returns schemas-absent when directory does not exist', async () => {
     const nonExistent = '/tmp/__squashage_build_gate_no_such_dir__/schemas';
-    const result = await buildReadyGateNode.execute(makeState(), makeContext(nonExistent) as never);
-    assert.equal(result.output, 'schemas-absent');
+    const output = await runNode(makeState(), makeContext(nonExistent));
+    assert.equal(output, 'schemas-absent');
   });
 });
 
@@ -44,8 +58,8 @@ test('buildReadyGate — empty directory', async (t) => {
     try {
       const finalsDir = join(work, 'schemas');
       await mkdir(finalsDir, { recursive: true });
-      const result = await buildReadyGateNode.execute(makeState(), makeContext(finalsDir) as never);
-      assert.equal(result.output, 'schemas-absent');
+      const output = await runNode(makeState(), makeContext(finalsDir));
+      assert.equal(output, 'schemas-absent');
     } finally {
       await rm(work, { recursive: true, force: true });
     }
@@ -58,8 +72,8 @@ test('buildReadyGate — empty directory', async (t) => {
       await mkdir(finalsDir, { recursive: true });
       await writeFile(join(finalsDir, 'Feat.draft.json'), '{}', 'utf8');
       await writeFile(join(finalsDir, 'README.md'),       '#',  'utf8');
-      const result = await buildReadyGateNode.execute(makeState(), makeContext(finalsDir) as never);
-      assert.equal(result.output, 'schemas-absent');
+      const output = await runNode(makeState(), makeContext(finalsDir));
+      assert.equal(output, 'schemas-absent');
     } finally {
       await rm(work, { recursive: true, force: true });
     }
@@ -73,8 +87,8 @@ test('buildReadyGate — empty directory', async (t) => {
       await mkdir(inferredDir, { recursive: true });
       // A *.schema.json inside a subdirectory should not count.
       await writeFile(join(inferredDir, 'Feat.schema.json'), '{}', 'utf8');
-      const result = await buildReadyGateNode.execute(makeState(), makeContext(finalsDir) as never);
-      assert.equal(result.output, 'schemas-absent');
+      const output = await runNode(makeState(), makeContext(finalsDir));
+      assert.equal(output, 'schemas-absent');
     } finally {
       await rm(work, { recursive: true, force: true });
     }
@@ -88,8 +102,8 @@ test('buildReadyGate — populated directory', async (t) => {
       const finalsDir = join(work, 'schemas');
       await mkdir(finalsDir, { recursive: true });
       await writeFile(join(finalsDir, 'Feat.schema.json'), '{}', 'utf8');
-      const result = await buildReadyGateNode.execute(makeState(), makeContext(finalsDir) as never);
-      assert.equal(result.output, 'schemas-present');
+      const output = await runNode(makeState(), makeContext(finalsDir));
+      assert.equal(output, 'schemas-present');
     } finally {
       await rm(work, { recursive: true, force: true });
     }
@@ -102,8 +116,8 @@ test('buildReadyGate — populated directory', async (t) => {
       await mkdir(finalsDir, { recursive: true });
       await writeFile(join(finalsDir, 'Feat.schema.json'),  '{}', 'utf8');
       await writeFile(join(finalsDir, 'Spell.schema.json'), '{}', 'utf8');
-      const result = await buildReadyGateNode.execute(makeState(), makeContext(finalsDir) as never);
-      assert.equal(result.output, 'schemas-present');
+      const output = await runNode(makeState(), makeContext(finalsDir));
+      assert.equal(output, 'schemas-present');
     } finally {
       await rm(work, { recursive: true, force: true });
     }

@@ -3,26 +3,26 @@
  *
  * Topology:
  *
- *   walk-drafts ──walked──► process-all-drafts (fan-out over state.drafts,
- *               ──empty──► END (null)           dispatch node=draft-dispatch)
+ *   walk-drafts ──walked──► process-all-drafts (scatter over state.drafts,
+ *               ──empty──► end                  sub-dag=squashage:refine-one)
  *
  *   process-all-drafts ──all-success──► refine-sync-tallies
  *                      ──partial    ──► refine-sync-tallies
  *                      ──all-error  ──► refine-sync-tallies
- *                      ──empty      ──► END (null)
+ *                      ──empty      ──► end
  *
- *   refine-sync-tallies ──synced──► END (null)
+ *   refine-sync-tallies ──synced──► end
  *
- * The fan-out dispatch node is named `draft-dispatch` and is registered
- * by `SquashageRun.forTarget`. The dispatch node executes `squashage:refine-one`
- * per item and writes tallies into `SquashageServices.refineSummaries`.
- * `refine-sync-tallies` copies those tallies back to the run state so that
- * `SquashageBootstrapState` stateMapping and CLI output are correct.
+ * The scatter invokes `squashage:refine-one` per draft item. Per-draft
+ * outcomes accumulate in `services.refineSummaries` (side-effect sink)
+ * so gather uses `{ strategy: 'discard' }`. The `refine-sync-tallies` node
+ * reads `services.refineSummaries` and writes the totals back to run state.
  */
 
-import type { DAG } from '@noocodex/dagonizer/entities';
-import type { NodeInterface } from '@noocodex/dagonizer';
-import { DAGBuilder } from '@noocodex/dagonizer/builder';
+import type { DAGType } from '@studnicky/dagonizer';
+import { MonadicNode } from '@studnicky/dagonizer';
+import type { Batch, NodeContextType, RoutedBatchType, NodeInterface } from '@studnicky/dagonizer';
+import { DAGBuilder } from '@studnicky/dagonizer/builder';
 
 import type { SquashageRefineRunState } from '../state/SquashageRefineRunState.js';
 import type { SquashageServices } from '../services/SquashageServices.js';
@@ -30,38 +30,48 @@ import type { SquashageServices } from '../services/SquashageServices.js';
 type StubFor<TOutput extends string> =
   NodeInterface<SquashageRefineRunState, TOutput, SquashageServices>;
 
-function stub<TOutput extends string>(name: string, outputs: readonly TOutput[]): StubFor<TOutput> {
-  return {
-    name,
-    outputs,
-    async execute() {
-      throw new Error(`stub for ${name} called; the real node must be registered on the dispatcher`);
-    },
-  };
+function stub<TOutput extends string>(stubName: string, stubOutputs: readonly TOutput[]): StubFor<TOutput> {
+  class Stub extends MonadicNode<SquashageRefineRunState, TOutput, SquashageServices> {
+    public readonly name    = stubName;
+    public readonly outputs = stubOutputs;
+    public override get outputSchema(): Record<TOutput, { type: 'object' }> {
+      return Object.fromEntries(stubOutputs.map((o) => [o, { type: 'object' }])) as Record<TOutput, { type: 'object' }>;
+    }
+    public override async execute(
+      _b: Batch<SquashageRefineRunState>,
+      _c: NodeContextType<SquashageServices>,
+    ): Promise<RoutedBatchType<TOutput, SquashageRefineRunState>> {
+      throw new Error(`stub '${stubName}' called; register the real node on the dispatcher`);
+    }
+  }
+  return new Stub();
 }
 
-export const refineDag: DAG = new DAGBuilder('squashage:refine', '1.0')
+export const refineDag: DAGType = new DAGBuilder('squashage:refine', '1.0')
   .node('walk-drafts', stub('walk-drafts', ['walked', 'empty'] as const), {
     walked: 'process-all-drafts',
-    empty:  null,
+    empty:  'end',
   })
 
-  .fanOut(
+  .scatter(
     'process-all-drafts',
-    stub('draft-dispatch', ['success', 'error'] as const),
     'drafts',
-    { strategy: 'append', target: '_dispatchedItems' },
+    { dag: 'squashage:refine-one' },
     {
       'all-success': 'refine-sync-tallies',
       partial:       'refine-sync-tallies',
       'all-error':   'refine-sync-tallies',
-      empty:         null,
+      empty:         'end',
+    },
+    {
+      gather: { strategy: 'discard' },
     },
   )
 
   .node('refine-sync-tallies', stub('refine-sync-tallies', ['synced'] as const), {
-    synced: null,
+    synced: 'end',
   })
 
+  .terminal('end')
   .entrypoint('walk-drafts')
   .build();

@@ -16,7 +16,7 @@ test('happy path', async (t) => {
     assert.equal(state.draftsWritten,         0);
     assert.equal(state.target,                TARGET);
     assert.equal(state.runStartTime,          TIMESTAMP);
-    assert.equal(state.lifecycle.kind,        'pending');
+    assert.equal(state.lifecycle.variant,        'pending');
   });
 
   await t.test('snapshot round-trip preserves all fields', () => {
@@ -44,7 +44,7 @@ test('happy path', async (t) => {
     assert.equal(restored.draftsWritten,          1);
     assert.equal(restored.target,                 TARGET);
     assert.equal(restored.runStartTime,           TIMESTAMP);
-    assert.equal(restored.lifecycle.kind,         'pending');
+    assert.equal(restored.lifecycle.variant,         'pending');
   });
 
   await t.test('clone produces an independent instance', () => {
@@ -88,9 +88,9 @@ test('edge cases', async (t) => {
   await t.test('lifecycle FSM transitions pending → running → completed', () => {
     const state = new SquashageInduceRunState(TARGET, TIMESTAMP);
     state.markRunning();
-    assert.equal(state.lifecycle.kind, 'running');
+    assert.equal(state.lifecycle.variant, 'running');
     state.markCompleted();
-    assert.equal(state.lifecycle.kind, 'completed');
+    assert.equal(state.lifecycle.variant, 'completed');
   });
 });
 

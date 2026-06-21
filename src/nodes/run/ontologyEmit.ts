@@ -20,36 +20,47 @@
  * target identifier string from `services.target`.
  */
 
-import type { NodeInterface } from '@noocodex/dagonizer';
+import { ScalarNode, NodeOutputBuilder } from '@studnicky/dagonizer';
+import type { NodeContextType, NodeOutputType } from '@studnicky/dagonizer';
 
 import type { SquashageServices } from '../../services/SquashageServices.js';
 import type { SquashageRunState } from '../../state/SquashageRunState.js';
 
 type Output = 'emitted' | 'skipped';
 
-/**
- * Builds the ontology graph IRI for a given target identifier.
- *
- * @param target - The squashage target name (e.g. `"aonprd"`).
- * @returns The graph IRI string: `urn:graph:<target>/ontology`.
- */
-export function ontologyGraphIri(target: string): string {
-  return `urn:graph:${target}/ontology`;
-}
+class OntologyEmitNodeImpl extends ScalarNode<SquashageRunState, Output, SquashageServices> {
+  public readonly name    = 'ontology-emit';
+  public readonly outputs = ['emitted', 'skipped'] as const;
 
-export const ontologyEmitNode: NodeInterface<SquashageRunState, Output, SquashageServices> = {
-  name:    'ontology-emit',
-  outputs: ['emitted', 'skipped'],
+  public override get outputSchema(): Record<Output, { type: 'object' }> {
+    return {
+      emitted: { type: 'object' },
+      skipped: { type: 'object' },
+    };
+  }
 
-  async execute(_state, context) {
+  /**
+   * Builds the ontology graph IRI for a given target identifier.
+   *
+   * @param target - The squashage target name (e.g. `"aonprd"`).
+   * @returns The graph IRI string: `urn:graph:<target>/ontology`.
+   */
+  public static ontologyGraphIri(target: string): string {
+    return `urn:graph:${target}/ontology`;
+  }
+
+  protected override async executeOne(
+    _state:  SquashageRunState,
+    context: NodeContextType<SquashageServices>,
+  ): Promise<NodeOutputType<Output>> {
     const { services } = context;
     const log = services.logger.forComponent('ontology-emit');
 
     if (services.ontology === null) {
-      log.debug('execute', 'no ontology engine configured; skipping ontology emit', {
+      log.debug('executeOne', 'no ontology engine configured; skipping ontology emit', {
         target: services.target,
       });
-      return { output: 'skipped' };
+      return NodeOutputBuilder.of('skipped');
     }
 
     const [tboxQuads, shaclQuads] = await Promise.all([
@@ -57,7 +68,9 @@ export const ontologyEmitNode: NodeInterface<SquashageRunState, Output, Squashag
       services.ontology.shacl(),
     ]);
 
-    const ontologyGraph = services.factory.namedNode(ontologyGraphIri(services.target));
+    const ontologyGraph = services.factory.namedNode(
+      OntologyEmitNodeImpl.ontologyGraphIri(services.target),
+    );
 
     for (const quad of tboxQuads) {
       services.dataset.add(
@@ -70,12 +83,15 @@ export const ontologyEmitNode: NodeInterface<SquashageRunState, Output, Squashag
       );
     }
 
-    log.info('execute', 'ontology emitted', {
+    log.info('executeOne', 'ontology emitted', {
       target:     services.target,
       tboxCount:  tboxQuads.length,
       shaclCount: shaclQuads.length,
     });
 
-    return { output: 'emitted' };
-  },
-};
+    return NodeOutputBuilder.of('emitted');
+  }
+}
+
+export const ontologyEmitNode = new OntologyEmitNodeImpl();
+export const { ontologyGraphIri } = OntologyEmitNodeImpl;

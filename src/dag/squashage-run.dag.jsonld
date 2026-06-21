@@ -1,0 +1,162 @@
+{
+  "@context": {
+    "@version": 1.1,
+    "name": {
+      "@id": "https://noocodex.dev/ontology/dag/name"
+    },
+    "version": {
+      "@id": "https://noocodex.dev/ontology/dag/version"
+    },
+    "entrypoint": {
+      "@id": "https://noocodex.dev/ontology/dag/entrypoint"
+    },
+    "nodes": {
+      "@id": "https://noocodex.dev/ontology/dag/nodes",
+      "@container": "@set"
+    },
+    "outputs": {
+      "@id": "https://noocodex.dev/ontology/dag/outputs"
+    },
+    "node": {
+      "@id": "https://noocodex.dev/ontology/dag/node"
+    },
+    "dag": {
+      "@id": "https://noocodex.dev/ontology/dag/dag"
+    },
+    "body": {
+      "@id": "https://noocodex.dev/ontology/dag/body"
+    },
+    "source": {
+      "@id": "https://noocodex.dev/ontology/dag/source"
+    },
+    "itemKey": {
+      "@id": "https://noocodex.dev/ontology/dag/itemKey"
+    },
+    "concurrency": {
+      "@id": "https://noocodex.dev/ontology/dag/concurrency"
+    },
+    "gather": {
+      "@id": "https://noocodex.dev/ontology/dag/gather"
+    },
+    "reducer": {
+      "@id": "https://noocodex.dev/ontology/dag/reducer"
+    },
+    "outcome": {
+      "@id": "https://noocodex.dev/ontology/dag/outcome"
+    },
+    "phase": {
+      "@id": "https://noocodex.dev/ontology/dag/phase"
+    },
+    "stateMapping": {
+      "@id": "https://noocodex.dev/ontology/dag/stateMapping"
+    },
+    "container": {
+      "@id": "https://noocodex.dev/ontology/dag/container"
+    },
+    "DAG": {
+      "@id": "https://noocodex.dev/ontology/dag/DAG"
+    },
+    "Placement": {
+      "@id": "https://noocodex.dev/ontology/dag/Placement"
+    },
+    "SingleNode": {
+      "@id": "https://noocodex.dev/ontology/dag/SingleNode"
+    },
+    "ScatterNode": {
+      "@id": "https://noocodex.dev/ontology/dag/ScatterNode"
+    },
+    "EmbeddedDAGNode": {
+      "@id": "https://noocodex.dev/ontology/dag/EmbeddedDAGNode"
+    },
+    "TerminalNode": {
+      "@id": "https://noocodex.dev/ontology/dag/TerminalNode"
+    },
+    "PhaseNode": {
+      "@id": "https://noocodex.dev/ontology/dag/PhaseNode"
+    }
+  },
+  "@id": "urn:noocodex:dag:squashage:run",
+  "@type": "DAG",
+  "name": "squashage:run",
+  "version": "1.0",
+  "entrypoint": "walk-input",
+  "nodes": [
+    {
+      "@id": "urn:noocodex:dag:squashage:run/node/walk-input",
+      "@type": "SingleNode",
+      "name": "walk-input",
+      "node": "walk-input",
+      "outputs": {
+        "walked": "process-all-records",
+        "empty": "rdfjs-finalize"
+      }
+    },
+    {
+      "@id": "urn:noocodex:dag:squashage:run/node/process-all-records",
+      "@type": "ScatterNode",
+      "name": "process-all-records",
+      "source": "locators",
+      "body": {
+        "dag": "squashage:record"
+      },
+      "gather": {
+        "strategy": "discard"
+      },
+      "outputs": {
+        "all-success": "enrich-entity-link",
+        "partial": "enrich-entity-link",
+        "all-error": "rdfjs-finalize",
+        "empty": "rdfjs-finalize"
+      },
+      "itemKey": "currentLocator",
+      "reducer": "aggregate",
+      "concurrency": 1
+    },
+    {
+      "@id": "urn:noocodex:dag:squashage:run/node/enrich-entity-link",
+      "@type": "SingleNode",
+      "name": "enrich-entity-link",
+      "node": "enrich-entity-link",
+      "outputs": {
+        "enriched": "ontology-emit",
+        "skipped": "ontology-emit"
+      }
+    },
+    {
+      "@id": "urn:noocodex:dag:squashage:run/node/ontology-emit",
+      "@type": "SingleNode",
+      "name": "ontology-emit",
+      "node": "ontology-emit",
+      "outputs": {
+        "emitted": "rdfjs-finalize",
+        "skipped": "rdfjs-finalize"
+      }
+    },
+    {
+      "@id": "urn:noocodex:dag:squashage:run/node/rdfjs-finalize",
+      "@type": "SingleNode",
+      "name": "rdfjs-finalize",
+      "node": "rdfjs-finalize",
+      "outputs": {
+        "written": "catalog-emit",
+        "empty": "run-end"
+      }
+    },
+    {
+      "@id": "urn:noocodex:dag:squashage:run/node/catalog-emit",
+      "@type": "SingleNode",
+      "name": "catalog-emit",
+      "node": "catalog-emit",
+      "outputs": {
+        "emitted": "run-end",
+        "skipped": "run-end"
+      }
+    },
+    {
+      "@id": "urn:noocodex:dag:squashage:run/node/run-end",
+      "@type": "TerminalNode",
+      "name": "run-end",
+      "outcome": "completed"
+    }
+  ]
+}

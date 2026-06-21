@@ -7,7 +7,8 @@
  * picked by priority, all matched patterns listed in `reasons`.
  */
 
-import type { NodeInterface } from '@noocodex/dagonizer';
+import { ScalarNode, NodeOutputBuilder } from '@studnicky/dagonizer';
+import type { NodeContextType, NodeOutputType } from '@studnicky/dagonizer';
 
 import type { SquashageServices } from '../../../services/SquashageServices.js';
 import type { ClassificationProposal } from '../../../state/schemas/ClassificationProposal.js';
@@ -32,29 +33,14 @@ interface CompiledPatternInterface {
 
 type Output = 'proposed' | 'no-match';
 
-function isPlainObject(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
+export class UrlPatternClassifierNode extends ScalarNode<SquashageRecordState, Output, SquashageServices> {
 
-function extractUrl(input: Readonly<Record<string, unknown>>): string | undefined {
-  const sourceBlock = input['_source'];
-  if (isPlainObject(sourceBlock) && typeof sourceBlock['url'] === 'string' && sourceBlock['url'].length > 0) {
-    return sourceBlock['url'];
-  }
-  if (typeof input['url'] === 'string' && input['url'].length > 0) {
-    return input['url'];
-  }
-  return undefined;
-}
-
-export class UrlPatternClassifierNode
-  implements NodeInterface<SquashageRecordState, Output, SquashageServices> {
-
-  readonly name    = 'classify:url-pattern';
-  readonly outputs = ['proposed', 'no-match'] as const;
+  public readonly name    = 'classify:url-pattern';
+  public readonly outputs = ['proposed', 'no-match'] as const;
   readonly #patterns: ReadonlyArray<CompiledPatternInterface>;
 
   constructor(config: UrlPatternConfigInterface) {
+    super();
     this.#patterns = Object.freeze(config.patterns.map((entry, idx) => {
       try {
         const regex = new RegExp(entry.match);
@@ -70,18 +56,22 @@ export class UrlPatternClassifierNode
     }));
   }
 
-  async execute(
+  public override get outputSchema(): Record<Output, { type: 'object' }> {
+    return { proposed: { type: 'object' }, 'no-match': { type: 'object' } };
+  }
+
+  protected override async executeOne(
     state:    SquashageRecordState,
-    _context: { readonly services: SquashageServices },
-  ): Promise<{ output: Output }> {
-    const url = extractUrl(state.input);
-    if (url === undefined) return { output: 'no-match' };
+    _context: NodeContextType<SquashageServices>,
+  ): Promise<NodeOutputType<Output>> {
+    const url = UrlPatternClassifierNode.extractUrl(state.input);
+    if (url === undefined) return NodeOutputBuilder.of('no-match');
 
     const matches: CompiledPatternInterface[] = [];
     for (const p of this.#patterns) {
       if (p.regex.test(url)) matches.push(p);
     }
-    if (matches.length === 0) return { output: 'no-match' };
+    if (matches.length === 0) return NodeOutputBuilder.of('no-match');
 
     // Pick the highest-priority match; record all matched reasons.
     let winner = matches[0] as CompiledPatternInterface;
@@ -101,6 +91,21 @@ export class UrlPatternClassifierNode
       reasons,
     };
     state.proposals['classify:url-pattern'] = proposal;
-    return { output: 'proposed' };
+    return NodeOutputBuilder.of('proposed');
+  }
+
+  private static isPlainObject(value: unknown): value is Record<string, unknown> {
+    return typeof value === 'object' && value !== null && !Array.isArray(value);
+  }
+
+  private static extractUrl(input: Readonly<Record<string, unknown>>): string | undefined {
+    const sourceBlock = input['_source'];
+    if (UrlPatternClassifierNode.isPlainObject(sourceBlock) && typeof sourceBlock['url'] === 'string' && sourceBlock['url'].length > 0) {
+      return sourceBlock['url'];
+    }
+    if (typeof input['url'] === 'string' && input['url'].length > 0) {
+      return input['url'];
+    }
+    return undefined;
   }
 }

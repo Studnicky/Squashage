@@ -66,6 +66,8 @@ data
 
 # Build / scrape output
 dist/
+# TypeScript incremental build info
+*.tsbuildinfo
 # Top-level output/ directory (run artifacts); src/output/ is source code and is tracked.
 /output/
 

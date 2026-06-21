@@ -15,18 +15,26 @@
  *   merged — always; the barrier always succeeds (empty cache is valid)
  */
 
-import type { NodeInterface } from '@noocodex/dagonizer';
+import { ScalarNode, NodeOutputBuilder } from '@studnicky/dagonizer';
+import type { NodeContextType, NodeOutputType } from '@studnicky/dagonizer';
 
 import type { SquashageServices } from '../../services/SquashageServices.js';
 import type { SquashageInduceRunState } from '../../state/SquashageInduceRunState.js';
 
 type Output = 'merged';
 
-export const mergeShapeCacheNode: NodeInterface<SquashageInduceRunState, Output, SquashageServices> = {
-  name:    'merge-shape-cache',
-  outputs: ['merged'],
+class MergeShapeCacheNodeImpl extends ScalarNode<SquashageInduceRunState, Output, SquashageServices> {
+  public readonly name    = 'merge-shape-cache';
+  public readonly outputs = ['merged'] as const;
 
-  async execute(state, context) {
+  public override get outputSchema(): Record<Output, { type: 'object' }> {
+    return { merged: { type: 'object' } };
+  }
+
+  protected override async executeOne(
+    state:   SquashageInduceRunState,
+    context: NodeContextType<SquashageServices>,
+  ): Promise<NodeOutputType<Output>> {
     const log = context.services.logger.forComponent('merge-shape-cache');
     const { shapeCache } = context.services;
 
@@ -40,11 +48,13 @@ export const mergeShapeCacheNode: NodeInterface<SquashageInduceRunState, Output,
     state.observedRecords   = observedRecords;
     state.discoveredClasses = discoveredClasses;
 
-    log.info('execute', 'shape cache merged', {
+    log.info('executeOne', 'shape cache merged', {
       classCount:      discoveredClasses.length,
       observedRecords,
     });
 
-    return { output: 'merged' };
-  },
-};
+    return NodeOutputBuilder.of('merged');
+  }
+}
+
+export const mergeShapeCacheNode = new MergeShapeCacheNodeImpl();

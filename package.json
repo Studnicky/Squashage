@@ -38,7 +38,9 @@
   },
   "scripts": {
     "prebuild": "rm -rf dist",
-    "build": "tsc --noEmit false",
+    "build": "tsc --noEmit false && npm run build:assets",
+    "build:assets": "node scripts/copy-dag-assets.mjs",
+    "author:dags": "node --import tsx scripts/author-dags.ts",
     "typecheck": "tsc --noEmit",
     "lint": "eslint 'src/**/*.ts'",
     "lint:fix": "eslint 'src/**/*.ts' --fix",
@@ -56,11 +58,11 @@
     "docs:preview": "vitepress preview docs"
   },
   "dependencies": {
-    "@noocodex/dagonizer": "file:../Dagonizer/packages/dagonizer",
     "@rdfjs/data-model": "^2.1.1",
     "@rdfjs/dataset": "^2.0.2",
     "@rdfjs/namespace": "^2.0.1",
     "@rdfjs/types": "^2.0.1",
+    "@studnicky/dagonizer": "^0.25.0",
     "ajv": "^8.20.0",
     "ajv-formats": "^3.0.1",
     "commander": "^14.0.3",

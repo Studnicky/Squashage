@@ -1,6 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
+import { Batch } from '@studnicky/dagonizer';
 import { refinementMissingWarnNode } from '../../../../src/nodes/refine/refinementMissingWarn.js';
 import { SquashageRefineState } from '../../../../src/state/SquashageRefineState.js';
 import type { SquashageServices } from '../../../../src/services/SquashageServices.js';
@@ -20,6 +21,19 @@ function makeContext(): { services: SquashageServices } {
   return { services: { logger: noopLogger } as unknown as SquashageServices };
 }
 
+async function runNode(
+  state: SquashageRefineState,
+  context: { services: SquashageServices },
+): Promise<string> {
+  const result = await refinementMissingWarnNode.execute(
+    Batch.of(state),
+    context as unknown as Parameters<typeof refinementMissingWarnNode.execute>[1],
+  );
+  const keys = [...result.keys()];
+  if (keys.length === 0) throw new Error('node produced no output port');
+  return keys[0] as string;
+}
+
 describe('refinementMissingWarnNode', () => {
   it('sets finalJson = draftJson and outcome = passthrough, outputs done', async () => {
     warnMessages.length = 0;
@@ -27,9 +41,9 @@ describe('refinementMissingWarnNode', () => {
     const state = new SquashageRefineState('/Feat.draft.json', 'Feat', null);
     state.draftJson = draft;
 
-    const result = await refinementMissingWarnNode.execute(state, makeContext());
+    const output = await runNode(state, makeContext());
 
-    assert.equal(result.output,  'done');
+    assert.equal(output,  'done');
     assert.equal(state.outcome,  'passthrough');
     assert.deepEqual(state.finalJson, draft);
   });
@@ -38,7 +52,7 @@ describe('refinementMissingWarnNode', () => {
     warnMessages.length = 0;
     const state = new SquashageRefineState('/Spell.draft.json', 'Spell', null);
     state.draftJson = {};
-    await refinementMissingWarnNode.execute(state, makeContext());
+    await runNode(state, makeContext());
 
     assert.ok(warnMessages.some((m) => m.includes('Spell')));
   });

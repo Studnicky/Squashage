@@ -12,7 +12,8 @@
  *   skipped  — state.classification is null (no classification; nothing to fold)
  */
 
-import type { NodeInterface } from '@noocodex/dagonizer';
+import { ScalarNode, NodeOutputBuilder } from '@studnicky/dagonizer';
+import type { NodeContextType, NodeOutputType } from '@studnicky/dagonizer';
 
 import { ShapeObservationAccumulator } from '../../induction/ShapeObservation.js';
 import type { SquashageServices } from '../../services/SquashageServices.js';
@@ -20,15 +21,22 @@ import type { SquashageRecordState } from '../../state/SquashageRecordState.js';
 
 type Output = 'observed' | 'skipped';
 
-export const shapeObserveNode: NodeInterface<SquashageRecordState, Output, SquashageServices> = {
-  name:    'shape-observe',
-  outputs: ['observed', 'skipped'],
+class ShapeObserveNodeImpl extends ScalarNode<SquashageRecordState, Output, SquashageServices> {
+  public readonly name    = 'shape-observe';
+  public readonly outputs = ['observed', 'skipped'] as const;
 
-  async execute(state, context) {
+  public override get outputSchema(): Record<Output, { type: 'object' }> {
+    return { observed: { type: 'object' }, skipped: { type: 'object' } };
+  }
+
+  protected override async executeOne(
+    state:   SquashageRecordState,
+    context: NodeContextType<SquashageServices>,
+  ): Promise<NodeOutputType<Output>> {
     // If the record has no classification the classify chain already routed it;
     // nothing to fold.
     if (state.classification === null) {
-      return { output: 'skipped' };
+      return NodeOutputBuilder.of('skipped');
     }
 
     const { shapeCache } = context.services;
@@ -45,6 +53,8 @@ export const shapeObserveNode: NodeInterface<SquashageRecordState, Output, Squas
     const observation = shapeCache.get(className)!;
     ShapeObservationAccumulator.fold(observation, state.input);
 
-    return { output: 'observed' };
-  },
-};
+    return NodeOutputBuilder.of('observed');
+  }
+}
+
+export const shapeObserveNode = new ShapeObserveNodeImpl();

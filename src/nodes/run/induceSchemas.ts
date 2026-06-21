@@ -13,7 +13,8 @@
  *   empty   — shapeCache is empty; nothing to induce
  */
 
-import type { NodeInterface } from '@noocodex/dagonizer';
+import { ScalarNode, NodeOutputBuilder } from '@studnicky/dagonizer';
+import type { NodeContextType, NodeOutputType } from '@studnicky/dagonizer';
 
 import { SchemaInducer } from '../../induction/SchemaInducer.js';
 import type { SquashageServices } from '../../services/SquashageServices.js';
@@ -29,17 +30,27 @@ function resolveBaseIri(services: SquashageServices): string {
     : 'https://example.org/';
 }
 
-export const induceSchemasNode: NodeInterface<SquashageInduceRunState, Output, SquashageServices> = {
-  name:    'induce-schemas',
-  outputs: ['induced', 'empty'],
+class InduceSchemasNodeImpl extends ScalarNode<SquashageInduceRunState, Output, SquashageServices> {
+  public readonly name    = 'induce-schemas';
+  public readonly outputs = ['induced', 'empty'] as const;
 
-  async execute(state, context) {
+  public override get outputSchema(): Record<Output, { type: 'object' }> {
+    return {
+      induced: { type: 'object' },
+      empty:   { type: 'object' },
+    };
+  }
+
+  protected override async executeOne(
+    state:   SquashageInduceRunState,
+    context: NodeContextType<SquashageServices>,
+  ): Promise<NodeOutputType<Output>> {
     const log = context.services.logger.forComponent('induce-schemas');
     const { shapeCache } = context.services;
 
     if (shapeCache.size === 0) {
-      log.info('execute', 'shape cache is empty; skipping induction', {});
-      return { output: 'empty' };
+      log.info('executeOne', 'shape cache is empty; skipping induction', {});
+      return NodeOutputBuilder.of('empty');
     }
 
     const baseIri = resolveBaseIri(context.services);
@@ -48,7 +59,7 @@ export const induceSchemasNode: NodeInterface<SquashageInduceRunState, Output, S
     state.inducedSchemas = schemaSet;
 
     const total = schemaSet.classes.length + schemaSet.primitives.length + schemaSet.objects.length;
-    log.info('execute', 'schemas induced', {
+    log.info('executeOne', 'schemas induced', {
       classes:    schemaSet.classes.length,
       primitives: schemaSet.primitives.length,
       objects:    schemaSet.objects.length,
@@ -56,6 +67,8 @@ export const induceSchemasNode: NodeInterface<SquashageInduceRunState, Output, S
       baseIri,
     });
 
-    return { output: 'induced' };
-  },
-};
+    return NodeOutputBuilder.of('induced');
+  }
+}
+
+export const induceSchemasNode = new InduceSchemasNodeImpl();

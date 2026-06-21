@@ -11,7 +11,8 @@
  *   { "from": "/_type", "sanitize": "pascalCase" }  // monster-family → MonsterFamily
  */
 
-import type { NodeInterface } from '@noocodex/dagonizer';
+import { ScalarNode, NodeOutputBuilder } from '@studnicky/dagonizer';
+import type { NodeContextType, NodeOutputType } from '@studnicky/dagonizer';
 
 import type { SquashageServices } from '../../../services/SquashageServices.js';
 import type { ClassificationProposal } from '../../../state/schemas/ClassificationProposal.js';
@@ -30,78 +31,35 @@ export interface DiscriminatorClassifierConfigInterface {
 
 type Output = 'proposed' | 'no-match';
 
-// ─── JSON Pointer (RFC 6901) ──────────────────────────────────────────────────
-
-/**
- * Resolve a JSON Pointer against an object.
- *
- * Handles `~0` → `~` and `~1` → `/` token unescaping per RFC 6901 §3.
- * Returns `undefined` when any segment is absent or the value is not
- * navigable.
- */
-function resolvePointer(obj: Record<string, unknown>, pointer: string): unknown {
-  if (pointer === '') return obj;
-  if (!pointer.startsWith('/')) return undefined;
-
-  const tokens = pointer.slice(1).split('/');
-  let cursor: unknown = obj;
-
-  for (const raw of tokens) {
-    if (cursor === null || typeof cursor !== 'object') return undefined;
-    // RFC 6901 §3: unescape ~1 first, then ~0 (order matters).
-    const key = raw.replace(/~1/g, '/').replace(/~0/g, '~');
-    cursor = (cursor as Record<string, unknown>)[key];
-  }
-
-  return cursor;
-}
-
-// ─── Sanitize policies ────────────────────────────────────────────────────────
-
 type SanitizeFn = (value: string) => string;
-
-/**
- * Split on `[-_\s]+` boundaries, PascalCase each segment, concat.
- *
- * `monster-family` → `MonsterFamily`, `spell_list` → `SpellList`.
- */
-function sanitizePascalCase(value: string): string {
-  return value
-    .split(/[-_\s]+/)
-    .filter((part) => part.length > 0)
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join('');
-}
-
-const SANITIZE_MAP: Record<NonNullable<DiscriminatorClassifierConfigInterface['sanitize']>, SanitizeFn> = {
-  verbatim:     (v) => v,
-  pascalCase:   sanitizePascalCase,
-  kebabToPascal: sanitizePascalCase,
-};
 
 // ─── Node ─────────────────────────────────────────────────────────────────────
 
-export class DiscriminatorClassifierNode
-  implements NodeInterface<SquashageRecordState, Output, SquashageServices> {
+export class DiscriminatorClassifierNode extends ScalarNode<SquashageRecordState, Output, SquashageServices> {
 
-  readonly name    = 'classify:discriminator';
-  readonly outputs = ['proposed', 'no-match'] as const;
+  public readonly name    = 'classify:discriminator';
+  public readonly outputs = ['proposed', 'no-match'] as const;
 
   readonly #config: DiscriminatorClassifierConfigInterface;
 
   constructor(config: DiscriminatorClassifierConfigInterface) {
+    super();
     this.#config = config;
   }
 
-  async execute(
+  public override get outputSchema(): Record<Output, { type: 'object' }> {
+    return { proposed: { type: 'object' }, 'no-match': { type: 'object' } };
+  }
+
+  protected override async executeOne(
     state:    SquashageRecordState,
-    _context: { readonly services: SquashageServices },
-  ): Promise<{ output: Output }> {
+    _context: NodeContextType<SquashageServices>,
+  ): Promise<NodeOutputType<Output>> {
     const rawValue = this.#resolve(state.input);
 
-    if (rawValue === undefined) return { output: 'no-match' };
+    if (rawValue === undefined) return NodeOutputBuilder.of('no-match');
 
-    const sanitizeFn  = SANITIZE_MAP[this.#config.sanitize ?? 'verbatim'];
+    const sanitizeFn  = DiscriminatorClassifierNode.SANITIZE_MAP[this.#config.sanitize ?? 'verbatim'];
     const className   = sanitizeFn(rawValue);
     const priority    = this.#config.priority ?? 50;
 
@@ -114,20 +72,63 @@ export class DiscriminatorClassifierNode
     };
 
     state.proposals['classify:discriminator'] = proposal;
-    return { output: 'proposed' };
+    return NodeOutputBuilder.of('proposed');
   }
 
   // ─── private helpers ───────────────────────────────────────────────────────
 
   #resolve(input: Record<string, unknown>): string | undefined {
-    const primary = resolvePointer(input, this.#config.from);
+    const primary = DiscriminatorClassifierNode.resolvePointer(input, this.#config.from);
     if (typeof primary === 'string' && primary.length > 0) return primary;
 
     if (this.#config.fallback !== undefined) {
-      const fb = resolvePointer(input, this.#config.fallback);
+      const fb = DiscriminatorClassifierNode.resolvePointer(input, this.#config.fallback);
       if (typeof fb === 'string' && fb.length > 0) return fb;
     }
 
     return undefined;
   }
+
+  /**
+   * Resolve a JSON Pointer against an object.
+   *
+   * Handles `~0` → `~` and `~1` → `/` token unescaping per RFC 6901 §3.
+   * Returns `undefined` when any segment is absent or the value is not
+   * navigable.
+   */
+  private static resolvePointer(obj: Record<string, unknown>, pointer: string): unknown {
+    if (pointer === '') return obj;
+    if (!pointer.startsWith('/')) return undefined;
+
+    const tokens = pointer.slice(1).split('/');
+    let cursor: unknown = obj;
+
+    for (const raw of tokens) {
+      if (cursor === null || typeof cursor !== 'object') return undefined;
+      // RFC 6901 §3: unescape ~1 first, then ~0 (order matters).
+      const key = raw.replace(/~1/g, '/').replace(/~0/g, '~');
+      cursor = (cursor as Record<string, unknown>)[key];
+    }
+
+    return cursor;
+  }
+
+  /**
+   * Split on `[-_\s]+` boundaries, PascalCase each segment, concat.
+   *
+   * `monster-family` → `MonsterFamily`, `spell_list` → `SpellList`.
+   */
+  private static toPascalCase(value: string): string {
+    return value
+      .split(/[-_\s]+/)
+      .filter((part) => part.length > 0)
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join('');
+  }
+
+  private static readonly SANITIZE_MAP: Record<NonNullable<DiscriminatorClassifierConfigInterface['sanitize']>, SanitizeFn> = {
+    verbatim:      (v) => v,
+    pascalCase:    (v) => DiscriminatorClassifierNode.toPascalCase(v),
+    kebabToPascal: (v) => DiscriminatorClassifierNode.toPascalCase(v),
+  };
 }

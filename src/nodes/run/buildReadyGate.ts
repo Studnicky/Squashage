@@ -14,7 +14,8 @@
 import { readdir } from 'node:fs/promises';
 import type { Dirent } from 'node:fs';
 
-import type { NodeInterface } from '@noocodex/dagonizer';
+import { ScalarNode, NodeOutputBuilder } from '@studnicky/dagonizer';
+import type { NodeContextType, NodeOutputType } from '@studnicky/dagonizer';
 
 import type { SquashageBootstrapState } from '../../state/SquashageBootstrapState.js';
 import type { SquashageServices } from '../../services/SquashageServices.js';
@@ -23,12 +24,22 @@ type Output = 'schemas-present' | 'schemas-absent';
 
 const SCHEMA_SUFFIX = '.schema.json';
 
-export const buildReadyGateNode: NodeInterface<SquashageBootstrapState, Output, SquashageServices> = {
-  name:    'build-ready-gate',
-  outputs: ['schemas-present', 'schemas-absent'],
+class BuildReadyGateNodeImpl extends ScalarNode<SquashageBootstrapState, Output, SquashageServices> {
+  public readonly name    = 'build-ready-gate';
+  public readonly outputs = ['schemas-present', 'schemas-absent'] as const;
 
-  async execute(_state, context): Promise<{ output: Output }> {
-    const log      = context.services.logger.forComponent('build-ready-gate');
+  public override get outputSchema(): Record<Output, { type: 'object' }> {
+    return {
+      'schemas-present': { type: 'object' },
+      'schemas-absent':  { type: 'object' },
+    };
+  }
+
+  protected override async executeOne(
+    _state:  SquashageBootstrapState,
+    context: NodeContextType<SquashageServices>,
+  ): Promise<NodeOutputType<Output>> {
+    const log       = context.services.logger.forComponent('build-ready-gate');
     const finalsDir = context.services.schemaPaths.finals;
 
     let entries: Dirent[];
@@ -36,11 +47,11 @@ export const buildReadyGateNode: NodeInterface<SquashageBootstrapState, Output, 
       entries = await readdir(finalsDir, { withFileTypes: true });
     } catch {
       log.info(
-        'execute',
+        'executeOne',
         `no final schemas found under ${finalsDir} — refinement did not produce expected outputs`,
         { finalsDir },
       );
-      return { output: 'schemas-absent' };
+      return NodeOutputBuilder.of('schemas-absent');
     }
 
     // Only count direct-child files (not subdirectories) ending in .schema.json.
@@ -50,18 +61,20 @@ export const buildReadyGateNode: NodeInterface<SquashageBootstrapState, Output, 
 
     if (schemaFiles.length === 0) {
       log.info(
-        'execute',
+        'executeOne',
         `no final schemas found under ${finalsDir} — refinement did not produce expected outputs`,
         { finalsDir },
       );
-      return { output: 'schemas-absent' };
+      return NodeOutputBuilder.of('schemas-absent');
     }
 
-    log.info('execute', 'final schemas present; proceeding to build phase', {
+    log.info('executeOne', 'final schemas present; proceeding to build phase', {
       finalsDir,
       count: schemaFiles.length,
     });
 
-    return { output: 'schemas-present' };
-  },
-};
+    return NodeOutputBuilder.of('schemas-present');
+  }
+}
+
+export const buildReadyGateNode = new BuildReadyGateNodeImpl();

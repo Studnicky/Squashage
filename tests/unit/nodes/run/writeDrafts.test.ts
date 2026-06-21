@@ -4,6 +4,7 @@ import { mkdtemp, readdir, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
+import { Batch } from '@studnicky/dagonizer';
 import { writeDraftsNode } from '../../../../src/nodes/run/writeDrafts.js';
 import { SquashageInduceRunState } from '../../../../src/state/SquashageInduceRunState.js';
 import type { InducedSchemaInterface, InducedSchemaSetInterface } from '../../../../src/induction/SchemaInducer.js';
@@ -82,18 +83,36 @@ function makeContext(inferredDir: string): { services: SquashageServices } {
   };
 }
 
+/**
+ * Helper: run the node over a single-state batch and return the output port name.
+ * The result is a ReadonlyMap<TOutput, Batch<TState>>; the winning port is the
+ * first (and only) key when a single item is processed.
+ */
+async function runNode(
+  state: SquashageInduceRunState,
+  context: { services: SquashageServices },
+): Promise<string> {
+  const result = await writeDraftsNode.execute(
+    Batch.of(state),
+    context as unknown as Parameters<typeof writeDraftsNode.execute>[1],
+  );
+  const keys = [...result.keys()];
+  if (keys.length === 0) throw new Error('node produced no output port');
+  return keys[0] as string;
+}
+
 describe('writeDraftsNode — empty inducedSchemas', () => {
   it('returns skipped when inducedSchemas is null; draftsWritten remains 0', async () => {
     const state  = makeState(null);
-    const result = await writeDraftsNode.execute(state, makeContext('/tmp/irrelevant'));
-    assert.equal(result.output,       'skipped');
+    const output = await runNode(state, makeContext('/tmp/irrelevant'));
+    assert.equal(output,             'skipped');
     assert.equal(state.draftsWritten, 0);
   });
 
   it('returns skipped when all arrays are empty; draftsWritten remains 0', async () => {
     const state  = makeState(makeSchemaSet([], [], []));
-    const result = await writeDraftsNode.execute(state, makeContext('/tmp/irrelevant'));
-    assert.equal(result.output,       'skipped');
+    const output = await runNode(state, makeContext('/tmp/irrelevant'));
+    assert.equal(output,             'skipped');
     assert.equal(state.draftsWritten, 0);
   });
 });
@@ -104,9 +123,9 @@ describe('writeDraftsNode — writes class files', () => {
     const inferredDir = join(tmpDir, 'schemas', 'inferred');
     try {
       const state  = makeState(makeSchemaSet([SAMPLE_CLASS]));
-      const result = await writeDraftsNode.execute(state, makeContext(inferredDir));
+      const output = await runNode(state, makeContext(inferredDir));
 
-      assert.equal(result.output,       'written');
+      assert.equal(output,             'written');
       assert.equal(state.draftsWritten, 1);
 
       const files = await readdir(inferredDir);
@@ -127,8 +146,8 @@ describe('writeDraftsNode — writes class files', () => {
     try {
       const run1 = makeState(makeSchemaSet([SAMPLE_CLASS]));
       const run2 = makeState(makeSchemaSet([SAMPLE_CLASS]));
-      await writeDraftsNode.execute(run1, makeContext(tmpDir1));
-      await writeDraftsNode.execute(run2, makeContext(tmpDir2));
+      await runNode(run1, makeContext(tmpDir1));
+      await runNode(run2, makeContext(tmpDir2));
 
       const content1 = await readFile(join(tmpDir1, 'Feat.draft.json'), 'utf8');
       const content2 = await readFile(join(tmpDir2, 'Feat.draft.json'), 'utf8');
@@ -144,8 +163,8 @@ describe('writeDraftsNode — writes class files', () => {
     const deepDir = join(tmpDir, 'a', 'b', 'c', 'inferred');
     try {
       const state  = makeState(makeSchemaSet([SAMPLE_CLASS]));
-      const result = await writeDraftsNode.execute(state, makeContext(deepDir));
-      assert.equal(result.output, 'written');
+      const output = await runNode(state, makeContext(deepDir));
+      assert.equal(output, 'written');
       const files = await readdir(deepDir);
       assert.ok(files.includes('Feat.draft.json'));
     } finally {
@@ -160,9 +179,9 @@ describe('writeDraftsNode — writes extracted files', () => {
     const inferredDir = join(tmpDir, 'inferred');
     try {
       const state  = makeState(makeSchemaSet([SAMPLE_CLASS], [SAMPLE_PRIMITIVE]));
-      const result = await writeDraftsNode.execute(state, makeContext(inferredDir));
+      const output = await runNode(state, makeContext(inferredDir));
 
-      assert.equal(result.output,       'written');
+      assert.equal(output,             'written');
       assert.equal(state.draftsWritten, 2);
 
       const primDir = join(inferredDir, 'primitives');
@@ -182,9 +201,9 @@ describe('writeDraftsNode — writes extracted files', () => {
     const inferredDir = join(tmpDir, 'inferred');
     try {
       const state  = makeState(makeSchemaSet([SAMPLE_CLASS], [], [SAMPLE_OBJECT]));
-      const result = await writeDraftsNode.execute(state, makeContext(inferredDir));
+      const output = await runNode(state, makeContext(inferredDir));
 
-      assert.equal(result.output,       'written');
+      assert.equal(output,             'written');
       assert.equal(state.draftsWritten, 2);
 
       const objDir = join(inferredDir, 'objects');
@@ -204,7 +223,7 @@ describe('writeDraftsNode — writes extracted files', () => {
     const inferredDir = join(tmpDir, 'inferred');
     try {
       const state  = makeState(makeSchemaSet([SAMPLE_CLASS], [SAMPLE_PRIMITIVE], [SAMPLE_OBJECT]));
-      await writeDraftsNode.execute(state, makeContext(inferredDir));
+      await runNode(state, makeContext(inferredDir));
       assert.equal(state.draftsWritten, 3);
     } finally {
       await rm(tmpDir, { recursive: true, force: true });

@@ -1,9 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { NodeStateBase } from '@noocodex/dagonizer';
-import { DAGBuilder } from '@noocodex/dagonizer/builder';
-import type { NodeInterface } from '@noocodex/dagonizer';
+import { NodeStateBase, Batch, RoutedBatchBuilder, Timeout } from '@studnicky/dagonizer';
+import { DAGBuilder } from '@studnicky/dagonizer/builder';
+import type { NodeInterface, RoutedBatchType } from '@studnicky/dagonizer';
 
 import { SquashageDagonizer } from '../../../src/dispatcher/SquashageDagonizer.js';
 import { NullObserver } from '../../../src/observer/NullObserver.js';
@@ -53,16 +53,27 @@ test('happy path', async (t) => {
 
     const stepA: NodeInterface<S, 'success', SquashageServices> = {
       name: 'a', outputs: ['success'],
-      async execute(state) { state.steps.push('a'); return { output: 'success' }; },
+      outputSchema: { success: { type: 'object' } },
+      timeout: Timeout.none(),
+      async execute(batch: Batch<S>): Promise<RoutedBatchType<'success', S>> {
+        for (const item of batch) { item.state.steps.push('a'); }
+        return RoutedBatchBuilder.of('success', batch);
+      },
     };
     const stepB: NodeInterface<S, 'success', SquashageServices> = {
       name: 'b', outputs: ['success'],
-      async execute(state) { state.steps.push('b'); return { output: 'success' }; },
+      outputSchema: { success: { type: 'object' } },
+      timeout: Timeout.none(),
+      async execute(batch: Batch<S>): Promise<RoutedBatchType<'success', S>> {
+        for (const item of batch) { item.state.steps.push('b'); }
+        return RoutedBatchBuilder.of('success', batch);
+      },
     };
 
     const dag = new DAGBuilder('two-step', '1.0')
       .node('a', stepA, { success: 'b' })
-      .node('b', stepB, { success: null })
+      .node('b', stepB, { success: 'end' })
+      .terminal('end')
       .build();
 
     dispatcher.registerNode(stepA);
@@ -72,11 +83,12 @@ test('happy path', async (t) => {
     const result = await dispatcher.execute('two-step', new S());
 
     assert.deepEqual(result.state.steps, ['a', 'b']);
-    assert.equal(result.state.lifecycle.kind, 'completed');
+    assert.equal(result.state.lifecycle.variant, 'completed');
     assert.deepEqual(observer.calls, [
       'flowStart:two-step',
       'nodeStart:a', 'nodeEnd:a:success',
       'nodeStart:b', 'nodeEnd:b:success',
+      'nodeStart:end', 'nodeEnd:end:completed',
       'flowEnd:two-step:completed',
     ]);
   });
@@ -89,9 +101,17 @@ test('edge cases', async (t) => {
 
     const tick: NodeInterface<S, 'success', SquashageServices> = {
       name: 'tick', outputs: ['success'],
-      async execute(state) { state.steps.push('tick'); return { output: 'success' }; },
+      outputSchema: { success: { type: 'object' } },
+      timeout: Timeout.none(),
+      async execute(batch: Batch<S>): Promise<RoutedBatchType<'success', S>> {
+        for (const item of batch) { item.state.steps.push('tick'); }
+        return RoutedBatchBuilder.of('success', batch);
+      },
     };
-    const dag = new DAGBuilder('one', '1.0').node('tick', tick, { success: null }).build();
+    const dag = new DAGBuilder('one', '1.0')
+      .node('tick', tick, { success: 'end' })
+      .terminal('end')
+      .build();
     dispatcher.registerNode(tick);
     dispatcher.registerDAG(dag);
 

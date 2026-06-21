@@ -68,7 +68,7 @@ test('induceDag smoke — one-record fixture', async (t) => {
       const result     = await run.executeInduce();
       const finalState = result.state as unknown as SquashageInduceRunState;
 
-      assert.equal(finalState.lifecycle.kind, 'completed');
+      assert.equal(finalState.lifecycle.variant, 'completed');
       assert.equal(finalState.locators.length, 1, 'should have found one record');
       assert.ok(
         finalState.observedRecords > 0,

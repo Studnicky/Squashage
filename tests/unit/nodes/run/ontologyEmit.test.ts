@@ -17,6 +17,7 @@ import dataFactory    from '@rdfjs/data-model';
 import datasetFactory from '@rdfjs/dataset';
 import type { DatasetCore, Quad } from '@rdfjs/types';
 
+import { Batch } from '@studnicky/dagonizer';
 import { ontologyEmitNode, ontologyGraphIri } from '../../../../src/nodes/run/ontologyEmit.js';
 import { SquashageRunState }                   from '../../../../src/state/SquashageRunState.js';
 import type { SquashageServices }              from '../../../../src/services/SquashageServices.js';
@@ -98,28 +99,35 @@ function makeServices(
   };
 }
 
+async function runNode(
+  state:   SquashageRunState,
+  context: { services: SquashageServices },
+): Promise<string> {
+  const result = await ontologyEmitNode.execute(
+    Batch.of(state),
+    context as unknown as Parameters<typeof ontologyEmitNode.execute>[1],
+  );
+  const keys = [...result.keys()];
+  if (keys.length === 0) throw new Error('node produced no output port');
+  return keys[0] as string;
+}
+
 // ---------------------------------------------------------------------------
 // Suite: null ontology → skipped
 // ---------------------------------------------------------------------------
 
 describe('ontologyEmitNode:null-ontology', () => {
   it('returns skipped when ontology is null', async () => {
-    const dataset = makeDataset();
+    const dataset  = makeDataset();
     const services = makeServices(null, dataset);
-    const result = await ontologyEmitNode.execute(
-      makeState(),
-      { services: services as unknown as SquashageServices },
-    );
-    assert.equal(result.output, 'skipped');
+    const output   = await runNode(makeState(), { services: services as unknown as SquashageServices });
+    assert.equal(output, 'skipped');
   });
 
   it('dataset is unchanged when ontology is null', async () => {
-    const dataset = makeDataset();
+    const dataset  = makeDataset();
     const services = makeServices(null, dataset);
-    await ontologyEmitNode.execute(
-      makeState(),
-      { services: services as unknown as SquashageServices },
-    );
+    await runNode(makeState(), { services: services as unknown as SquashageServices });
     assert.equal(dataset.size, 0);
   });
 });
@@ -131,21 +139,15 @@ describe('ontologyEmitNode:null-ontology', () => {
 describe('ontologyEmitNode:emitted', () => {
   it('returns emitted when ontology is configured', async () => {
     const services = makeServices(makeFakeOntology(makeTboxQuads(), makeShaclQuads()));
-    const result = await ontologyEmitNode.execute(
-      makeState(),
-      { services: services as unknown as SquashageServices },
-    );
-    assert.equal(result.output, 'emitted');
+    const output   = await runNode(makeState(), { services: services as unknown as SquashageServices });
+    assert.equal(output, 'emitted');
   });
 
   it('adds tbox quads to dataset in the ontology graph', async () => {
     const dataset  = makeDataset();
     const tbox     = makeTboxQuads();
     const services = makeServices(makeFakeOntology(tbox, []), dataset);
-    await ontologyEmitNode.execute(
-      makeState(),
-      { services: services as unknown as SquashageServices },
-    );
+    await runNode(makeState(), { services: services as unknown as SquashageServices });
     assert.equal(dataset.size, tbox.length);
     for (const q of dataset) {
       assert.equal((q as Quad).graph.value, ONTOLOGY_IRI);
@@ -156,10 +158,7 @@ describe('ontologyEmitNode:emitted', () => {
     const dataset  = makeDataset();
     const shacl    = makeShaclQuads();
     const services = makeServices(makeFakeOntology([], shacl), dataset);
-    await ontologyEmitNode.execute(
-      makeState(),
-      { services: services as unknown as SquashageServices },
-    );
+    await runNode(makeState(), { services: services as unknown as SquashageServices });
     assert.equal(dataset.size, shacl.length);
     for (const q of dataset) {
       assert.equal((q as Quad).graph.value, ONTOLOGY_IRI);
@@ -171,10 +170,7 @@ describe('ontologyEmitNode:emitted', () => {
     const tbox     = makeTboxQuads();
     const shacl    = makeShaclQuads();
     const services = makeServices(makeFakeOntology(tbox, shacl), dataset);
-    await ontologyEmitNode.execute(
-      makeState(),
-      { services: services as unknown as SquashageServices },
-    );
+    await runNode(makeState(), { services: services as unknown as SquashageServices });
     assert.equal(dataset.size, tbox.length + shacl.length);
   });
 
@@ -182,10 +178,7 @@ describe('ontologyEmitNode:emitted', () => {
     const dataset  = makeDataset();
     const tbox     = makeTboxQuads();
     const services = makeServices(makeFakeOntology(tbox, []), dataset);
-    await ontologyEmitNode.execute(
-      makeState(),
-      { services: services as unknown as SquashageServices },
-    );
+    await runNode(makeState(), { services: services as unknown as SquashageServices });
 
     const emitted = [...dataset] as Quad[];
     for (let i = 0; i < tbox.length; i++) {
@@ -201,11 +194,8 @@ describe('ontologyEmitNode:emitted', () => {
   it('tbox and shacl with empty quads → dataset stays empty but output is emitted', async () => {
     const dataset  = makeDataset();
     const services = makeServices(makeFakeOntology([], []), dataset);
-    const result = await ontologyEmitNode.execute(
-      makeState(),
-      { services: services as unknown as SquashageServices },
-    );
-    assert.equal(result.output, 'emitted');
+    const output   = await runNode(makeState(), { services: services as unknown as SquashageServices });
+    assert.equal(output, 'emitted');
     assert.equal(dataset.size, 0);
   });
 });

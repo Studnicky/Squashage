@@ -90,7 +90,7 @@ test('refineDag smoke — single draft + refinement', async (t) => {
       const result     = await run.executeRefine();
       const finalState = result.state as unknown as SquashageRefineRunState;
 
-      assert.equal(finalState.lifecycle.kind, 'completed');
+      assert.equal(finalState.lifecycle.variant, 'completed');
       assert.equal(finalState.refinedCount,   1, 'should have refined one draft');
       assert.equal(finalState.passthroughCount, 0);
       assert.equal(finalState.runErrors.length, 0);
@@ -136,7 +136,7 @@ test('refineDag smoke — single draft + refinement', async (t) => {
       const result     = await run.executeRefine();
       const finalState = result.state as unknown as SquashageRefineRunState;
 
-      assert.equal(finalState.lifecycle.kind, 'completed');
+      assert.equal(finalState.lifecycle.variant, 'completed');
       assert.equal(finalState.passthroughCount, 1);
       assert.equal(finalState.refinedCount,     0);
 

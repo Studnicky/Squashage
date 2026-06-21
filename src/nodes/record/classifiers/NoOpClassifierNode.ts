@@ -8,28 +8,42 @@
  * `classifyAllParallelMembers` is always registered on the dispatcher.
  */
 
-import type { NodeInterface } from '@noocodex/dagonizer';
+import { ScalarNode, NodeOutputBuilder } from '@studnicky/dagonizer';
+import type { NodeContextType, NodeOutputType } from '@studnicky/dagonizer';
 
 import type { SquashageServices } from '../../../services/SquashageServices.js';
 import type { SquashageRecordState } from '../../../state/SquashageRecordState.js';
 
 type Output = 'proposed' | 'no-match' | 'validated' | 'narrowed' | 'no-op';
 
-export class NoOpClassifierNode
-  implements NodeInterface<SquashageRecordState, Output, SquashageServices> {
+export class NoOpClassifierNode extends ScalarNode<SquashageRecordState, Output, SquashageServices> {
 
-  readonly name:    string;
-  readonly outputs: readonly Output[];
+  public readonly name:    string;
+  public readonly outputs: readonly Output[];
 
   constructor(name: string, outputs: readonly Output[]) {
+    super();
     this.name    = name;
     this.outputs = outputs;
   }
 
-  async execute(
+  public override get outputSchema(): Record<Output, { type: 'object' }> {
+    return {
+      proposed:   { type: 'object' },
+      'no-match': { type: 'object' },
+      validated:  { type: 'object' },
+      narrowed:   { type: 'object' },
+      'no-op':    { type: 'object' },
+    };
+  }
+
+  protected override async executeOne(
     _state:   SquashageRecordState,
-    _context: { readonly services: SquashageServices },
-  ): Promise<{ output: Output }> {
-    return { output: this.outputs.includes('no-match') ? 'no-match' as Output : (this.outputs[0] as Output) };
+    _context: NodeContextType<SquashageServices>,
+  ): Promise<NodeOutputType<Output>> {
+    const first = this.outputs.includes('no-match')
+      ? ('no-match' as Output)
+      : (this.outputs[0] as Output);
+    return NodeOutputBuilder.of(first);
   }
 }

@@ -19,18 +19,26 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
-import type { NodeInterface } from '@noocodex/dagonizer';
+import { ScalarNode, NodeOutputBuilder } from '@studnicky/dagonizer';
+import type { NodeContextType, NodeOutputType } from '@studnicky/dagonizer';
 
 import type { SquashageServices } from '../../services/SquashageServices.js';
 import type { SquashageRefineState } from '../../state/SquashageRefineState.js';
 
 type Output = 'written';
 
-export const writeFinalNode: NodeInterface<SquashageRefineState, Output, SquashageServices> = {
-  name:    'write-final',
-  outputs: ['written'],
+class WriteFinalNodeImpl extends ScalarNode<SquashageRefineState, Output, SquashageServices> {
+  public readonly name    = 'write-final';
+  public readonly outputs = ['written'] as const;
 
-  async execute(state, context): Promise<{ output: Output }> {
+  public override get outputSchema(): Record<Output, { type: 'object' }> {
+    return { written: { type: 'object' } };
+  }
+
+  protected override async executeOne(
+    state:   SquashageRefineState,
+    context: NodeContextType<SquashageServices>,
+  ): Promise<NodeOutputType<Output>> {
     const log        = context.services.logger.forComponent('write-final');
     const finalsDir  = context.services.schemaPaths.finals;
 
@@ -65,13 +73,15 @@ export const writeFinalNode: NodeInterface<SquashageRefineState, Output, Squasha
       state.outcome = 'refined';
     }
 
-    log.info('execute', 'final schema written', {
+    log.info('executeOne', 'final schema written', {
       className: state.className,
       filePath,
       outcome:   state.outcome,
       subdir:    state.subdir,
     });
 
-    return { output: 'written' };
-  },
-};
+    return NodeOutputBuilder.of('written');
+  }
+}
+
+export const writeFinalNode = new WriteFinalNodeImpl();

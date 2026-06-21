@@ -12,7 +12,8 @@
  * → priority winner → lex tiebreak).
  */
 
-import type { NodeInterface } from '@noocodex/dagonizer';
+import { ScalarNode, NodeOutputBuilder } from '@studnicky/dagonizer';
+import type { NodeContextType, NodeOutputType } from '@studnicky/dagonizer';
 
 import type { SquashageServices } from '../../services/SquashageServices.js';
 import type { ClassificationEvidence } from '../../state/schemas/ClassificationEvidence.js';
@@ -28,64 +29,46 @@ type Output = 'resolved' | 'tie' | 'unknown';
 
 const SENTINELS = new Set<string>(['__source__', '__validation__', '__narrowing_applied__', 'unknown']);
 
-function pickHighestPriority(
-  proposals: ReadonlyArray<ClassificationProposal>,
-): ClassificationProposal {
-  let winner = proposals[0] as ClassificationProposal;
-  for (let i = 1; i < proposals.length; i++) {
-    const p = proposals[i] as ClassificationProposal;
-    if (p.priority > winner.priority) winner = p;
-  }
-  return winner;
-}
-
-function buildEvidence(
-  className:    string,
-  proposals:    ReadonlyArray<ClassificationProposal>,
-  tied:         ReadonlyArray<string> | undefined,
-  preserveAll:  boolean,
-): ClassificationEvidence {
-  const winner   = pickHighestPriority(proposals);
-  const engine   = [...new Set<string>(proposals.map((p) => p.source))].join(',');
-  const reasons  = preserveAll
-    ? proposals.flatMap((p) => [...p.reasons])
-    : [winner.reasons[0] ?? winner.className];
-  return tied !== undefined
-    ? { type: className, confidence: winner.confidence, engine, reasons, candidates: [...tied] }
-    : { type: className, confidence: winner.confidence, engine, reasons };
-}
-
 export class ClassifyConflictNode
-  implements NodeInterface<SquashageRecordState, Output, SquashageServices> {
+  extends ScalarNode<SquashageRecordState, Output, SquashageServices> {
 
-  readonly name    = 'classify-conflict';
-  readonly outputs = ['resolved', 'tie', 'unknown'] as const;
+  public readonly name    = 'classify-conflict';
+  public readonly outputs = ['resolved', 'tie', 'unknown'] as const;
   readonly #config: ClassifyConflictConfigInterface;
 
   constructor(config: ClassifyConflictConfigInterface) {
+    super();
     this.#config = Object.freeze({ ...config });
   }
 
-  async execute(
+  public override get outputSchema(): Record<Output, { type: 'object' }> {
+    return {
+      resolved: { type: 'object' },
+      tie:      { type: 'object' },
+      unknown:  { type: 'object' },
+    };
+  }
+
+  protected override async executeOne(
     state:    SquashageRecordState,
-    _context: { readonly services: SquashageServices },
-  ): Promise<{ output: Output }> {
+    _context: NodeContextType<SquashageServices>,
+  ): Promise<NodeOutputType<Output>> {
     const all = Object.values(state.proposals).filter(
       (p) => !SENTINELS.has(p.className),
     );
 
     if (all.length === 0) {
       state.quarantineBucket = 'unknown';
-      return { output: 'unknown' };
+      return NodeOutputBuilder.of('unknown');
     }
 
     const classNames = new Set<string>(all.map((p) => p.className));
 
     if (classNames.size === 1) {
-      state.classification = buildEvidence(
+      state.classification = ClassifyConflictNode.buildEvidence(
         (all[0] as ClassificationProposal).className, all, undefined, this.#config.evidence,
       );
-      return { output: 'resolved' };
+      return NodeOutputBuilder.of('resolved');
     }
 
     const maxPriority   = Math.max(...all.map((p) => p.priority));
@@ -95,20 +78,51 @@ export class ClassifyConflictNode
     if (topClassNames.length === 1) {
       const winnerClass     = topClassNames[0] as string;
       const winnerProposals = all.filter((p) => p.className === winnerClass);
-      state.classification = buildEvidence(winnerClass, winnerProposals, undefined, this.#config.evidence);
-      return { output: 'resolved' };
+      state.classification = ClassifyConflictNode.buildEvidence(
+        winnerClass, winnerProposals, undefined, this.#config.evidence,
+      );
+      return NodeOutputBuilder.of('resolved');
     }
 
     const tied = [...topClassNames].sort();
 
     if (this.#config.onConflict === 'quarantine') {
       state.quarantineBucket = 'conflicts';
-      return { output: 'tie' };
+      return NodeOutputBuilder.of('tie');
     }
 
     const winnerClass = tied[0] as string;
     const winnerProposals = all.filter((p) => p.className === winnerClass);
-    state.classification = buildEvidence(winnerClass, winnerProposals, tied, this.#config.evidence);
-    return { output: 'resolved' };
+    state.classification = ClassifyConflictNode.buildEvidence(
+      winnerClass, winnerProposals, tied, this.#config.evidence,
+    );
+    return NodeOutputBuilder.of('resolved');
+  }
+
+  private static pickHighestPriority(
+    proposals: ReadonlyArray<ClassificationProposal>,
+  ): ClassificationProposal {
+    let winner = proposals[0] as ClassificationProposal;
+    for (let i = 1; i < proposals.length; i++) {
+      const p = proposals[i] as ClassificationProposal;
+      if (p.priority > winner.priority) winner = p;
+    }
+    return winner;
+  }
+
+  private static buildEvidence(
+    className:    string,
+    proposals:    ReadonlyArray<ClassificationProposal>,
+    tied:         ReadonlyArray<string> | undefined,
+    preserveAll:  boolean,
+  ): ClassificationEvidence {
+    const winner   = ClassifyConflictNode.pickHighestPriority(proposals);
+    const engine   = [...new Set<string>(proposals.map((p) => p.source))].join(',');
+    const reasons  = preserveAll
+      ? proposals.flatMap((p) => [...p.reasons])
+      : [winner.reasons[0] ?? winner.className];
+    return tied !== undefined
+      ? { type: className, confidence: winner.confidence, engine, reasons, candidates: [...tied] }
+      : { type: className, confidence: winner.confidence, engine, reasons };
   }
 }

@@ -1,6 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
+import { Batch } from '@studnicky/dagonizer';
 import { shapeObserveNode } from '../../../../src/nodes/record/shapeObserve.js';
 import { ShapeObservationAccumulator } from '../../../../src/induction/ShapeObservation.js';
 import { SquashageRecordState } from '../../../../src/state/SquashageRecordState.js';
@@ -26,21 +27,34 @@ function makeServices(
   };
 }
 
+async function runNode(
+  state: SquashageRecordState,
+  context: { readonly services: SquashageServices },
+): Promise<string> {
+  const result = await shapeObserveNode.execute(
+    Batch.of(state),
+    context as unknown as Parameters<typeof shapeObserveNode.execute>[1],
+  );
+  const keys = [...result.keys()];
+  if (keys.length === 0) throw new Error('node produced no output port');
+  return keys[0] as string;
+}
+
 // ─── skipped output ────────────────────────────────────────────────────────────
 
 describe('shapeObserveNode — skipped when classification is null', () => {
   it('returns skipped when state.classification is null', async () => {
     const state = makeState(null);
     const ctx   = makeServices();
-    const result = await shapeObserveNode.execute(state, ctx);
-    assert.equal(result.output, 'skipped');
+    const result = await runNode(state, ctx);
+    assert.equal(result, 'skipped');
   });
 
   it('does not modify shapeCache when skipped', async () => {
     const state      = makeState(null);
     const shapeCache = new Map<string, ShapeObservation>();
     const ctx        = makeServices(shapeCache);
-    await shapeObserveNode.execute(state, ctx);
+    await runNode(state, ctx);
     assert.equal(shapeCache.size, 0);
   });
 });
@@ -51,15 +65,15 @@ describe('shapeObserveNode — observed output', () => {
   it('returns observed when classification is set', async () => {
     const state  = makeState({ type: 'Spell' });
     const ctx    = makeServices();
-    const result = await shapeObserveNode.execute(state, ctx);
-    assert.equal(result.output, 'observed');
+    const result = await runNode(state, ctx);
+    assert.equal(result, 'observed');
   });
 
   it('creates a shapeCache entry on first contact for a className', async () => {
     const state      = makeState({ type: 'Feat' });
     const shapeCache = new Map<string, ShapeObservation>();
     const ctx        = makeServices(shapeCache);
-    await shapeObserveNode.execute(state, ctx);
+    await runNode(state, ctx);
     assert.ok(shapeCache.has('Feat'), 'shapeCache should have an entry for Feat');
   });
 
@@ -67,7 +81,7 @@ describe('shapeObserveNode — observed output', () => {
     const state      = makeState({ type: 'Feat' });
     const shapeCache = new Map<string, ShapeObservation>();
     const ctx        = makeServices(shapeCache);
-    await shapeObserveNode.execute(state, ctx);
+    await runNode(state, ctx);
     const obs = shapeCache.get('Feat');
     assert.ok(obs !== undefined);
     assert.equal(obs.recordCount, 1);
@@ -79,11 +93,11 @@ describe('shapeObserveNode — observed output', () => {
 
     const s1 = makeState({ type: 'Feat' });
     s1.input = { name: 'Power Attack' };
-    await shapeObserveNode.execute(s1, ctx);
+    await runNode(s1, ctx);
 
     const s2 = makeState({ type: 'Feat' });
     s2.input = { name: 'Cleave' };
-    await shapeObserveNode.execute(s2, ctx);
+    await runNode(s2, ctx);
 
     const obs = shapeCache.get('Feat');
     assert.ok(obs !== undefined);
@@ -97,7 +111,7 @@ describe('shapeObserveNode — observed output', () => {
     for (const name of ['A', 'B', 'C']) {
       const s = makeState({ type: 'Spell' });
       s.input = { name };
-      await shapeObserveNode.execute(s, ctx);
+      await runNode(s, ctx);
     }
 
     assert.equal(shapeCache.size, 1, 'only one entry per className');
@@ -112,11 +126,11 @@ describe('shapeObserveNode — observed output', () => {
 
     const s1 = makeState({ type: 'Feat' });
     s1.input = { name: 'Power Attack' };
-    await shapeObserveNode.execute(s1, ctx);
+    await runNode(s1, ctx);
 
     const s2 = makeState({ type: 'Spell' });
     s2.input = { name: 'Fireball' };
-    await shapeObserveNode.execute(s2, ctx);
+    await runNode(s2, ctx);
 
     assert.equal(shapeCache.size, 2);
     assert.ok(shapeCache.has('Feat'));
@@ -129,7 +143,7 @@ describe('shapeObserveNode — observed output', () => {
 
     const s = makeState({ type: 'Item' });
     s.input = { name: 'Sword', level: 5, active: true };
-    await shapeObserveNode.execute(s, ctx);
+    await runNode(s, ctx);
 
     const obs = shapeCache.get('Item');
     assert.ok(obs !== undefined);
@@ -149,7 +163,7 @@ describe('shapeObserveNode — observed output', () => {
 
     const s = makeState({ type: 'Feat' });
     s.input = { name: 'New Record' };
-    await shapeObserveNode.execute(s, ctx);
+    await runNode(s, ctx);
 
     const obs = shapeCache.get('Feat');
     assert.ok(obs !== undefined);

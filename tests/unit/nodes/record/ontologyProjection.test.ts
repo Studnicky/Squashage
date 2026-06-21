@@ -24,6 +24,7 @@ import dataFactory   from '@rdfjs/data-model';
 import datasetFactory from '@rdfjs/dataset';
 import type { DatasetCore, NamedNode, Quad } from '@rdfjs/types';
 
+import { Batch } from '@studnicky/dagonizer';
 import { ontologyProjectionNode } from '../../../../src/nodes/record/ontologyProjection.js';
 import { SquashageRecordState }   from '../../../../src/state/SquashageRecordState.js';
 import type { SquashageServices } from '../../../../src/services/SquashageServices.js';
@@ -93,23 +94,32 @@ function makeServices(
 /**
  * Build a fake ontology service whose toQuads returns a fixed set of quads.
  *
- * @param quads       - Quads toQuads() will resolve with.
- * @param throws      - When true, toQuads() rejects.
- * @param ancestorIrisMap - Optional map of className → ancestor IRI list.
+ * @param quads            - Quads toQuads() will resolve with.
+ * @param throws           - When true, toQuads() rejects.
+ * @param ancestorIrisMap  - Optional map of className → ancestor IRI list.
+ * @param extraClassNames  - Additional classNames schemaForClassName recognises
+ *                           (in addition to 'Person').
  */
 function makeFakeOntology(
   quads: Quad[] = [],
   throws = false,
   ancestorIrisMap: Readonly<Record<string, string[]>> = {},
+  extraClassNames: ReadonlyArray<string> = [],
 ): SquashageServices['ontology'] {
+  const known = new Set(['Person', ...extraClassNames]);
   return {
     baseIRI:            () => BASE_IRI,
-    schemaForClassName: (name: string) => (name === 'Person' ? { $id: SCHEMA_ID } : undefined) as ReturnType<NonNullable<SquashageServices['ontology']>['schemaForClassName']>,
-    toQuads:            async (_schemaId: string, _instance: unknown) => {
+    schemaForClassName: (name: string) =>
+      (known.has(name) ? { $id: SCHEMA_ID } : undefined) as
+        ReturnType<NonNullable<SquashageServices['ontology']>['schemaForClassName']>,
+    toQuads: async (_schemaId: string, _instance: unknown) => {
       if (throws) throw new Error('projection error from fake ontology');
       return quads;
     },
     ancestorIris: (name: string): ReadonlyArray<string> => ancestorIrisMap[name] ?? [],
+    validate: (_schemaId: string, _instance: unknown) =>
+      ({ ok: true, items: [], length: 0 }) as unknown as
+        ReturnType<NonNullable<SquashageServices['ontology']>['validate']>,
   } as unknown as SquashageServices['ontology'];
 }
 
@@ -141,6 +151,24 @@ function stateWithClassification(className: string): SquashageRecordState {
 }
 
 // ---------------------------------------------------------------------------
+// Test helper
+// ---------------------------------------------------------------------------
+
+async function runNode(
+  state: SquashageRecordState,
+  services: Pick<SquashageServices, 'factory' | 'dataset' | 'ontology' | 'subjectIri' | 'graphs' | 'logger'>,
+): Promise<string> {
+  const ctx = { services: services as unknown as SquashageServices };
+  const result = await ontologyProjectionNode.execute(
+    Batch.of(state),
+    ctx as unknown as Parameters<typeof ontologyProjectionNode.execute>[1],
+  );
+  const keys = [...result.keys()];
+  if (keys.length === 0) throw new Error('node produced no output port');
+  return keys[0] as string;
+}
+
+// ---------------------------------------------------------------------------
 // Happy path
 // ---------------------------------------------------------------------------
 
@@ -151,12 +179,9 @@ describe('ontologyProjectionNode:happy-path', () => {
     const services  = makeServices(makeFakeOntology(fakeQuads), dataset);
     const state     = stateWithClassification('Person');
 
-    const result = await ontologyProjectionNode.execute(
-      state,
-      { services: services as unknown as SquashageServices },
-    );
+    const result = await runNode(state, services);
 
-    assert.equal(result.output, 'squashed');
+    assert.equal(result, 'squashed');
     assert.ok(dataset.size > 0, 'dataset must contain quads after projection');
   });
 
@@ -165,10 +190,7 @@ describe('ontologyProjectionNode:happy-path', () => {
     const services  = makeServices(makeFakeOntology(fakeQuads));
     const state     = stateWithClassification('Person');
 
-    await ontologyProjectionNode.execute(
-      state,
-      { services: services as unknown as SquashageServices },
-    );
+    await runNode(state, services);
 
     const squashed = state.squashedQuads as Quad[];
     assert.equal(squashed.length, fakeQuads.length);
@@ -185,12 +207,9 @@ describe('ontologyProjectionNode:no-classification', () => {
     const state    = new SquashageRecordState(source, '/fixtures/a.json', 1);
     // classification is null by default
 
-    const result = await ontologyProjectionNode.execute(
-      state,
-      { services: services as unknown as SquashageServices },
-    );
+    const result = await runNode(state, services);
 
-    assert.equal(result.output, 'quarantined');
+    assert.equal(result, 'quarantined');
     assert.equal(state.quarantineBucket, 'projection');
     assert.ok(
       state.errors.some(e => e.code === 'SQUASH_NO_CLASSIFICATION'),
@@ -208,12 +227,9 @@ describe('ontologyProjectionNode:no-ontology', () => {
     const services = makeServices(null);
     const state    = stateWithClassification('Person');
 
-    const result = await ontologyProjectionNode.execute(
-      state,
-      { services: services as unknown as SquashageServices },
-    );
+    const result = await runNode(state, services);
 
-    assert.equal(result.output, 'quarantined');
+    assert.equal(result, 'quarantined');
     assert.equal(state.quarantineBucket, 'projection');
     assert.ok(
       state.errors.some(e => e.code === 'SQUASH_NO_ONTOLOGY'),
@@ -231,12 +247,9 @@ describe('ontologyProjectionNode:no-schema', () => {
     const services = makeServices(makeFakeOntology([]));
     const state    = stateWithClassification('UnknownClass');
 
-    const result = await ontologyProjectionNode.execute(
-      state,
-      { services: services as unknown as SquashageServices },
-    );
+    const result = await runNode(state, services);
 
-    assert.equal(result.output, 'quarantined');
+    assert.equal(result, 'quarantined');
     assert.equal(state.quarantineBucket, 'projection');
     assert.ok(
       state.errors.some(e => e.code === 'SQUASH_NO_SCHEMA_FOR_CLASS'),
@@ -248,14 +261,80 @@ describe('ontologyProjectionNode:no-schema', () => {
     const services = makeServices(makeFakeOntology([]));
     const state    = stateWithClassification('UnknownClass');
 
-    await ontologyProjectionNode.execute(
-      state,
-      { services: services as unknown as SquashageServices },
-    );
+    await runNode(state, services);
 
     const err = state.errors.find(e => e.code === 'SQUASH_NO_SCHEMA_FOR_CLASS');
     assert.ok(err !== undefined);
     assert.equal(err.context?.['className'], 'UnknownClass');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Generic fallback
+// ---------------------------------------------------------------------------
+
+describe('ontologyProjectionNode:generic-fallback', () => {
+  it('projects using Generic schema when className has no registered schema', async () => {
+    const fakeQuads = makeFakeABoxQuads();
+    // Recognise 'Generic' in the fake ontology so schemaForClassName('Generic') returns a schema.
+    const services = makeServices(
+      makeFakeOntology(fakeQuads, false, {}, ['Generic']),
+    );
+    const state = stateWithClassification('Unregistered');
+
+    const result = await runNode(state, services);
+
+    assert.equal(result, 'squashed');
+    assert.ok(
+      state.errors.length === 0,
+      'must not collect errors when Generic fallback succeeds',
+    );
+  });
+
+  it('emits PROJECTION_GENERIC_FALLBACK warning when Generic fallback is used', async () => {
+    const fakeQuads = makeFakeABoxQuads();
+    const services  = makeServices(
+      makeFakeOntology(fakeQuads, false, {}, ['Generic']),
+    );
+    const state = stateWithClassification('Unregistered');
+
+    await runNode(state, services);
+
+    assert.ok(
+      state.warnings.some(w => w.code === 'PROJECTION_GENERIC_FALLBACK'),
+      'must emit PROJECTION_GENERIC_FALLBACK warning',
+    );
+  });
+
+  it('includes className in the Generic fallback warning message', async () => {
+    const fakeQuads = makeFakeABoxQuads();
+    const services  = makeServices(
+      makeFakeOntology(fakeQuads, false, {}, ['Generic']),
+    );
+    const state = stateWithClassification('Unregistered');
+
+    await runNode(state, services);
+
+    const warning = state.warnings.find(w => w.code === 'PROJECTION_GENERIC_FALLBACK');
+    assert.ok(warning !== undefined);
+    assert.ok(
+      warning.message.includes('Unregistered'),
+      `warning message must include the unregistered className; got: "${warning.message}"`,
+    );
+  });
+
+  it('quarantines with SQUASH_NO_SCHEMA_FOR_CLASS when neither className nor Generic is registered', async () => {
+    const services = makeServices(makeFakeOntology([]));
+    const state    = stateWithClassification('Unregistered');
+
+    const result = await runNode(state, services);
+
+    assert.equal(result, 'quarantined');
+    assert.equal(state.quarantineBucket, 'projection');
+    assert.ok(
+      state.errors.some(e => e.code === 'SQUASH_NO_SCHEMA_FOR_CLASS'),
+      'must collect SQUASH_NO_SCHEMA_FOR_CLASS when no Generic schema is registered',
+    );
   });
 });
 
@@ -268,12 +347,9 @@ describe('ontologyProjectionNode:projection-failure', () => {
     const services = makeServices(makeFakeOntology([], /* throws */ true));
     const state    = stateWithClassification('Person');
 
-    const result = await ontologyProjectionNode.execute(
-      state,
-      { services: services as unknown as SquashageServices },
-    );
+    const result = await runNode(state, services);
 
-    assert.equal(result.output, 'quarantined');
+    assert.equal(result, 'quarantined');
     assert.equal(state.quarantineBucket, 'projection');
     assert.ok(
       state.errors.some(e => e.code === 'SQUASH_PROJECTION_FAILED'),
@@ -285,10 +361,7 @@ describe('ontologyProjectionNode:projection-failure', () => {
     const services = makeServices(makeFakeOntology([], /* throws */ true));
     const state    = stateWithClassification('Person');
 
-    await ontologyProjectionNode.execute(
-      state,
-      { services: services as unknown as SquashageServices },
-    );
+    await runNode(state, services);
 
     const err = state.errors.find(e => e.code === 'SQUASH_PROJECTION_FAILED');
     assert.ok(err !== undefined);
@@ -315,10 +388,7 @@ describe('ontologyProjectionNode:taxonomic-inheritance', () => {
     );
     const state = stateWithClassification('Person');
 
-    await ontologyProjectionNode.execute(
-      state,
-      { services: services as unknown as SquashageServices },
-    );
+    await runNode(state, services);
 
     const all = [...dataset] as Quad[];
     const ancestorTypeQuads = all.filter(
@@ -345,10 +415,7 @@ describe('ontologyProjectionNode:taxonomic-inheritance', () => {
     );
     const state = stateWithClassification('Person');
 
-    await ontologyProjectionNode.execute(
-      state,
-      { services: services as unknown as SquashageServices },
-    );
+    await runNode(state, services);
 
     const squashed = state.squashedQuads as Quad[];
     assert.equal(
@@ -365,10 +432,7 @@ describe('ontologyProjectionNode:taxonomic-inheritance', () => {
     const services = makeServices(makeFakeOntology(fakeQuads, false, {}));
     const state    = stateWithClassification('Person');
 
-    await ontologyProjectionNode.execute(
-      state,
-      { services: services as unknown as SquashageServices },
-    );
+    await runNode(state, services);
 
     const squashed = state.squashedQuads as Quad[];
     assert.equal(
@@ -390,10 +454,7 @@ describe('ontologyProjectionNode:subject-rebinding', () => {
     const services  = makeServices(makeFakeOntology(fakeQuads), dataset);
     const state     = stateWithClassification('Person');
 
-    await ontologyProjectionNode.execute(
-      state,
-      { services: services as unknown as SquashageServices },
-    );
+    await runNode(state, services);
 
     const quads = [...dataset] as Quad[];
     const mintedFound = quads.some(q =>
@@ -411,10 +472,7 @@ describe('ontologyProjectionNode:subject-rebinding', () => {
     const services  = makeServices(makeFakeOntology(fakeQuads));
     const state     = stateWithClassification('Person');
 
-    await ontologyProjectionNode.execute(
-      state,
-      { services: services as unknown as SquashageServices },
-    );
+    await runNode(state, services);
 
     const squashed = state.squashedQuads as Quad[];
     for (const quad of squashed) {
@@ -438,10 +496,7 @@ describe('ontologyProjectionNode:graph-rebinding', () => {
     const services  = makeServices(makeFakeOntology(fakeQuads), dataset);
     const state     = stateWithClassification('Person');
 
-    await ontologyProjectionNode.execute(
-      state,
-      { services: services as unknown as SquashageServices },
-    );
+    await runNode(state, services);
 
     const quads = [...dataset] as Quad[];
     for (const quad of quads) {
@@ -467,10 +522,7 @@ describe('ontologyProjectionNode:graph-rebinding', () => {
     const services = makeServices(makeFakeOntology(quadsInDefaultGraph), dataset);
     const state    = stateWithClassification('Person');
 
-    await ontologyProjectionNode.execute(
-      state,
-      { services: services as unknown as SquashageServices },
-    );
+    await runNode(state, services);
 
     const written = [...dataset] as Quad[];
     assert.equal(written.length, 1);

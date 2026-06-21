@@ -8,7 +8,8 @@
 import { readdir, readFile, stat } from 'node:fs/promises';
 import { extname, join } from 'node:path';
 
-import type { NodeInterface } from '@noocodex/dagonizer';
+import { ScalarNode, NodeOutputBuilder } from '@studnicky/dagonizer';
+import type { NodeContextType, NodeOutputType } from '@studnicky/dagonizer';
 
 import type { SquashageServices } from '../../services/SquashageServices.js';
 import type { SquashageRunState } from '../../state/SquashageRunState.js';
@@ -45,11 +46,22 @@ async function walkDirectory(dirPath: string): Promise<RecordLocator[]> {
   return out;
 }
 
-export const walkInputNode: NodeInterface<SquashageRunState, Output, SquashageServices> = {
-  name:    'walk-input',
-  outputs: ['walked', 'empty'],
-  async execute(state, context) {
-    const log = context.services.logger.forComponent('walk-input');
+class WalkInputNodeImpl extends ScalarNode<SquashageRunState, Output, SquashageServices> {
+  public readonly name    = 'walk-input';
+  public readonly outputs = ['walked', 'empty'] as const;
+
+  public override get outputSchema(): Record<Output, { type: 'object' }> {
+    return {
+      walked: { type: 'object' },
+      empty:  { type: 'object' },
+    };
+  }
+
+  protected override async executeOne(
+    state:   SquashageRunState,
+    context: NodeContextType<SquashageServices>,
+  ): Promise<NodeOutputType<Output>> {
+    const log   = context.services.logger.forComponent('walk-input');
     const input = context.services.targetConfig.input;
 
     let info: Awaited<ReturnType<typeof stat>>;
@@ -57,9 +69,9 @@ export const walkInputNode: NodeInterface<SquashageRunState, Output, SquashageSe
       info = await stat(input);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      log.warn('execute', 'input path not accessible', { input, message });
+      log.warn('executeOne', 'input path not accessible', { input, message });
       state.locators = [];
-      return { output: 'empty' };
+      return NodeOutputBuilder.of('empty');
     }
 
     if (info.isDirectory()) {
@@ -71,7 +83,9 @@ export const walkInputNode: NodeInterface<SquashageRunState, Output, SquashageSe
         : [{ recordPath: input, recordLine: 0 }];
     }
 
-    log.info('execute', 'walk complete', { input, recordCount: state.locators.length });
-    return { output: state.locators.length === 0 ? 'empty' : 'walked' };
-  },
-};
+    log.info('executeOne', 'walk complete', { input, recordCount: state.locators.length });
+    return NodeOutputBuilder.of(state.locators.length === 0 ? 'empty' : 'walked');
+  }
+}
+
+export const walkInputNode = new WalkInputNodeImpl();

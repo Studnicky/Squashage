@@ -12,7 +12,8 @@
 
 import { createHash } from 'node:crypto';
 
-import type { NodeInterface } from '@noocodex/dagonizer';
+import { ScalarNode, NodeOutputBuilder } from '@studnicky/dagonizer';
+import type { NodeContextType, NodeOutputType } from '@studnicky/dagonizer';
 
 import type { SquashageServices } from '../../services/SquashageServices.js';
 import type { SquashageRecordState } from '../../state/SquashageRecordState.js';
@@ -38,48 +39,31 @@ interface ResolvedConfigInterface {
   readonly include: ReadonlyArray<string>;
 }
 
-function resolveConfig(services: SquashageServices): ResolvedConfigInterface | null {
-  const raw = (services.output as Record<string, unknown>)['provenance'];
-  if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) return null;
-  const cfg = raw as Record<string, unknown>;
-  if (cfg['enabled'] !== true) return null;
-  const include = Array.isArray(cfg['include'])
-    ? (cfg['include'] as string[])
-    : DEFAULT_INCLUDE;
-  const graph = typeof cfg['graph'] === 'string' ? cfg['graph'] : undefined;
-  return { enabled: true, graph, include };
-}
+class OutputProvenanceNodeImpl extends ScalarNode<SquashageRecordState, Output, SquashageServices> {
+  public readonly name    = 'output-provenance';
+  public readonly outputs = ['written', 'skipped'] as const;
 
-function deriveRecordIri(runBase: string, recordPath: string, recordLine: number): string {
-  const key  = `${recordPath}:${String(recordLine)}`;
-  const hash = createHash('sha1').update(key).digest('hex').slice(0, 8);
-  const base = runBase.endsWith('/') ? runBase : `${runBase}/`;
-  return `${base}run/${hash}`;
-}
-
-function resolveGraphIri(runBase: string, graph: string | undefined): string {
-  if (graph === undefined || graph.length === 0) {
-    const base = runBase.endsWith('/') ? runBase : `${runBase}/`;
-    return `${base}provenance`;
+  public override get outputSchema(): Record<Output, { type: 'object' }> {
+    return { written: { type: 'object' }, skipped: { type: 'object' } };
   }
-  if (graph.startsWith('http://') || graph.startsWith('https://')) return graph;
-  const base = runBase.endsWith('/') ? runBase : `${runBase}/`;
-  return `${base}${graph}`;
-}
 
-export const outputProvenanceNode: NodeInterface<SquashageRecordState, Output, SquashageServices> = {
-  name:    'output-provenance',
-  outputs: ['written', 'skipped'],
-  async execute(state, context) {
-    const cfg = resolveConfig(context.services);
-    if (cfg === null) return { output: 'skipped' };
-    if (state.classification === null) return { output: 'skipped' };
+  protected override async executeOne(
+    state:   SquashageRecordState,
+    context: NodeContextType<SquashageServices>,
+  ): Promise<NodeOutputType<Output>> {
+    const cfg = OutputProvenanceNodeImpl.resolveConfig(context.services);
+    if (cfg === null) return NodeOutputBuilder.of('skipped');
+    if (state.classification === null) return NodeOutputBuilder.of('skipped');
 
     const factory   = context.services.factory;
     const dataset   = context.services.dataset;
     const runBase   = context.services.prefixes.instances.base;
-    const subject   = factory.namedNode(deriveRecordIri(runBase, state.recordPath, state.recordLine));
-    const graphNode = factory.namedNode(resolveGraphIri(runBase, cfg.graph));
+    const subject   = factory.namedNode(
+      OutputProvenanceNodeImpl.deriveRecordIri(runBase, state.recordPath, state.recordLine),
+    );
+    const graphNode = factory.namedNode(
+      OutputProvenanceNodeImpl.resolveGraphIri(runBase, cfg.graph),
+    );
 
     dataset.add(factory.quad(
       subject,
@@ -121,6 +105,37 @@ export const outputProvenanceNode: NodeInterface<SquashageRecordState, Output, S
         graphNode,
       ));
     }
-    return { output: 'written' };
-  },
-};
+    return NodeOutputBuilder.of('written');
+  }
+
+  private static resolveConfig(services: SquashageServices): ResolvedConfigInterface | null {
+    const raw = (services.output as Record<string, unknown>)['provenance'];
+    if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) return null;
+    const cfg = raw as Record<string, unknown>;
+    if (cfg['enabled'] !== true) return null;
+    const include = Array.isArray(cfg['include'])
+      ? (cfg['include'] as string[])
+      : DEFAULT_INCLUDE;
+    const graph = typeof cfg['graph'] === 'string' ? cfg['graph'] : undefined;
+    return { enabled: true, graph, include };
+  }
+
+  private static deriveRecordIri(runBase: string, recordPath: string, recordLine: number): string {
+    const key  = `${recordPath}:${String(recordLine)}`;
+    const hash = createHash('sha1').update(key).digest('hex').slice(0, 8);
+    const base = runBase.endsWith('/') ? runBase : `${runBase}/`;
+    return `${base}run/${hash}`;
+  }
+
+  private static resolveGraphIri(runBase: string, graph: string | undefined): string {
+    if (graph === undefined || graph.length === 0) {
+      const base = runBase.endsWith('/') ? runBase : `${runBase}/`;
+      return `${base}provenance`;
+    }
+    if (graph.startsWith('http://') || graph.startsWith('https://')) return graph;
+    const base = runBase.endsWith('/') ? runBase : `${runBase}/`;
+    return `${base}${graph}`;
+  }
+}
+
+export const outputProvenanceNode = new OutputProvenanceNodeImpl();

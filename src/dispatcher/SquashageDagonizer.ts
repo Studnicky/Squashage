@@ -7,8 +7,8 @@
  * knows nothing about PROV-O — it just forwards.
  */
 
-import { Dagonizer } from '@noocodex/dagonizer';
-import type { ExecutionResultInterface, NodeStateInterface } from '@noocodex/dagonizer';
+import { Dagonizer } from '@studnicky/dagonizer';
+import type { ExecutionResultType, NodeStateInterface } from '@studnicky/dagonizer';
 
 import type { ProvObserverInterface } from '../observer/ProvObserverInterface.js';
 import type { SquashageServices } from '../services/SquashageServices.js';
@@ -35,24 +35,34 @@ export class SquashageDagonizer<TState extends NodeStateInterface>
   protected override onFlowEnd(
     dagName: string,
     state:   TState,
-    _result: ExecutionResultInterface<TState>,
+    _result: ExecutionResultType<NodeStateInterface>,
   ): void {
-    this.#observer.recordFlowEnd(dagName, state.lifecycle.kind);
+    this.#observer.recordFlowEnd(dagName, state.lifecycle.variant);
   }
 
-  protected override onNodeStart(nodeName: string, _state: TState): void {
+  protected override onNodeStart(
+    nodeName: string,
+    _state: TState,
+    _placementPath: readonly string[],
+  ): void {
     this.#observer.recordNodeStart(nodeName);
   }
 
   protected override onNodeEnd(
     nodeName: string,
-    output:   string | undefined,
+    output:   string | null,
     _state:   TState,
+    _placementPath: readonly string[],
   ): void {
     this.#observer.recordNodeEnd(nodeName, output);
   }
 
-  protected override onError(nodeName: string, error: Error, _state: TState): void {
+  protected override onError(
+    nodeName: string,
+    error: Error,
+    _state: TState,
+    _placementPath: readonly string[],
+  ): void {
     this.#observer.recordError(nodeName, error);
   }
 }

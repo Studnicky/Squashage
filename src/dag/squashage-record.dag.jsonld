@@ -1,0 +1,280 @@
+{
+  "@context": {
+    "@version": 1.1,
+    "name": {
+      "@id": "https://noocodex.dev/ontology/dag/name"
+    },
+    "version": {
+      "@id": "https://noocodex.dev/ontology/dag/version"
+    },
+    "entrypoint": {
+      "@id": "https://noocodex.dev/ontology/dag/entrypoint"
+    },
+    "nodes": {
+      "@id": "https://noocodex.dev/ontology/dag/nodes",
+      "@container": "@set"
+    },
+    "outputs": {
+      "@id": "https://noocodex.dev/ontology/dag/outputs"
+    },
+    "node": {
+      "@id": "https://noocodex.dev/ontology/dag/node"
+    },
+    "dag": {
+      "@id": "https://noocodex.dev/ontology/dag/dag"
+    },
+    "body": {
+      "@id": "https://noocodex.dev/ontology/dag/body"
+    },
+    "source": {
+      "@id": "https://noocodex.dev/ontology/dag/source"
+    },
+    "itemKey": {
+      "@id": "https://noocodex.dev/ontology/dag/itemKey"
+    },
+    "concurrency": {
+      "@id": "https://noocodex.dev/ontology/dag/concurrency"
+    },
+    "gather": {
+      "@id": "https://noocodex.dev/ontology/dag/gather"
+    },
+    "reducer": {
+      "@id": "https://noocodex.dev/ontology/dag/reducer"
+    },
+    "outcome": {
+      "@id": "https://noocodex.dev/ontology/dag/outcome"
+    },
+    "phase": {
+      "@id": "https://noocodex.dev/ontology/dag/phase"
+    },
+    "stateMapping": {
+      "@id": "https://noocodex.dev/ontology/dag/stateMapping"
+    },
+    "container": {
+      "@id": "https://noocodex.dev/ontology/dag/container"
+    },
+    "DAG": {
+      "@id": "https://noocodex.dev/ontology/dag/DAG"
+    },
+    "Placement": {
+      "@id": "https://noocodex.dev/ontology/dag/Placement"
+    },
+    "SingleNode": {
+      "@id": "https://noocodex.dev/ontology/dag/SingleNode"
+    },
+    "ScatterNode": {
+      "@id": "https://noocodex.dev/ontology/dag/ScatterNode"
+    },
+    "EmbeddedDAGNode": {
+      "@id": "https://noocodex.dev/ontology/dag/EmbeddedDAGNode"
+    },
+    "TerminalNode": {
+      "@id": "https://noocodex.dev/ontology/dag/TerminalNode"
+    },
+    "PhaseNode": {
+      "@id": "https://noocodex.dev/ontology/dag/PhaseNode"
+    }
+  },
+  "@id": "urn:noocodex:dag:squashage:record",
+  "@type": "DAG",
+  "name": "squashage:record",
+  "version": "1.0",
+  "entrypoint": "record-init",
+  "nodes": [
+    {
+      "@id": "urn:noocodex:dag:squashage:record/node/record-init",
+      "@type": "SingleNode",
+      "name": "record-init",
+      "node": "record-init",
+      "outputs": {
+        "done": "json-read"
+      }
+    },
+    {
+      "@id": "urn:noocodex:dag:squashage:record/node/json-read",
+      "@type": "SingleNode",
+      "name": "json-read",
+      "node": "json-read",
+      "outputs": {
+        "loaded": "classify:discriminator",
+        "quarantined": "record-quarantine"
+      }
+    },
+    {
+      "@id": "urn:noocodex:dag:squashage:record/node/classify:discriminator",
+      "@type": "SingleNode",
+      "name": "classify:discriminator",
+      "node": "classify:discriminator",
+      "outputs": {
+        "proposed": "classify:source",
+        "no-match": "classify:source"
+      }
+    },
+    {
+      "@id": "urn:noocodex:dag:squashage:record/node/classify:source",
+      "@type": "SingleNode",
+      "name": "classify:source",
+      "node": "classify:source",
+      "outputs": {
+        "proposed": "classify:url-pattern",
+        "no-match": "classify:url-pattern"
+      }
+    },
+    {
+      "@id": "urn:noocodex:dag:squashage:record/node/classify:url-pattern",
+      "@type": "SingleNode",
+      "name": "classify:url-pattern",
+      "node": "classify:url-pattern",
+      "outputs": {
+        "proposed": "classify:structural",
+        "no-match": "classify:structural"
+      }
+    },
+    {
+      "@id": "urn:noocodex:dag:squashage:record/node/classify:structural",
+      "@type": "SingleNode",
+      "name": "classify:structural",
+      "node": "classify:structural",
+      "outputs": {
+        "proposed": "classify:rules",
+        "no-match": "classify:rules"
+      }
+    },
+    {
+      "@id": "urn:noocodex:dag:squashage:record/node/classify:rules",
+      "@type": "SingleNode",
+      "name": "classify:rules",
+      "node": "classify:rules",
+      "outputs": {
+        "proposed": "classify:schema",
+        "no-match": "classify:schema"
+      }
+    },
+    {
+      "@id": "urn:noocodex:dag:squashage:record/node/classify:schema",
+      "@type": "SingleNode",
+      "name": "classify:schema",
+      "node": "classify:schema",
+      "outputs": {
+        "proposed": "classify:shacl-shape",
+        "no-match": "classify:shacl-shape"
+      }
+    },
+    {
+      "@id": "urn:noocodex:dag:squashage:record/node/classify:shacl-shape",
+      "@type": "SingleNode",
+      "name": "classify:shacl-shape",
+      "node": "classify:shacl-shape",
+      "outputs": {
+        "proposed": "classify:property-fingerprint",
+        "no-match": "classify:property-fingerprint"
+      }
+    },
+    {
+      "@id": "urn:noocodex:dag:squashage:record/node/classify:property-fingerprint",
+      "@type": "SingleNode",
+      "name": "classify:property-fingerprint",
+      "node": "classify:property-fingerprint",
+      "outputs": {
+        "proposed": "classify:winknlp-entities",
+        "no-match": "classify:winknlp-entities"
+      }
+    },
+    {
+      "@id": "urn:noocodex:dag:squashage:record/node/classify:winknlp-entities",
+      "@type": "SingleNode",
+      "name": "classify:winknlp-entities",
+      "node": "classify:winknlp-entities",
+      "outputs": {
+        "proposed": "classify:ontology",
+        "no-match": "classify:ontology"
+      }
+    },
+    {
+      "@id": "urn:noocodex:dag:squashage:record/node/classify:ontology",
+      "@type": "SingleNode",
+      "name": "classify:ontology",
+      "node": "classify:ontology",
+      "outputs": {
+        "validated": "classify:taxonomic-narrowing",
+        "no-match": "classify:taxonomic-narrowing"
+      }
+    },
+    {
+      "@id": "urn:noocodex:dag:squashage:record/node/classify:taxonomic-narrowing",
+      "@type": "SingleNode",
+      "name": "classify:taxonomic-narrowing",
+      "node": "classify:taxonomic-narrowing",
+      "outputs": {
+        "narrowed": "record-health-gate",
+        "no-op": "record-health-gate"
+      }
+    },
+    {
+      "@id": "urn:noocodex:dag:squashage:record/node/record-health-gate",
+      "@type": "SingleNode",
+      "name": "record-health-gate",
+      "node": "record-health-gate",
+      "outputs": {
+        "has-proposals": "classify-conflict",
+        "none": "record-quarantine",
+        "errors": "record-quarantine"
+      }
+    },
+    {
+      "@id": "urn:noocodex:dag:squashage:record/node/classify-conflict",
+      "@type": "SingleNode",
+      "name": "classify-conflict",
+      "node": "classify-conflict",
+      "outputs": {
+        "resolved": "squash",
+        "tie": "record-quarantine",
+        "unknown": "record-quarantine"
+      }
+    },
+    {
+      "@id": "urn:noocodex:dag:squashage:record/node/squash",
+      "@type": "SingleNode",
+      "name": "squash",
+      "node": "squash",
+      "outputs": {
+        "squashed": "output-provenance",
+        "quarantined": "record-quarantine"
+      }
+    },
+    {
+      "@id": "urn:noocodex:dag:squashage:record/node/output-provenance",
+      "@type": "SingleNode",
+      "name": "output-provenance",
+      "node": "output-provenance",
+      "outputs": {
+        "written": "record-summary-collect",
+        "skipped": "record-summary-collect"
+      }
+    },
+    {
+      "@id": "urn:noocodex:dag:squashage:record/node/record-quarantine",
+      "@type": "SingleNode",
+      "name": "record-quarantine",
+      "node": "record-quarantine",
+      "outputs": {
+        "recorded": "record-summary-collect"
+      }
+    },
+    {
+      "@id": "urn:noocodex:dag:squashage:record/node/record-summary-collect",
+      "@type": "SingleNode",
+      "name": "record-summary-collect",
+      "node": "record-summary-collect",
+      "outputs": {
+        "done": "end"
+      }
+    },
+    {
+      "@id": "urn:noocodex:dag:squashage:record/node/end",
+      "@type": "TerminalNode",
+      "name": "end",
+      "outcome": "completed"
+    }
+  ]
+}

@@ -13,8 +13,9 @@
  *   error   — draftJson or refinementJson is null (programming error)
  */
 
-import type { NodeInterface } from '@noocodex/dagonizer';
-import type { JsonObject } from '@noocodex/dagonizer/types';
+import { ScalarNode, NodeOutputBuilder, NodeErrorBuilder } from '@studnicky/dagonizer';
+import type { NodeContextType, NodeOutputType } from '@studnicky/dagonizer';
+import type { JsonObjectType } from '@studnicky/dagonizer/entities';
 
 import { RefinementApplier } from '../../induction/RefinementApplier.js';
 import type { RefineSpec } from '../../induction/RefinementApplier.js';
@@ -23,24 +24,30 @@ import type { SquashageRefineState } from '../../state/SquashageRefineState.js';
 
 type Output = 'applied' | 'error';
 
-export const applyRefinementNode: NodeInterface<SquashageRefineState, Output, SquashageServices> = {
-  name:    'apply-refinement',
-  outputs: ['applied', 'error'],
+class ApplyRefinementNodeImpl extends ScalarNode<SquashageRefineState, Output, SquashageServices> {
+  public readonly name    = 'apply-refinement';
+  public readonly outputs = ['applied', 'error'] as const;
 
-  async execute(state, context): Promise<{ output: Output }> {
+  public override get outputSchema(): Record<Output, { type: 'object' }> {
+    return {
+      applied: { type: 'object' },
+      error:   { type: 'object' },
+    };
+  }
+
+  protected override async executeOne(
+    state:   SquashageRefineState,
+    context: NodeContextType<SquashageServices>,
+  ): Promise<NodeOutputType<Output>> {
     const log = context.services.logger.forComponent('apply-refinement');
 
     if (state.draftJson === null || state.refinementJson === null) {
       const message = 'apply-refinement: draftJson or refinementJson is null';
-      log.error('execute', message, { className: state.className });
-      state.collectError({
-        code:        'APPLY_REFINEMENT_NULL_INPUT',
-        message,
-        operation:   'apply-refinement.execute',
-        recoverable: false,
-        timestamp:   new Date().toISOString(),
-      });
-      return { output: 'error' };
+      log.error('executeOne', message, { className: state.className });
+      state.collectError(NodeErrorBuilder.from(
+        'APPLY_REFINEMENT_NULL_INPUT', message, 'apply-refinement.executeOne', false, new Date().toISOString(),
+      ));
+      return NodeOutputBuilder.of('error');
     }
 
     const { final, warnings } = RefinementApplier.apply(
@@ -49,19 +56,21 @@ export const applyRefinementNode: NodeInterface<SquashageRefineState, Output, Sq
     );
 
     for (const w of warnings) {
-      log.warn('execute', w.message, {
+      log.warn('executeOne', w.message, {
         className: state.className,
         code:      w.code,
         pointer:   w.pointer,
       });
     }
 
-    state.finalJson = final as JsonObject;
-    log.debug('execute', 'refinement applied', {
+    state.finalJson = final as JsonObjectType;
+    log.debug('executeOne', 'refinement applied', {
       className:    state.className,
       warningCount: warnings.length,
     });
 
-    return { output: 'applied' };
-  },
-};
+    return NodeOutputBuilder.of('applied');
+  }
+}
+
+export const applyRefinementNode = new ApplyRefinementNodeImpl();

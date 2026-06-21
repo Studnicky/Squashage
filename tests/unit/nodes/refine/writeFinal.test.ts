@@ -4,6 +4,7 @@ import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
+import { Batch } from '@studnicky/dagonizer';
 import { writeFinalNode } from '../../../../src/nodes/refine/writeFinal.js';
 import { SquashageRefineState } from '../../../../src/state/SquashageRefineState.js';
 import type { SquashageServices } from '../../../../src/services/SquashageServices.js';
@@ -16,6 +17,19 @@ const noopLogger = {
     error: () => undefined,
   }),
 } as unknown as SquashageServices['logger'];
+
+async function runNode(
+  state: SquashageRefineState,
+  context: { services: SquashageServices },
+): Promise<string> {
+  const result = await writeFinalNode.execute(
+    Batch.of(state),
+    context as unknown as Parameters<typeof writeFinalNode.execute>[1],
+  );
+  const keys = [...result.keys()];
+  if (keys.length === 0) throw new Error('node produced no output port');
+  return keys[0] as string;
+}
 
 function makeContext(finalsDir: string): { services: SquashageServices } {
   return {
@@ -36,8 +50,8 @@ describe('writeFinalNode — happy path', () => {
       state.finalJson = schema;
       state.outcome   = 'error'; // should be overwritten
 
-      const result = await writeFinalNode.execute(state, makeContext(finalsDir));
-      assert.equal(result.output, 'written');
+      const output = await runNode(state, makeContext(finalsDir));
+      assert.equal(output, 'written');
       assert.equal(state.outcome, 'refined');
 
       const filePath = join(finalsDir, 'Feat.schema.json');
@@ -58,7 +72,7 @@ describe('writeFinalNode — happy path', () => {
       state.finalJson = { title: 'Feat' };
       state.outcome   = 'passthrough'; // should remain passthrough
 
-      await writeFinalNode.execute(state, makeContext(finalsDir));
+      await runNode(state, makeContext(finalsDir));
       assert.equal(state.outcome, 'passthrough');
     } finally {
       await rm(tmp, { recursive: true, force: true });
@@ -83,7 +97,7 @@ describe('writeFinalNode — happy path', () => {
       const state  = new SquashageRefineState('/Feat.draft.json', 'Feat', '/Feat.refine.json');
       state.finalJson = schema;
 
-      await writeFinalNode.execute(state, makeContext(finalsDir));
+      await runNode(state, makeContext(finalsDir));
 
       const text   = await readFile(join(finalsDir, 'Feat.schema.json'), 'utf8');
       const parsed = JSON.parse(text) as Record<string, unknown>;
@@ -116,7 +130,7 @@ describe('writeFinalNode — happy path', () => {
       state.finalJson = schema;
       state.subdir    = 'primitives';
 
-      await writeFinalNode.execute(state, makeContext(join(tmp, 'schemas')));
+      await runNode(state, makeContext(join(tmp, 'schemas')));
 
       const text   = await readFile(join(finalsDir, 'FeatRarity.schema.json'), 'utf8');
       const parsed = JSON.parse(text) as Record<string, unknown>;

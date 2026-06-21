@@ -1,5 +1,5 @@
-import { NodeStateBase } from '@noocodex/dagonizer';
-import type { JsonObject, JsonValue } from '@noocodex/dagonizer/types';
+import { NodeStateBase } from '@studnicky/dagonizer';
+import type { JsonObjectType, JsonValueType } from '@studnicky/dagonizer/entities';
 
 import type { ClassificationEvidence } from './schemas/ClassificationEvidence.js';
 import type { ClassificationProposal } from './schemas/ClassificationProposal.js';
@@ -32,7 +32,7 @@ export class SquashageRecordState extends NodeStateBase {
   classification: ClassificationEvidence | null;
 
   /** Projected quads from `squash`. Held inline so streaming can flush per record. */
-  squashedQuads: readonly unknown[];
+  squashedQuads: unknown[];
 
   /** Failed-records bucket set by `record-quarantine`. */
   quarantineBucket: 'unknown' | 'conflicts' | 'projection' | 'output' | null;
@@ -53,8 +53,8 @@ export class SquashageRecordState extends NodeStateBase {
     this.recordLine       = recordLine;
   }
 
-  override clone(): SquashageRecordState {
-    const base = super.clone() as SquashageRecordState;
+  override clone() {
+    const base = super.clone() as this;
     base.source           = this.source;
     base.input            = this.input;
     base.proposals        = { ...this.proposals };
@@ -66,19 +66,19 @@ export class SquashageRecordState extends NodeStateBase {
     return base;
   }
 
-  protected override snapshotData(): JsonObject {
+  protected override snapshotData(): JsonObjectType {
     return {
-      source:           this.source           as unknown as JsonValue,
-      input:            this.input            as unknown as JsonValue,
-      proposals:        this.proposals        as unknown as JsonValue,
-      classification:   (this.classification ?? null) as unknown as JsonValue,
-      quarantineBucket: (this.quarantineBucket ?? null) as unknown as JsonValue,
+      source:           this.source           as unknown as JsonValueType,
+      input:            this.input            as unknown as JsonValueType,
+      proposals:        this.proposals        as unknown as JsonValueType,
+      classification:   (this.classification ?? null) as unknown as JsonValueType,
+      quarantineBucket: (this.quarantineBucket ?? null) as unknown as JsonValueType,
       recordPath:       this.recordPath,
       recordLine:       this.recordLine,
     };
   }
 
-  protected override restoreData(snap: JsonObject): void {
+  protected override restoreData(snap: JsonObjectType): void {
     const source = snap['source'];
     if (isPlainObject(source)) this.source = source as unknown as InputSource;
     const input = snap['input'];
@@ -100,6 +100,6 @@ export class SquashageRecordState extends NodeStateBase {
   }
 }
 
-function isPlainObject(value: JsonValue | undefined): value is JsonObject {
+function isPlainObject(value: JsonValueType | undefined): value is JsonObjectType {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }

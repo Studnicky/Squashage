@@ -73,9 +73,9 @@ test('edge cases', async (t) => {
   await t.test('lifecycle pending → running → completed', () => {
     const state = new SquashageRecordState(source, '/r/a.json', 0);
     state.markRunning();
-    assert.equal(state.lifecycle.kind, 'running');
+    assert.equal(state.lifecycle.variant, 'running');
     state.markCompleted();
-    assert.equal(state.lifecycle.kind, 'completed');
+    assert.equal(state.lifecycle.variant, 'completed');
   });
 });
 

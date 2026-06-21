@@ -16,7 +16,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { MermaidRenderer } from '@noocodex/dagonizer/viz';
+import { MermaidRenderer } from '@studnicky/dagonizer/viz';
 
 import { recordDag } from '../src/dag/recordDag.js';
 import { SquashageRun } from '../src/SquashageRun.js';

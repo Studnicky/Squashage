@@ -10,7 +10,7 @@ test('happy path', async (t) => {
     assert.deepEqual(state._dispatchedItems, []);
     assert.equal(state.target, 'aonprd');
     assert.equal(state.runStartTime, '2026-05-18T00:00:00Z');
-    assert.equal(state.lifecycle.kind, 'pending');
+    assert.equal(state.lifecycle.variant, 'pending');
   });
 
   await t.test('snapshot round-trip preserves locators + identity fields', () => {
@@ -24,7 +24,7 @@ test('happy path', async (t) => {
     assert.deepEqual(restored._dispatchedItems, state._dispatchedItems);
     assert.equal(restored.target, 'aonprd');
     assert.equal(restored.runStartTime, '2026-05-18T00:00:00Z');
-    assert.equal(restored.lifecycle.kind, 'pending');
+    assert.equal(restored.lifecycle.variant, 'pending');
   });
 
   await t.test('clone produces an independent SquashageRunState instance', () => {
@@ -54,9 +54,9 @@ test('edge cases', async (t) => {
   await t.test('lifecycle FSM transitions pending → running → completed', () => {
     const state = new SquashageRunState('aonprd', '2026-05-18T00:00:00Z');
     state.markRunning();
-    assert.equal(state.lifecycle.kind, 'running');
+    assert.equal(state.lifecycle.variant, 'running');
     state.markCompleted();
-    assert.equal(state.lifecycle.kind, 'completed');
+    assert.equal(state.lifecycle.variant, 'completed');
   });
 });
 
@@ -76,6 +76,6 @@ test('unhappy path', async (t) => {
     state.markRunning();
     state.markCompleted();
     assert.throws(() => state.markCancelled('ignored'), /Cannot mark cancelled/);
-    assert.equal(state.lifecycle.kind, 'completed');
+    assert.equal(state.lifecycle.variant, 'completed');
   });
 });

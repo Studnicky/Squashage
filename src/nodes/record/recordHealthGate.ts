@@ -8,25 +8,40 @@
  *                                        quarantineBucket=projection)
  */
 
-import type { NodeInterface } from '@noocodex/dagonizer';
+import { ScalarNode, NodeOutputBuilder } from '@studnicky/dagonizer';
+import type { NodeContextType, NodeOutputType } from '@studnicky/dagonizer';
 
 import type { SquashageServices } from '../../services/SquashageServices.js';
 import type { SquashageRecordState } from '../../state/SquashageRecordState.js';
 
 type Output = 'has-proposals' | 'none' | 'errors';
 
-export const recordHealthGateNode: NodeInterface<SquashageRecordState, Output, SquashageServices> = {
-  name:    'record-health-gate',
-  outputs: ['has-proposals', 'none', 'errors'],
-  async execute(state, _context) {
+class RecordHealthGateNodeImpl extends ScalarNode<SquashageRecordState, Output, SquashageServices> {
+  public readonly name    = 'record-health-gate';
+  public readonly outputs = ['has-proposals', 'none', 'errors'] as const;
+
+  public override get outputSchema(): Record<Output, { type: 'object' }> {
+    return {
+      'has-proposals': { type: 'object' },
+      none:            { type: 'object' },
+      errors:          { type: 'object' },
+    };
+  }
+
+  protected override async executeOne(
+    state:    SquashageRecordState,
+    _context: NodeContextType<SquashageServices>,
+  ): Promise<NodeOutputType<Output>> {
     if (state.errors.length > 0) {
       state.quarantineBucket = 'projection';
-      return { output: 'errors' };
+      return NodeOutputBuilder.of('errors');
     }
     if (Object.keys(state.proposals).length === 0) {
       state.quarantineBucket = 'unknown';
-      return { output: 'none' };
+      return NodeOutputBuilder.of('none');
     }
-    return { output: 'has-proposals' };
-  },
-};
+    return NodeOutputBuilder.of('has-proposals');
+  }
+}
+
+export const recordHealthGateNode = new RecordHealthGateNodeImpl();

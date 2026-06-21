@@ -1,5 +1,5 @@
-import { NodeStateBase } from '@noocodex/dagonizer';
-import type { JsonObject, JsonValue } from '@noocodex/dagonizer/types';
+import { NodeStateBase } from '@studnicky/dagonizer';
+import type { JsonObjectType, JsonValueType } from '@studnicky/dagonizer/entities';
 
 import type { RecordLocator } from './schemas/RecordLocator.js';
 import type { InducedSchemaSetInterface } from '../induction/SchemaInducer.js';
@@ -54,8 +54,8 @@ export class SquashageInduceRunState extends NodeStateBase {
     this.runStartTime    = runStartTime;
   }
 
-  override clone(): SquashageInduceRunState {
-    const base = super.clone() as SquashageInduceRunState;
+  override clone() {
+    const base = super.clone() as this;
     base.locators          = [...this.locators];
     base._dispatchedItems  = [...this._dispatchedItems];
     base.observedRecords   = this.observedRecords;
@@ -67,20 +67,20 @@ export class SquashageInduceRunState extends NodeStateBase {
     return base;
   }
 
-  protected override snapshotData(): JsonObject {
+  protected override snapshotData(): JsonObjectType {
     return {
-      locators:          this.locators          as unknown as JsonValue,
-      _dispatchedItems:  this._dispatchedItems  as unknown as JsonValue,
+      locators:          this.locators          as unknown as JsonValueType,
+      _dispatchedItems:  this._dispatchedItems  as unknown as JsonValueType,
       observedRecords:   this.observedRecords,
-      discoveredClasses: this.discoveredClasses as unknown as JsonValue,
-      inducedSchemas:    this.inducedSchemas    as unknown as JsonValue,
+      discoveredClasses: this.discoveredClasses as unknown as JsonValueType,
+      inducedSchemas:    this.inducedSchemas    as unknown as JsonValueType,
       draftsWritten:     this.draftsWritten,
       target:            this.target,
       runStartTime:      this.runStartTime,
     };
   }
 
-  protected override restoreData(snap: JsonObject): void {
+  protected override restoreData(snap: JsonObjectType): void {
     const locators = snap['locators'];
     if (Array.isArray(locators)) this.locators = locators as unknown as RecordLocator[];
 

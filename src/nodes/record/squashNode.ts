@@ -12,7 +12,8 @@
  * plugin's or the default.
  */
 
-import type { NodeInterface } from '@noocodex/dagonizer';
+import { ScalarNode, NodeOutputBuilder, NodeErrorBuilder } from '@studnicky/dagonizer';
+import type { NodeContextType, NodeOutputType, NodeInterface } from '@studnicky/dagonizer';
 import type { Quad } from '@rdfjs/types';
 
 import type { SquashageServices } from '../../services/SquashageServices.js';
@@ -33,21 +34,27 @@ const RDF_TYPE = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type';
  * derived from the record's resolved classification. Target plugins override
  * with their own NodeInterface registered under the same name (`'squash'`).
  */
-export const defaultSquashNode: SquashNodeInterface = {
-  name:    'squash',
-  outputs: ['squashed', 'quarantined'],
-  async execute(state, context) {
+class DefaultSquashNodeImpl extends ScalarNode<SquashageRecordState, SquashOutput, SquashageServices> {
+  public readonly name    = 'squash';
+  public readonly outputs = ['squashed', 'quarantined'] as const;
+
+  public override get outputSchema(): Record<SquashOutput, { type: 'object' }> {
+    return { squashed: { type: 'object' }, quarantined: { type: 'object' } };
+  }
+
+  protected override async executeOne(
+    state:   SquashageRecordState,
+    context: NodeContextType<SquashageServices>,
+  ): Promise<NodeOutputType<SquashOutput>> {
     const log = context.services.logger.forComponent('squash');
     if (state.classification === null) {
-      state.collectError({
-        code:        'SQUASH_NO_CLASSIFICATION',
-        message:     'squash invoked but state.classification is null',
-        operation:   'squash',
-        recoverable: false,
-        timestamp:   new Date().toISOString(),
-      });
+      state.collectError(NodeErrorBuilder.from(
+        'SQUASH_NO_CLASSIFICATION',
+        'squash invoked but state.classification is null',
+        'squash', false, new Date().toISOString(),
+      ));
       state.quarantineBucket = 'projection';
-      return { output: 'quarantined' };
+      return NodeOutputBuilder.of('quarantined');
     }
 
     const factory    = context.services.factory;
@@ -58,18 +65,20 @@ export const defaultSquashNode: SquashNodeInterface = {
       state.classification.type,
     );
 
-    const subject = factory.namedNode(subjectIri);
+    const subject   = factory.namedNode(subjectIri);
     const predicate = factory.namedNode(RDF_TYPE);
-    const object  = factory.namedNode(
+    const object    = factory.namedNode(
       `${context.services.prefixes.vocabulary.base}${state.classification.type}`,
     );
     const graph = context.services.graphs['default'] ?? factory.defaultGraph();
     const quad: Quad = factory.quad(subject, predicate, object, graph);
 
-    (state as unknown as { squashedQuads: Quad[] }).squashedQuads = [quad];
+    state.squashedQuads = [quad];
     context.services.dataset.add(quad);
 
-    log.debug('execute', 'squash emitted rdf:type', { subjectIri, classIri: object.value });
-    return { output: 'squashed' };
-  },
-};
+    log.debug('executeOne', 'squash emitted rdf:type', { subjectIri, classIri: object.value });
+    return NodeOutputBuilder.of('squashed');
+  }
+}
+
+export const defaultSquashNode: SquashNodeInterface = new DefaultSquashNodeImpl();

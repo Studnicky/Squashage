@@ -9,22 +9,30 @@
  *   done — always
  */
 
-import type { NodeInterface } from '@noocodex/dagonizer';
+import { ScalarNode, NodeOutputBuilder } from '@studnicky/dagonizer';
+import type { NodeContextType, NodeOutputType } from '@studnicky/dagonizer';
 
 import type { SquashageServices } from '../../services/SquashageServices.js';
 import type { SquashageRefineState } from '../../state/SquashageRefineState.js';
 
 type Output = 'done';
 
-export const refinementMissingWarnNode: NodeInterface<SquashageRefineState, Output, SquashageServices> = {
-  name:    'refinement-missing-warn',
-  outputs: ['done'],
+class RefinementMissingWarnNodeImpl extends ScalarNode<SquashageRefineState, Output, SquashageServices> {
+  public readonly name    = 'refinement-missing-warn';
+  public readonly outputs = ['done'] as const;
 
-  async execute(state, context): Promise<{ output: Output }> {
+  public override get outputSchema(): Record<Output, { type: 'object' }> {
+    return { done: { type: 'object' } };
+  }
+
+  protected override async executeOne(
+    state:   SquashageRefineState,
+    context: NodeContextType<SquashageServices>,
+  ): Promise<NodeOutputType<Output>> {
     const log = context.services.logger.forComponent('refinement-missing-warn');
 
     log.warn(
-      'execute',
+      'executeOne',
       `no refinement for ${state.className}; writing draft as final`,
       { className: state.className, draftPath: state.draftPath },
     );
@@ -32,6 +40,8 @@ export const refinementMissingWarnNode: NodeInterface<SquashageRefineState, Outp
     state.finalJson = state.draftJson;
     state.outcome   = 'passthrough';
 
-    return { output: 'done' };
-  },
-};
+    return NodeOutputBuilder.of('done');
+  }
+}
+
+export const refinementMissingWarnNode = new RefinementMissingWarnNodeImpl();

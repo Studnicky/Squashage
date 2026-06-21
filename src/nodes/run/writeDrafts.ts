@@ -20,7 +20,8 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
-import type { NodeInterface } from '@noocodex/dagonizer';
+import { ScalarNode, NodeOutputBuilder } from '@studnicky/dagonizer';
+import type { NodeContextType, NodeOutputType } from '@studnicky/dagonizer';
 
 import type { InducedSchemaInterface } from '../../induction/SchemaInducer.js';
 import type { SquashageServices } from '../../services/SquashageServices.js';
@@ -28,11 +29,28 @@ import type { SquashageInduceRunState } from '../../state/SquashageInduceRunStat
 
 type Output = 'written' | 'skipped';
 
-export const writeDraftsNode: NodeInterface<SquashageInduceRunState, Output, SquashageServices> = {
-  name:    'write-drafts',
-  outputs: ['written', 'skipped'],
+class WriteDraftsNodeImpl extends ScalarNode<SquashageInduceRunState, Output, SquashageServices> {
+  public readonly name    = 'write-drafts';
+  public readonly outputs = ['written', 'skipped'] as const;
 
-  async execute(state, context) {
+  public override get outputSchema(): Record<Output, { type: 'object' }> {
+    return {
+      written: { type: 'object' },
+      skipped: { type: 'object' },
+    };
+  }
+
+  private static async writeSchema(induced: InducedSchemaInterface, dir: string, suffix: string): Promise<void> {
+    const filename = `${induced.className}${suffix}`;
+    const filePath = join(dir, filename);
+    const text     = JSON.stringify(induced.schema, null, 2) + '\n';
+    await writeFile(filePath, text, 'utf8');
+  }
+
+  protected override async executeOne(
+    state:   SquashageInduceRunState,
+    context: NodeContextType<SquashageServices>,
+  ): Promise<NodeOutputType<Output>> {
     const log = context.services.logger.forComponent('write-drafts');
 
     const schemaSet = state.inducedSchemas;
@@ -42,11 +60,11 @@ export const writeDraftsNode: NodeInterface<SquashageInduceRunState, Output, Squ
        schemaSet.primitives.length === 0 &&
        schemaSet.objects.length === 0)
     ) {
-      log.info('execute', 'no induced schemas; skipping write', {});
-      return { output: 'skipped' };
+      log.info('executeOne', 'no induced schemas; skipping write', {});
+      return NodeOutputBuilder.of('skipped');
     }
 
-    const outDir       = context.services.schemaPaths.inferred;
+    const outDir        = context.services.schemaPaths.inferred;
     const primitivesDir = join(outDir, 'primitives');
     const objectsDir    = join(outDir, 'objects');
 
@@ -61,34 +79,27 @@ export const writeDraftsNode: NodeInterface<SquashageInduceRunState, Output, Squ
 
     let count = 0;
 
-    async function writeSchema(induced: InducedSchemaInterface, dir: string, suffix: string): Promise<void> {
-      const filename = `${induced.className}${suffix}`;
-      const filePath = join(dir, filename);
-      const text     = JSON.stringify(induced.schema, null, 2) + '\n';
-      await writeFile(filePath, text, 'utf8');
-    }
-
     // Write class drafts.
     for (const induced of schemaSet.classes) {
-      await writeSchema(induced, outDir, '.draft.json');
+      await WriteDraftsNodeImpl.writeSchema(induced, outDir, '.draft.json');
       count++;
     }
 
     // Write extracted primitive drafts.
     for (const induced of schemaSet.primitives) {
-      await writeSchema(induced, primitivesDir, '.draft.json');
+      await WriteDraftsNodeImpl.writeSchema(induced, primitivesDir, '.draft.json');
       count++;
     }
 
     // Write extracted object drafts.
     for (const induced of schemaSet.objects) {
-      await writeSchema(induced, objectsDir, '.draft.json');
+      await WriteDraftsNodeImpl.writeSchema(induced, objectsDir, '.draft.json');
       count++;
     }
 
     state.draftsWritten = count;
 
-    log.info('execute', 'drafts written', {
+    log.info('executeOne', 'drafts written', {
       classes:    schemaSet.classes.length,
       primitives: schemaSet.primitives.length,
       objects:    schemaSet.objects.length,
@@ -96,6 +107,8 @@ export const writeDraftsNode: NodeInterface<SquashageInduceRunState, Output, Squ
       outDir,
     });
 
-    return { output: 'written' };
-  },
-};
+    return NodeOutputBuilder.of('written');
+  }
+}
+
+export const writeDraftsNode = new WriteDraftsNodeImpl();

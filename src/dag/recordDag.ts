@@ -1,14 +1,15 @@
 /**
  * recordDag — per-record deep-DAG registered under the name
- * `'squashage:record'`. Invoked by the run-scope DAG's fan-out placement, one
+ * `'squashage:record'`. Invoked by the run-scope DAG's scatter placement, one
  * execution per `RecordLocator`.
  *
  * Topology:
  *
- *   json-read ─loaded──► classify-all (parallel: source, url-pattern, structural)
- *                                            │
- *                              success/error │
+ *   json-read ─loaded──► classify:discriminator → classify:source → … → classify:winknlp-entities
+ *                                            │ (last classifier)
  *                                            ▼
+ *                              classify:ontology → classify:taxonomic-narrowing
+ *                                            │
  *                                  record-health-gate
  *                                            │
  *                  has-proposals / errors / none
@@ -19,29 +20,23 @@
  *           resolved / tie / unknown
  *                       │
  *                       ▼
- *                     squash ──squashed──► output-provenance ──► END
+ *                     squash ──squashed──► output-provenance ──► end
  *                       │                                 │
- *                  quarantined                       (written/skipped → END)
+ *                  quarantined                       (written/skipped → end)
  *                       │
  *                       ▼
- *                record-quarantine ──► END
- *
- * Quarantine is a real DAG path: every failure-route lands on
- * `record-quarantine` which writes the failed-records dump file and ends the
- * per-record execution via output→null.
- *
- * The placement objects reference nodes by name only. The actual node
- * instances (some class-based, requiring per-target config) are registered on
- * the dispatcher in `registerRecordNodes(...)` inside `SquashageRun`.
+ *                record-quarantine ──► end
  */
 
-import type { DAG } from '@noocodex/dagonizer/entities';
-import type { NodeInterface } from '@noocodex/dagonizer';
-import { DAGBuilder } from '@noocodex/dagonizer/builder';
+import type { DAGType } from '@studnicky/dagonizer';
+import { MonadicNode } from '@studnicky/dagonizer';
+import type { Batch, NodeContextType, RoutedBatchType, NodeInterface } from '@studnicky/dagonizer';
+import { DAGBuilder } from '@studnicky/dagonizer/builder';
 
 import type { SquashageRecordState } from '../state/SquashageRecordState.js';
 import type { SquashageServices } from '../services/SquashageServices.js';
-import { classifyAllParallelMembers } from './recordDagClassifierMembers.js';
+import { recordInitNode } from './recordInitNode.js';
+import { recordSummaryCollectNode } from './recordSummaryCollectNode.js';
 
 type StubFor<TOutput extends string> =
   NodeInterface<SquashageRecordState, TOutput, SquashageServices>;
@@ -52,45 +47,56 @@ type StubFor<TOutput extends string> =
  * invoked through this object — the dispatcher resolves nodes by name at
  * execute time.
  */
-function stub<TOutput extends string>(name: string, outputs: readonly TOutput[]): StubFor<TOutput> {
-  return {
-    name,
-    outputs,
-    async execute() { throw new Error(`stub for ${name} called; the real node must be registered on the dispatcher`); },
-  };
+function stub<TOutput extends string>(stubName: string, stubOutputs: readonly TOutput[]): StubFor<TOutput> {
+  class Stub extends MonadicNode<SquashageRecordState, TOutput, SquashageServices> {
+    public readonly name    = stubName;
+    public readonly outputs = stubOutputs;
+    public override get outputSchema(): Record<TOutput, { type: 'object' }> {
+      return Object.fromEntries(stubOutputs.map((o) => [o, { type: 'object' }])) as Record<TOutput, { type: 'object' }>;
+    }
+    public override async execute(
+      _b: Batch<SquashageRecordState>,
+      _c: NodeContextType<SquashageServices>,
+    ): Promise<RoutedBatchType<TOutput, SquashageRecordState>> {
+      throw new Error(`stub '${stubName}' called; register the real node on the dispatcher`);
+    }
+  }
+  return new Stub();
 }
 
-export const recordDag: DAG = new DAGBuilder('squashage:record', '1.0')
+export const recordDag: DAGType = new DAGBuilder('squashage:record', '1.0')
+  // record-init seeds recordPath/recordLine/source from the currentLocator
+  // metadata key written by the scatter. Runs as the entrypoint instead of a
+  // pre-phase because scatter bodies execute with embedded:true, which
+  // suppresses phase placements.
+  .node('record-init', recordInitNode, {
+    done: 'json-read',
+  })
+
   .node('json-read', stub('json-read', ['loaded', 'quarantined'] as const), {
-    loaded:      'classify-all',
+    loaded:      'classify:discriminator',
     quarantined: 'record-quarantine',
   })
 
-  .parallel(
-    'classify-all',
-    classifyAllParallelMembers,
-    'collect',
-    { success: 'classify:ontology', error: 'classify:ontology' },
-  )
+  // Sequential classifier chain (classify-all: each writes its own proposals slot)
+  .node('classify:discriminator',         stub('classify:discriminator',         ['proposed', 'no-match'] as const), { proposed: 'classify:source',               'no-match': 'classify:source' })
+  .node('classify:source',                stub('classify:source',                ['proposed', 'no-match'] as const), { proposed: 'classify:url-pattern',          'no-match': 'classify:url-pattern' })
+  .node('classify:url-pattern',           stub('classify:url-pattern',           ['proposed', 'no-match'] as const), { proposed: 'classify:structural',           'no-match': 'classify:structural' })
+  .node('classify:structural',            stub('classify:structural',            ['proposed', 'no-match'] as const), { proposed: 'classify:rules',                'no-match': 'classify:rules' })
+  .node('classify:rules',                 stub('classify:rules',                 ['proposed', 'no-match'] as const), { proposed: 'classify:schema',               'no-match': 'classify:schema' })
+  .node('classify:schema',                stub('classify:schema',                ['proposed', 'no-match'] as const), { proposed: 'classify:shacl-shape',          'no-match': 'classify:shacl-shape' })
+  .node('classify:shacl-shape',           stub('classify:shacl-shape',           ['proposed', 'no-match'] as const), { proposed: 'classify:property-fingerprint', 'no-match': 'classify:property-fingerprint' })
+  .node('classify:property-fingerprint',  stub('classify:property-fingerprint',  ['proposed', 'no-match'] as const), { proposed: 'classify:winknlp-entities',     'no-match': 'classify:winknlp-entities' })
+  .node('classify:winknlp-entities',      stub('classify:winknlp-entities',      ['proposed', 'no-match'] as const), { proposed: 'classify:ontology',             'no-match': 'classify:ontology' })
 
-  .node('classify:discriminator',         stub('classify:discriminator',         ['proposed', 'no-match'] as const), { proposed: null, 'no-match': null })
-  .node('classify:source',                stub('classify:source',                ['proposed', 'no-match'] as const), { proposed: null, 'no-match': null })
-  .node('classify:url-pattern',           stub('classify:url-pattern',           ['proposed', 'no-match'] as const), { proposed: null, 'no-match': null })
-  .node('classify:structural',            stub('classify:structural',            ['proposed', 'no-match'] as const), { proposed: null, 'no-match': null })
-  .node('classify:rules',                 stub('classify:rules',                 ['proposed', 'no-match'] as const), { proposed: null, 'no-match': null })
-  .node('classify:schema',                stub('classify:schema',                ['proposed', 'no-match'] as const), { proposed: null, 'no-match': null })
-  .node('classify:shacl-shape',           stub('classify:shacl-shape',           ['proposed', 'no-match'] as const), { proposed: null, 'no-match': null })
-  .node('classify:property-fingerprint',  stub('classify:property-fingerprint',  ['proposed', 'no-match'] as const), { proposed: null, 'no-match': null })
-  .node('classify:winknlp-entities',      stub('classify:winknlp-entities',      ['proposed', 'no-match'] as const), { proposed: null, 'no-match': null })
-
-  // Post-parallel sequential classifiers (read other classifiers' proposals).
+  // Post-chain sequential classifiers (read other classifiers' proposals).
   .node('classify:ontology', stub('classify:ontology', ['validated', 'no-match'] as const), {
-    validated: 'classify:taxonomic-narrowing',
+    validated:  'classify:taxonomic-narrowing',
     'no-match': 'classify:taxonomic-narrowing',
   })
   .node('classify:taxonomic-narrowing', stub('classify:taxonomic-narrowing', ['narrowed', 'no-op'] as const), {
     narrowed: 'record-health-gate',
-    'no-op':   'record-health-gate',
+    'no-op':  'record-health-gate',
   })
 
   .node('record-health-gate', stub('record-health-gate', ['has-proposals', 'none', 'errors'] as const), {
@@ -111,13 +117,21 @@ export const recordDag: DAG = new DAGBuilder('squashage:record', '1.0')
   })
 
   .node('output-provenance', stub('output-provenance', ['written', 'skipped'] as const), {
-    written: null,
-    skipped: null,
+    written: 'record-summary-collect',
+    skipped: 'record-summary-collect',
   })
 
   .node('record-quarantine', stub('record-quarantine', ['recorded'] as const), {
-    recorded: null,
+    recorded: 'record-summary-collect',
   })
 
-  .entrypoint('json-read')
+  // record-summary-collect collects the RecordSummary into services.recordSummaries
+  // on every exit path. Placed as a regular node (not post-phase) because scatter
+  // bodies run with embedded:true, which suppresses phase placements.
+  .node('record-summary-collect', recordSummaryCollectNode, {
+    done: 'end',
+  })
+
+  .terminal('end')
+  .entrypoint('record-init')
   .build();

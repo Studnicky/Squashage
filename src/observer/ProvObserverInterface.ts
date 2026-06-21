@@ -9,6 +9,6 @@ export interface ProvObserverInterface {
   recordFlowStart(dagName: string): void;
   recordFlowEnd(dagName: string, lifecycleKind: string): void;
   recordNodeStart(nodeName: string): void;
-  recordNodeEnd(nodeName: string, output: string | undefined): void;
+  recordNodeEnd(nodeName: string, output: string | null): void;
   recordError(nodeName: string, error: Error): void;
 }

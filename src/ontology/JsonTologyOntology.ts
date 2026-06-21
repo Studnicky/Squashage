@@ -31,6 +31,7 @@
  */
 
 import { JsonTology, Curie } from 'json-tology';
+import type { ValidationErrors } from 'json-tology';
 
 import type { Quad, NamedNode, Literal } from '@rdfjs/types';
 import { dataFactory } from '../rdf/DataFactory.js';
@@ -270,6 +271,147 @@ function buildDenormalizedSchema(
   result['$id']   = schema.$id;
   if ('title' in schema) result['title'] = schema['title'];
   return result as Record<string, unknown> & { readonly '$id': string };
+}
+
+// ---------------------------------------------------------------------------
+// ProjectionSchema — lenient relax transform for ABox projection
+// ---------------------------------------------------------------------------
+
+/**
+ * Keys stripped unconditionally at every nesting level during the relax transform.
+ *
+ * These are validation constraints that cause real-world records to be rejected
+ * by json-tology's ABox path. Stripping them makes projection permissive while
+ * preserving all structural markers json-tology needs to walk the schema tree.
+ *
+ * @internal
+ */
+const RELAX_STRIP_KEYS = new Set([
+  'required',
+  'enum',
+  'const',
+  'minimum',
+  'maximum',
+  'exclusiveMinimum',
+  'exclusiveMaximum',
+  'multipleOf',
+  'minLength',
+  'maxLength',
+  'pattern',
+  'minItems',
+  'maxItems',
+]);
+
+/**
+ * Recursively relaxes a schema node for ABox projection.
+ *
+ * Rules applied at each node:
+ * - Strip all keys in {@link RELAX_STRIP_KEYS}.
+ * - For leaf nodes (no `properties`, no `items`): remove the `type` key
+ *   entirely so json-tology can infer from the actual value. This avoids
+ *   `"null"` or over-narrow `"integer"` types failing real-world values.
+ * - For structural nodes (has `properties` → object; has `items` → array):
+ *   preserve `type` so json-tology knows how to traverse the tree.
+ * - Recurse into `properties` values, `items`, and `allOf` entries.
+ * - Preserve `$id`, `title`, and all `x-squashage-*` annotations.
+ *
+ * @internal
+ */
+function relaxSchemaNode(node: Record<string, unknown>): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+
+  const hasProperties =
+    node['properties'] !== null &&
+    node['properties'] !== undefined &&
+    typeof node['properties'] === 'object' &&
+    !Array.isArray(node['properties']);
+
+  const hasItems =
+    node['items'] !== null &&
+    node['items'] !== undefined &&
+    typeof node['items'] === 'object' &&
+    !Array.isArray(node['items']);
+
+  const isStructural = hasProperties || hasItems;
+
+  for (const [key, value] of Object.entries(node)) {
+    // Strip validation constraint keys.
+    if (RELAX_STRIP_KEYS.has(key)) continue;
+
+    // Strip `type` on leaf nodes — structural `type` (object/array) is preserved below.
+    if (key === 'type' && !isStructural) continue;
+
+    if (key === 'properties' && hasProperties) {
+      // Recurse into each property schema.
+      const props = value as Record<string, unknown>;
+      const relaxedProps: Record<string, unknown> = {};
+      for (const [propName, propSchema] of Object.entries(props)) {
+        if (propSchema !== null && typeof propSchema === 'object' && !Array.isArray(propSchema)) {
+          relaxedProps[propName] = relaxSchemaNode(propSchema as Record<string, unknown>);
+        } else {
+          relaxedProps[propName] = propSchema;
+        }
+      }
+      out['properties'] = relaxedProps;
+      continue;
+    }
+
+    if (key === 'items' && hasItems) {
+      // Recurse into items schema.
+      out['items'] = relaxSchemaNode(value as Record<string, unknown>);
+      continue;
+    }
+
+    if (key === 'allOf' && Array.isArray(value)) {
+      // Recurse into allOf entries.
+      out['allOf'] = value.map(entry => {
+        if (entry !== null && typeof entry === 'object' && !Array.isArray(entry)) {
+          return relaxSchemaNode(entry as Record<string, unknown>);
+        }
+        return entry;
+      });
+      continue;
+    }
+
+    out[key] = value;
+  }
+
+  return out;
+}
+
+/**
+ * Produces a relaxed (permissive) copy of a denormalized schema for ABox
+ * projection leniency. The relaxed schema preserves all structural markers
+ * json-tology needs to map JSON→RDF while stripping validation constraints
+ * that would reject real-world records.
+ *
+ * @remarks
+ * **Preserved:** `$id`, `title`, `type: "object"` / `type: "array"` structural
+ * markers, `properties`, `items`, `allOf`, and all `x-squashage-*` annotations.
+ *
+ * **Stripped:** `required`, `enum`, `const`, numeric range keywords
+ * (`minimum`, `maximum`, `exclusiveMinimum`, `exclusiveMaximum`, `multipleOf`),
+ * string constraints (`minLength`, `maxLength`, `pattern`), array length
+ * constraints (`minItems`, `maxItems`), and `type` on leaf scalar nodes
+ * (widened to accept any value by removing the type key entirely).
+ *
+ * This is an internal implementation detail of the ABox denormalization path.
+ * Not exported from the module.
+ *
+ * @internal
+ */
+class ProjectionSchema {
+  public static relax(
+    schema: Record<string, unknown> & { readonly '$id': string },
+  ): Record<string, unknown> & { readonly '$id': string } {
+    const relaxed = relaxSchemaNode(schema);
+    // Ensure $id and title are preserved on the root — they are identity anchors.
+    relaxed['$id'] = schema.$id;
+    if ('title' in schema) {
+      relaxed['title'] = schema['title'];
+    }
+    return relaxed as Record<string, unknown> & { readonly '$id': string };
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -598,7 +740,7 @@ export class JsonTologyOntology {
     // Cross-schema $ref works correctly for TBox + SHACL emission. Route
     // tbox() and shacl() through this instance.
     const jt = JsonTology.create({
-      baseIRI:           options.baseIRI,
+      baseIri:           options.baseIRI,
       enableStrictGraph: false,
       schemas:           options.schemas.map(entry => entry.schema) as unknown as ReadonlyArray<{ readonly '$id': string }>,
     });
@@ -609,10 +751,10 @@ export class JsonTologyOntology {
     // definition, so this instance runs with enableStrictGraph: false.
     // Only toQuads() routes through this instance; tbox()/shacl() stay on #jt.
     const denormalizedSchemas = options.schemas.map(entry =>
-      buildDenormalizedSchema(entry.schema, schemasById),
+      ProjectionSchema.relax(buildDenormalizedSchema(entry.schema, schemasById)),
     );
     const abox = JsonTology.create({
-      baseIRI:           options.baseIRI,
+      baseIri:           options.baseIRI,
       enableStrictGraph: false,
       schemas:           denormalizedSchemas as unknown as ReadonlyArray<{ readonly '$id': string }>,
     });
@@ -857,5 +999,34 @@ export class JsonTologyOntology {
     const denormalized = this.#denormalizedById[schemaId] ?? schema;
     const raw = this.#abox.toQuads(denormalized, instance);
     return raw.map(q => JsonTologyOntology.#expandQuad(q, this.#curie));
+  }
+
+  /**
+   * Validates `instance` against the strict schema registered under `schemaId`.
+   *
+   * @remarks
+   * Validation is advisory — it uses the original strict `#jt` schemas so
+   * callers can surface constraint violations as warnings without preventing
+   * projection. The relaxed ABox schemas (used by `toQuads`) never participate
+   * in validation; validation is a separate best-effort signal.
+   *
+   * Delegates to `JsonTology.validate` (static), which does not require the
+   * registry instance.
+   *
+   * @param schemaId - The `$id` of a schema registered at construction time.
+   * @param instance - The value to validate.
+   * @returns A {@link ValidationErrors} instance. `result.ok === true` when
+   *   valid; `result.items` carries the individual constraint violations.
+   * @throws {OutputConfigError} When `schemaId` is not registered.
+   */
+  public validate(schemaId: string, instance: unknown): ValidationErrors {
+    const schema = this.#schemasById[schemaId];
+    if (schema === undefined) {
+      throw OutputConfigError.create(
+        `JsonTologyOntology.validate: no schema registered with $id "${schemaId}"`,
+        { metadata: { schemaId, registered: Object.keys(this.#schemasById) } },
+      );
+    }
+    return JsonTology.validate(schema, instance);
   }
 }

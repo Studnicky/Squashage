@@ -4,6 +4,7 @@ import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
+import { Batch } from '@studnicky/dagonizer';
 import { refineRequiredGateNode } from '../../../../src/nodes/run/refineRequiredGate.js';
 import { SquashageBootstrapState } from '../../../../src/state/SquashageBootstrapState.js';
 import type { SquashageServices } from '../../../../src/services/SquashageServices.js';
@@ -30,11 +31,24 @@ function makeState(): SquashageBootstrapState {
   return new SquashageBootstrapState('test', new Date().toISOString());
 }
 
+async function runNode(
+  state:   SquashageBootstrapState,
+  context: { services: SquashageServices },
+): Promise<string> {
+  const result = await refineRequiredGateNode.execute(
+    Batch.of(state),
+    context as unknown as Parameters<typeof refineRequiredGateNode.execute>[1],
+  );
+  const keys = [...result.keys()];
+  if (keys.length === 0) throw new Error('node produced no output port');
+  return keys[0] as string;
+}
+
 test('refineRequiredGate — missing directory', async (t) => {
   await t.test('returns refinements-absent when directory does not exist', async () => {
     const nonExistent = '/tmp/__squashage_gate_no_such_dir__/refinements';
-    const result = await refineRequiredGateNode.execute(makeState(), makeContext(nonExistent) as never);
-    assert.equal(result.output, 'refinements-absent');
+    const output = await runNode(makeState(), makeContext(nonExistent));
+    assert.equal(output, 'refinements-absent');
   });
 });
 
@@ -44,8 +58,8 @@ test('refineRequiredGate — empty directory', async (t) => {
     try {
       const refinementsDir = join(work, 'refinements');
       await mkdir(refinementsDir, { recursive: true });
-      const result = await refineRequiredGateNode.execute(makeState(), makeContext(refinementsDir) as never);
-      assert.equal(result.output, 'refinements-absent');
+      const output = await runNode(makeState(), makeContext(refinementsDir));
+      assert.equal(output, 'refinements-absent');
     } finally {
       await rm(work, { recursive: true, force: true });
     }
@@ -57,8 +71,8 @@ test('refineRequiredGate — empty directory', async (t) => {
       const refinementsDir = join(work, 'refinements');
       await mkdir(refinementsDir, { recursive: true });
       await writeFile(join(refinementsDir, 'Feat.draft.json'), '{}', 'utf8');
-      const result = await refineRequiredGateNode.execute(makeState(), makeContext(refinementsDir) as never);
-      assert.equal(result.output, 'refinements-absent');
+      const output = await runNode(makeState(), makeContext(refinementsDir));
+      assert.equal(output, 'refinements-absent');
     } finally {
       await rm(work, { recursive: true, force: true });
     }
@@ -72,8 +86,8 @@ test('refineRequiredGate — populated directory', async (t) => {
       const refinementsDir = join(work, 'refinements');
       await mkdir(refinementsDir, { recursive: true });
       await writeFile(join(refinementsDir, 'Feat.refine.json'), '{}', 'utf8');
-      const result = await refineRequiredGateNode.execute(makeState(), makeContext(refinementsDir) as never);
-      assert.equal(result.output, 'refinements-present');
+      const output = await runNode(makeState(), makeContext(refinementsDir));
+      assert.equal(output, 'refinements-present');
     } finally {
       await rm(work, { recursive: true, force: true });
     }
@@ -86,8 +100,8 @@ test('refineRequiredGate — populated directory', async (t) => {
       await mkdir(refinementsDir, { recursive: true });
       await writeFile(join(refinementsDir, 'Feat.refine.json'),  '{}', 'utf8');
       await writeFile(join(refinementsDir, 'Spell.refine.json'), '{}', 'utf8');
-      const result = await refineRequiredGateNode.execute(makeState(), makeContext(refinementsDir) as never);
-      assert.equal(result.output, 'refinements-present');
+      const output = await runNode(makeState(), makeContext(refinementsDir));
+      assert.equal(output, 'refinements-present');
     } finally {
       await rm(work, { recursive: true, force: true });
     }

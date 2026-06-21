@@ -37,7 +37,7 @@ test('SquashageBootstrapState — construction', async (t) => {
     assert.equal(s.passthroughCount, 0);
     assert.deepEqual(s.runErrors,        []);
     assert.deepEqual(s.results,          []);
-    assert.equal(s.lifecycle.kind,   'pending');
+    assert.equal(s.lifecycle.variant,   'pending');
   });
 });
 
@@ -102,7 +102,7 @@ test('SquashageBootstrapState — snapshot / restore', async (t) => {
     assert.equal(s2.draftsWritten, 1);
     assert.equal(s2.refinedCount,  1);
     assert.deepEqual(s2.runErrors, ['some warning']);
-    assert.equal(s2.lifecycle.kind, 'pending');
+    assert.equal(s2.lifecycle.variant, 'pending');
   });
 
   await t.test('restore with null result fields preserves null', () => {

@@ -79,11 +79,11 @@ export class ProvObserver implements ProvObserverInterface {
     this.#activeByNode.set(nodeName, activity);
   }
 
-  recordNodeEnd(nodeName: string, output: string | undefined): void {
+  recordNodeEnd(nodeName: string, output: string | null): void {
     const activity = this.#activeByNode.get(nodeName);
     if (activity === undefined) return;
     this.#assertDateTime(activity, this.#vocab.endedAtTime, new Date());
-    if (output !== undefined) {
+    if (output !== null) {
       this.#assertLiteral(activity, this.#vocab.dagOutput, output);
     }
     this.#activeByNode.delete(nodeName);

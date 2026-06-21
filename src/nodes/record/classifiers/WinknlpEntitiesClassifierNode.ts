@@ -9,7 +9,8 @@ import type { WinkMethods, CustomEntityExample, Detail } from 'wink-nlp';
 import winkNlpModule from 'wink-nlp';
 import modelModule   from 'wink-eng-lite-web-model';
 
-import type { NodeInterface } from '@noocodex/dagonizer';
+import { ScalarNode, NodeOutputBuilder } from '@studnicky/dagonizer';
+import type { NodeContextType, NodeOutputType } from '@studnicky/dagonizer';
 
 import type { SquashageServices } from '../../../services/SquashageServices.js';
 import type { ClassificationProposal } from '../../../state/schemas/ClassificationProposal.js';
@@ -41,16 +42,16 @@ interface CompiledPatternMetaInterface {
 
 type Output = 'proposed' | 'no-match';
 
-export class WinknlpEntitiesClassifierNode
-  implements NodeInterface<SquashageRecordState, Output, SquashageServices> {
+export class WinknlpEntitiesClassifierNode extends ScalarNode<SquashageRecordState, Output, SquashageServices> {
 
-  readonly name    = 'classify:winknlp-entities';
-  readonly outputs = ['proposed', 'no-match'] as const;
+  public readonly name    = 'classify:winknlp-entities';
+  public readonly outputs = ['proposed', 'no-match'] as const;
   readonly #nlp:    WinkMethods;
   readonly #meta:   Readonly<Record<string, CompiledPatternMetaInterface>>;
   readonly #fields: ReadonlyArray<string>;
 
   constructor(config: WinknlpEntitiesConfigInterface) {
+    super();
     const nlp = winkNlp(model);
 
     const examples: CustomEntityExample[] = config.patterns.map((entry) => ({
@@ -78,10 +79,14 @@ export class WinknlpEntitiesClassifierNode
     );
   }
 
-  async execute(
+  public override get outputSchema(): Record<Output, { type: 'object' }> {
+    return { proposed: { type: 'object' }, 'no-match': { type: 'object' } };
+  }
+
+  protected override async executeOne(
     state:    SquashageRecordState,
-    _context: { readonly services: SquashageServices },
-  ): Promise<{ output: Output }> {
+    _context: NodeContextType<SquashageServices>,
+  ): Promise<NodeOutputType<Output>> {
     const matches: Array<{ meta: CompiledPatternMetaInterface; reasons: string[] }> = [];
 
     for (const fieldName of this.#fields) {
@@ -109,7 +114,7 @@ export class WinknlpEntitiesClassifierNode
       }
     }
 
-    if (matches.length === 0) return { output: 'no-match' };
+    if (matches.length === 0) return NodeOutputBuilder.of('no-match');
 
     let winner = matches[0]!;
     for (let i = 1; i < matches.length; i++) {
@@ -124,6 +129,6 @@ export class WinknlpEntitiesClassifierNode
       reasons:    allReasons,
     };
     state.proposals['classify:winknlp-entities'] = proposal;
-    return { output: 'proposed' };
+    return NodeOutputBuilder.of('proposed');
   }
 }

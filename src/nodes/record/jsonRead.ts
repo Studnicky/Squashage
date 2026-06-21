@@ -10,7 +10,8 @@
 
 import { readFile } from 'node:fs/promises';
 
-import type { NodeInterface } from '@noocodex/dagonizer';
+import { ScalarNode, NodeOutputBuilder, NodeErrorBuilder } from '@studnicky/dagonizer';
+import type { NodeContextType, NodeOutputType } from '@studnicky/dagonizer';
 
 import type { SquashageServices } from '../../services/SquashageServices.js';
 import type { SquashageRecordState } from '../../state/SquashageRecordState.js';
@@ -30,10 +31,18 @@ function extractRecord(rawText: string, recordLine: number): unknown {
   return JSON.parse(lines[recordLine] ?? '');
 }
 
-export const jsonReadNode: NodeInterface<SquashageRecordState, Output, SquashageServices> = {
-  name:    'json-read',
-  outputs: ['loaded', 'quarantined'],
-  async execute(state, context) {
+class JsonReadNodeImpl extends ScalarNode<SquashageRecordState, Output, SquashageServices> {
+  public readonly name    = 'json-read';
+  public readonly outputs = ['loaded', 'quarantined'] as const;
+
+  public override get outputSchema(): Record<Output, { type: 'object' }> {
+    return { loaded: { type: 'object' }, quarantined: { type: 'object' } };
+  }
+
+  protected override async executeOne(
+    state:   SquashageRecordState,
+    context: NodeContextType<SquashageServices>,
+  ): Promise<NodeOutputType<Output>> {
     const log = context.services.logger.forComponent('json-read');
     const recordPath = state.recordPath;
     const recordLine = state.recordLine;
@@ -43,14 +52,12 @@ export const jsonReadNode: NodeInterface<SquashageRecordState, Output, Squashage
       rawText = await readFile(recordPath, 'utf8');
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      state.collectError({
-        code: 'JSON_READ_FILE_ERROR', message,
-        operation: 'json-read', recoverable: false,
-        timestamp: new Date().toISOString(),
-      });
+      state.collectError(NodeErrorBuilder.from(
+        'JSON_READ_FILE_ERROR', message, 'json-read', false, new Date().toISOString(),
+      ));
       state.quarantineBucket = 'projection';
-      log.warn('execute', 'unreadable input', { recordPath, message });
-      return { output: 'quarantined' };
+      log.warn('executeOne', 'unreadable input', { recordPath, message });
+      return NodeOutputBuilder.of('quarantined');
     }
 
     let parsed: unknown;
@@ -58,39 +65,35 @@ export const jsonReadNode: NodeInterface<SquashageRecordState, Output, Squashage
       parsed = extractRecord(rawText, recordLine);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      state.collectError({
-        code: 'JSON_READ_PARSE_ERROR',
-        message: `malformed JSON at ${recordPath}:${recordLine.toString()} — ${message}`,
-        operation: 'json-read', recoverable: false,
-        timestamp: new Date().toISOString(),
-      });
+      state.collectError(NodeErrorBuilder.from(
+        'JSON_READ_PARSE_ERROR',
+        `malformed JSON at ${recordPath}:${recordLine.toString()} — ${message}`,
+        'json-read', false, new Date().toISOString(),
+      ));
       state.quarantineBucket = 'projection';
-      return { output: 'quarantined' };
+      return NodeOutputBuilder.of('quarantined');
     }
 
     if (!isPlainObject(parsed)) {
-      state.collectError({
-        code: 'JSON_READ_NON_OBJECT',
-        message: 'record is not a plain object',
-        operation: 'json-read', recoverable: false,
-        timestamp: new Date().toISOString(),
-      });
+      state.collectError(NodeErrorBuilder.from(
+        'JSON_READ_NON_OBJECT', 'record is not a plain object',
+        'json-read', false, new Date().toISOString(),
+      ));
       state.quarantineBucket = 'projection';
-      return { output: 'quarantined' };
+      return NodeOutputBuilder.of('quarantined');
     }
 
     // Cross-check / merge embedded `_source`.
     const embedded = parsed['_source'];
     if (isPlainObject(embedded) && typeof embedded['target'] === 'string'
         && embedded['target'] !== state.source.target) {
-      state.collectError({
-        code: 'JSON_READ_TARGET_MISMATCH',
-        message: `_source.target "${embedded['target']}" does not match state.source.target "${state.source.target}"`,
-        operation: 'json-read', recoverable: false,
-        timestamp: new Date().toISOString(),
-      });
+      state.collectError(NodeErrorBuilder.from(
+        'JSON_READ_TARGET_MISMATCH',
+        `_source.target "${embedded['target']}" does not match state.source.target "${state.source.target}"`,
+        'json-read', false, new Date().toISOString(),
+      ));
       state.quarantineBucket = 'projection';
-      return { output: 'quarantined' };
+      return NodeOutputBuilder.of('quarantined');
     }
 
     if (isPlainObject(embedded)) {
@@ -103,8 +106,10 @@ export const jsonReadNode: NodeInterface<SquashageRecordState, Output, Squashage
       state.source = merged;
     }
 
-    (state as unknown as { input: Record<string, unknown> }).input = parsed;
-    log.debug('execute', 'record loaded', { recordPath, recordLine });
-    return { output: 'loaded' };
-  },
-};
+    state.input = parsed;
+    log.debug('executeOne', 'record loaded', { recordPath, recordLine });
+    return NodeOutputBuilder.of('loaded');
+  }
+}
+
+export const jsonReadNode = new JsonReadNodeImpl();

@@ -6,24 +6,29 @@
  * Stateless — const literal node.
  */
 
-import type { NodeInterface } from '@noocodex/dagonizer';
+import { ScalarNode, NodeOutputBuilder } from '@studnicky/dagonizer';
+import type { NodeContextType, NodeOutputType } from '@studnicky/dagonizer';
 
 import type { SquashageServices } from '../../../services/SquashageServices.js';
 import type { SquashageRecordState } from '../../../state/SquashageRecordState.js';
 
 type Output = 'proposed' | 'no-match';
 
-function isPlainObject(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
+class SourceClassifierNodeImpl extends ScalarNode<SquashageRecordState, Output, SquashageServices> {
+  public readonly name    = 'classify:source';
+  public readonly outputs = ['proposed', 'no-match'] as const;
 
-export const sourceClassifierNode: NodeInterface<SquashageRecordState, Output, SquashageServices> = {
-  name:    'classify:source',
-  outputs: ['proposed', 'no-match'],
-  async execute(state, _context) {
+  public override get outputSchema(): Record<Output, { type: 'object' }> {
+    return { proposed: { type: 'object' }, 'no-match': { type: 'object' } };
+  }
+
+  protected override async executeOne(
+    state:    SquashageRecordState,
+    _context: NodeContextType<SquashageServices>,
+  ): Promise<NodeOutputType<Output>> {
     const raw = state.input['_source'];
-    if (!isPlainObject(raw)) {
-      return { output: 'no-match' };
+    if (!SourceClassifierNodeImpl.isPlainObject(raw)) {
+      return NodeOutputBuilder.of('no-match');
     }
 
     const reasons: string[] = [];
@@ -38,6 +43,12 @@ export const sourceClassifierNode: NodeInterface<SquashageRecordState, Output, S
       confidence: 1,
       reasons,
     };
-    return { output: 'proposed' };
-  },
-};
+    return NodeOutputBuilder.of('proposed');
+  }
+
+  private static isPlainObject(value: unknown): value is Record<string, unknown> {
+    return typeof value === 'object' && value !== null && !Array.isArray(value);
+  }
+}
+
+export const sourceClassifierNode = new SourceClassifierNodeImpl();

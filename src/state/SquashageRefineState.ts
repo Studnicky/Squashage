@@ -1,5 +1,5 @@
-import { NodeStateBase } from '@noocodex/dagonizer';
-import type { JsonObject, JsonValue } from '@noocodex/dagonizer/types';
+import { NodeStateBase } from '@studnicky/dagonizer';
+import type { JsonObjectType, JsonValueType } from '@studnicky/dagonizer/entities';
 
 /**
  * Per-draft state flowing through the refine-one deep-DAG
@@ -36,13 +36,13 @@ export class SquashageRefineState extends NodeStateBase {
   subdir: string | undefined;
 
   /** Parsed draft schema; populated by `read-draft`. */
-  draftJson: JsonObject | null;
+  draftJson: JsonObjectType | null;
 
   /** Parsed refinement document; populated by `read-refinement`. */
-  refinementJson: JsonObject | null;
+  refinementJson: JsonObjectType | null;
 
   /** Final schema after applying the refinement; populated by `apply-refinement`. */
-  finalJson: JsonObject | null;
+  finalJson: JsonObjectType | null;
 
   /**
    * Outcome of this per-draft execution:
@@ -69,8 +69,8 @@ export class SquashageRefineState extends NodeStateBase {
     this.outcome        = 'error';
   }
 
-  override clone(): SquashageRefineState {
-    const base = super.clone() as SquashageRefineState;
+  override clone() {
+    const base = super.clone() as this;
     base.draftPath      = this.draftPath;
     base.refinementPath = this.refinementPath;
     base.className      = this.className;
@@ -82,20 +82,20 @@ export class SquashageRefineState extends NodeStateBase {
     return base;
   }
 
-  protected override snapshotData(): JsonObject {
+  protected override snapshotData(): JsonObjectType {
     return {
       draftPath:      this.draftPath,
       refinementPath: this.refinementPath,
       className:      this.className,
       subdir:         this.subdir ?? null,
-      draftJson:      (this.draftJson ?? null)      as unknown as JsonValue,
-      refinementJson: (this.refinementJson ?? null) as unknown as JsonValue,
-      finalJson:      (this.finalJson ?? null)      as unknown as JsonValue,
+      draftJson:      (this.draftJson ?? null)      as unknown as JsonValueType,
+      refinementJson: (this.refinementJson ?? null) as unknown as JsonValueType,
+      finalJson:      (this.finalJson ?? null)      as unknown as JsonValueType,
       outcome:        this.outcome,
     };
   }
 
-  protected override restoreData(snap: JsonObject): void {
+  protected override restoreData(snap: JsonObjectType): void {
     const draftPath = snap['draftPath'];
     if (typeof draftPath === 'string') this.draftPath = draftPath;
 
@@ -124,6 +124,6 @@ export class SquashageRefineState extends NodeStateBase {
   }
 }
 
-function isPlainObject(value: JsonValue | undefined): value is JsonObject {
+function isPlainObject(value: JsonValueType | undefined): value is JsonObjectType {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }

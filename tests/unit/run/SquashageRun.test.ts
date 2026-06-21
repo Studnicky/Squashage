@@ -62,7 +62,7 @@ test('happy path', async (t) => {
 
       const result   = await run.execute();
       const summaries = run.services.recordSummaries;
-      assert.equal(result.state.lifecycle.kind, 'completed');
+      assert.equal(result.state.lifecycle.variant, 'completed');
       assert.equal(result.state.locators.length, 1);
       assert.equal(summaries.length, 1);
       assert.equal(summaries[0]!.outcome, 'squashed');
@@ -91,7 +91,7 @@ test('happy path', async (t) => {
         seen.push(node.nodeName);
       }
       const result = await exec;
-      assert.equal(result.state.lifecycle.kind, 'completed');
+      assert.equal(result.state.lifecycle.variant, 'completed');
       assert.ok(seen.includes('walk-input'), 'walk-input fires');
       assert.ok(seen.includes('process-all-records'), 'process-all-records fires');
       assert.ok(seen.includes('rdfjs-finalize'), 'rdfjs-finalize fires');

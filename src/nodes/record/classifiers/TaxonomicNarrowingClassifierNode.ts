@@ -16,7 +16,8 @@ import { readFileSync } from 'node:fs';
 import { resolve as resolvePath } from 'node:path';
 
 import type { Quad } from '@rdfjs/types';
-import type { NodeInterface } from '@noocodex/dagonizer';
+import { ScalarNode, NodeOutputBuilder } from '@studnicky/dagonizer';
+import type { NodeContextType, NodeOutputType } from '@studnicky/dagonizer';
 
 import { Parser } from '../../../rdf/Parser.js';
 
@@ -37,64 +38,15 @@ type Output = 'narrowed' | 'no-op';
 
 const SENTINELS = new Set<string>(['__source__', '__validation__', '__narrowing_applied__', 'unknown']);
 
-function lastSegment(iri: string): string {
-  const hashIdx = iri.indexOf('#');
-  if (hashIdx !== -1) {
-    const fragment = iri.slice(hashIdx + 1);
-    if (fragment.length > 0) return fragment;
-  }
-  const segment = iri.split('/').pop();
-  return segment ?? '';
-}
+export class TaxonomicNarrowingClassifierNode extends ScalarNode<SquashageRecordState, Output, SquashageServices> {
 
-function buildClosure(quads: ReadonlyArray<Quad>): Map<string, Set<string>> {
-  const direct = new Map<string, Set<string>>();
-  for (const quad of quads) {
-    if (quad.predicate.value !== OWL_SUB_CLASS_OF) continue;
-    if (quad.subject.termType !== 'NamedNode' || quad.object.termType !== 'NamedNode') continue;
-    const sub = lastSegment(quad.subject.value);
-    const sup = lastSegment(quad.object.value);
-    if (sub.length === 0 || sup.length === 0 || sub === sup) continue;
-    const existing = direct.get(sub);
-    if (existing !== undefined) existing.add(sup); else direct.set(sub, new Set([sup]));
-  }
-
-  const closure = new Map<string, Set<string>>();
-  for (const [sub, supers] of direct) closure.set(sub, new Set(supers));
-
-  let changed = true;
-  while (changed) {
-    changed = false;
-    for (const [sub, supers] of closure) {
-      const additions: string[] = [];
-      for (const sup of supers) {
-        const next = closure.get(sup);
-        if (next === undefined) continue;
-        for (const t of next) {
-          if (!supers.has(t) && t !== sub) additions.push(t);
-        }
-      }
-      for (const a of additions) { supers.add(a); changed = true; }
-    }
-  }
-  return closure;
-}
-
-async function parseTurtleOrNquads(absPath: string, text: string): Promise<Quad[]> {
-  const format  = absPath.endsWith('.nq') ? 'nquads' as const : 'turtle' as const;
-  const result  = await Parser.parse(text, { format });
-  return result.quads as Quad[];
-}
-
-export class TaxonomicNarrowingClassifierNode
-  implements NodeInterface<SquashageRecordState, Output, SquashageServices> {
-
-  readonly name    = 'classify:taxonomic-narrowing';
-  readonly outputs = ['narrowed', 'no-op'] as const;
+  public readonly name    = 'classify:taxonomic-narrowing';
+  public readonly outputs = ['narrowed', 'no-op'] as const;
   readonly #enabled: boolean;
   readonly #closure: Map<string, Set<string>>;
 
   private constructor(enabled: boolean, closure: Map<string, Set<string>>) {
+    super();
     this.#enabled = enabled;
     this.#closure = closure;
   }
@@ -116,25 +68,29 @@ export class TaxonomicNarrowingClassifierNode
         return new TaxonomicNarrowingClassifierNode(false, new Map());
       }
       const quads = await ontology.tbox();
-      return new TaxonomicNarrowingClassifierNode(true, buildClosure(quads));
+      return new TaxonomicNarrowingClassifierNode(true, TaxonomicNarrowingClassifierNode.buildClosure(quads));
     }
 
     const absPath = resolvePath(schemasBase, config.tboxFrom);
     const text    = readFileSync(absPath, 'utf8');
-    const quads   = await parseTurtleOrNquads(absPath, text);
-    return new TaxonomicNarrowingClassifierNode(true, buildClosure(quads));
+    const quads   = await TaxonomicNarrowingClassifierNode.parseTurtleOrNquads(absPath, text);
+    return new TaxonomicNarrowingClassifierNode(true, TaxonomicNarrowingClassifierNode.buildClosure(quads));
   }
 
-  async execute(
+  public override get outputSchema(): Record<Output, { type: 'object' }> {
+    return { narrowed: { type: 'object' }, 'no-op': { type: 'object' } };
+  }
+
+  protected override async executeOne(
     state:    SquashageRecordState,
-    _context: { readonly services: SquashageServices },
-  ): Promise<{ output: Output }> {
-    if (!this.#enabled || this.#closure.size === 0) return { output: 'no-op' };
+    _context: NodeContextType<SquashageServices>,
+  ): Promise<NodeOutputType<Output>> {
+    if (!this.#enabled || this.#closure.size === 0) return NodeOutputBuilder.of('no-op');
 
     const realEntries = Object.entries(state.proposals).filter(
       ([, p]) => !SENTINELS.has(p.className),
     );
-    if (realEntries.length < 2) return { output: 'no-op' };
+    if (realEntries.length < 2) return NodeOutputBuilder.of('no-op');
 
     const proposedClassNames = new Set(realEntries.map(([, p]) => p.className));
     const toRemove = new Set<string>();
@@ -153,7 +109,7 @@ export class TaxonomicNarrowingClassifierNode
       if (isSupertype) toRemove.add(cls); else toKeep.add(cls);
     }
 
-    if (toRemove.size === 0) return { output: 'no-op' };
+    if (toRemove.size === 0) return NodeOutputBuilder.of('no-op');
 
     // Drop proposal slots whose className is in toRemove.
     const reasons: string[] = [];
@@ -177,6 +133,55 @@ export class TaxonomicNarrowingClassifierNode
       reasons,
     };
     state.proposals['classify:taxonomic-narrowing'] = sentinel;
-    return { output: 'narrowed' };
+    return NodeOutputBuilder.of('narrowed');
+  }
+
+  private static lastSegment(iri: string): string {
+    const hashIdx = iri.indexOf('#');
+    if (hashIdx !== -1) {
+      const fragment = iri.slice(hashIdx + 1);
+      if (fragment.length > 0) return fragment;
+    }
+    const segment = iri.split('/').pop();
+    return segment ?? '';
+  }
+
+  private static buildClosure(quads: ReadonlyArray<Quad>): Map<string, Set<string>> {
+    const direct = new Map<string, Set<string>>();
+    for (const quad of quads) {
+      if (quad.predicate.value !== OWL_SUB_CLASS_OF) continue;
+      if (quad.subject.termType !== 'NamedNode' || quad.object.termType !== 'NamedNode') continue;
+      const sub = TaxonomicNarrowingClassifierNode.lastSegment(quad.subject.value);
+      const sup = TaxonomicNarrowingClassifierNode.lastSegment(quad.object.value);
+      if (sub.length === 0 || sup.length === 0 || sub === sup) continue;
+      const existing = direct.get(sub);
+      if (existing !== undefined) existing.add(sup); else direct.set(sub, new Set([sup]));
+    }
+
+    const closure = new Map<string, Set<string>>();
+    for (const [sub, supers] of direct) closure.set(sub, new Set(supers));
+
+    let changed = true;
+    while (changed) {
+      changed = false;
+      for (const [sub, supers] of closure) {
+        const additions: string[] = [];
+        for (const sup of supers) {
+          const next = closure.get(sup);
+          if (next === undefined) continue;
+          for (const t of next) {
+            if (!supers.has(t) && t !== sub) additions.push(t);
+          }
+        }
+        for (const a of additions) { supers.add(a); changed = true; }
+      }
+    }
+    return closure;
+  }
+
+  private static async parseTurtleOrNquads(absPath: string, text: string): Promise<Quad[]> {
+    const format  = absPath.endsWith('.nq') ? 'nquads' as const : 'turtle' as const;
+    const result  = await Parser.parse(text, { format });
+    return result.quads as Quad[];
   }
 }
