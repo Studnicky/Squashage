@@ -91,21 +91,21 @@ function freshState(): SquashageRunState {
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
-test('RecordFoldGather — registration', (t) => {
-  t.test('is registered under squashage:record-fold', () => {
+test('RecordFoldGather — registration', async (t) => {
+  await t.test('is registered under squashage:record-fold', () => {
     const strategy = GatherStrategies.resolve('squashage:record-fold');
     assert.ok(strategy instanceof RecordFoldGather);
     assert.equal(strategy.name, 'squashage:record-fold');
   });
 
-  t.test('retainsRecordsForFinalize is false (compactable)', () => {
+  await t.test('retainsRecordsForFinalize is false (compactable)', () => {
     const strategy = GatherStrategies.resolve('squashage:record-fold');
     assert.equal(strategy.retainsRecordsForFinalize, false);
   });
 });
 
-test('RecordFoldGather — initial', (t) => {
-  t.test('seeds all fold fields to zero/empty on parent state', () => {
+test('RecordFoldGather — initial', async (t) => {
+  await t.test('seeds all fold fields to zero/empty on parent state', () => {
     const strategy = new RecordFoldGather();
     const parent   = freshState();
 
