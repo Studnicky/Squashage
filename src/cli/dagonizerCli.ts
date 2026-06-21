@@ -93,12 +93,12 @@ export class DagonizerCli {
 
         const result = await run.execute();
         const finalState = result.state as unknown as SquashageRunState;
-        const summaries  = run.services.recordSummaries;
-        const successes  = summaries.filter((r) => r.outcome === 'squashed').length;
-        const failures   = summaries.filter((r) => r.outcome !== 'squashed').length;
+        const total    = finalState.squashedCount + finalState.quarantinedCount + finalState.errorCount;
+        const successes = finalState.squashedCount;
+        const failures  = finalState.quarantinedCount + finalState.errorCount;
         process.stdout.write(
           `target: ${opts.target}\n` +
-          `records: ${String(summaries.length)}\n` +
+          `records: ${String(total)}\n` +
           `succeeded: ${String(successes)}\n` +
           `failed: ${String(failures)}\n` +
           `lifecycle: ${finalState.lifecycle.variant}\n`,
@@ -233,17 +233,17 @@ export class DagonizerCli {
             `[refine]    ${String(refineState.refinedCount)} drafts → ${String(refineState.refinedCount + refineState.passthroughCount)} finals\n`,
           );
 
-          await run.execute();
-          const buildSummaries = run.services.recordSummaries;
-
-          const successes = buildSummaries.filter((r) => r.outcome === 'squashed').length;
-          const failures  = buildSummaries.filter((r) => r.outcome !== 'squashed').length;
+          const buildResult   = await run.execute();
+          const buildFinal    = buildResult.state as unknown as SquashageRunState;
+          const buildTotal    = buildFinal.squashedCount + buildFinal.quarantinedCount + buildFinal.errorCount;
+          const buildSuccesses = buildFinal.squashedCount;
+          const buildFailures  = buildFinal.quarantinedCount + buildFinal.errorCount;
 
           process.stdout.write(
-            `[build]     ${String(buildSummaries.length)} records → ${String(successes)} quads + TBox + SHACL + PROV\n`,
+            `[build]     ${String(buildTotal)} records → ${String(buildSuccesses)} quads + TBox + SHACL + PROV\n`,
           );
 
-          process.exitCode = failures > 0 ? 1 : 0;
+          process.exitCode = buildFailures > 0 ? 1 : 0;
           return;
         }
 
@@ -283,12 +283,12 @@ export class DagonizerCli {
           return;
         }
 
-        if (finalState.results.length > 0) {
-          const successes = finalState.results.filter((r) => r.outcome === 'squashed').length;
+        if (finalState.squashedCount > 0 || finalState.quarantinedCount > 0) {
+          const total    = finalState.squashedCount + finalState.quarantinedCount + finalState.errorCount;
+          const failures = finalState.quarantinedCount + finalState.errorCount;
           process.stdout.write(
-            `[build]     ${String(finalState.results.length)} records → ${String(successes)} quads + TBox + SHACL + PROV\n`,
+            `[build]     ${String(total)} records → ${String(finalState.squashedCount)} quads + TBox + SHACL + PROV\n`,
           );
-          const failures = finalState.results.filter((r) => r.outcome !== 'squashed').length;
           process.exitCode = failures > 0 ? 1 : 0;
         }
       });

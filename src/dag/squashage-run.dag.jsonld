@@ -100,7 +100,7 @@
         "dag": "squashage:record"
       },
       "gather": {
-        "strategy": "discard"
+        "strategy": "squashage:record-fold"
       },
       "outputs": {
         "all-success": "enrich-entity-link",

@@ -248,8 +248,8 @@
       "name": "output-provenance",
       "node": "output-provenance",
       "outputs": {
-        "written": "record-summary-collect",
-        "skipped": "record-summary-collect"
+        "written": "end",
+        "skipped": "end"
       }
     },
     {
@@ -258,16 +258,7 @@
       "name": "record-quarantine",
       "node": "record-quarantine",
       "outputs": {
-        "recorded": "record-summary-collect"
-      }
-    },
-    {
-      "@id": "urn:noocodex:dag:squashage:record/node/record-summary-collect",
-      "@type": "SingleNode",
-      "name": "record-summary-collect",
-      "node": "record-summary-collect",
-      "outputs": {
-        "done": "end"
+        "recorded": "end"
       }
     },
     {

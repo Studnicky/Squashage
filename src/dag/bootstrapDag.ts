@@ -159,6 +159,14 @@ export const bootstrapDag: DAGType = new DAGBuilder('squashage:bootstrap', '1.0'
     'build',
     'squashage:run',
     { success: 'bootstrap-end', error: 'bootstrap-end' },
+    {
+      outputs: {
+        'squashedCount':    'squashedCount',
+        'quarantinedCount': 'quarantinedCount',
+        'errorCount':       'errorCount',
+        'sampleSummaries':  'sampleSummaries',
+      },
+    },
   )
 
   .node('bootstrap-end', bootstrapEndStub, { done: 'end' })

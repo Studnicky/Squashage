@@ -91,6 +91,23 @@ export class SquashageBootstrapState extends NodeStateBase {
    */
   _dispatchedItems: unknown[];
 
+  // ── Bounded fold accumulators (written by RecordFoldGather during build scatter) ─
+
+  /** Exact count of records that completed with outcome 'squashed'. */
+  squashedCount: number;
+
+  /** Exact count of records that completed with outcome 'quarantined'. */
+  quarantinedCount: number;
+
+  /** Exact count of records that completed with outcome 'error'. */
+  errorCount: number;
+
+  /**
+   * Capped FIFO ring of RecordSummary objects (up to 200).
+   * Populated by RecordFoldGather during the build scatter.
+   */
+  sampleSummaries: RecordSummary[];
+
   constructor(target: string, runStartTime: string) {
     super();
     this.target           = target;
@@ -109,6 +126,10 @@ export class SquashageBootstrapState extends NodeStateBase {
     this.runErrors        = [];
     this.results          = [];
     this._dispatchedItems = [];
+    this.squashedCount    = 0;
+    this.quarantinedCount = 0;
+    this.errorCount       = 0;
+    this.sampleSummaries  = [];
   }
 
   override clone() {
@@ -129,6 +150,10 @@ export class SquashageBootstrapState extends NodeStateBase {
     base.runErrors         = [...this.runErrors];
     base.results           = [...this.results];
     base._dispatchedItems  = [...this._dispatchedItems];
+    base.squashedCount     = this.squashedCount;
+    base.quarantinedCount  = this.quarantinedCount;
+    base.errorCount        = this.errorCount;
+    base.sampleSummaries   = [...this.sampleSummaries];
     return base;
   }
 
@@ -150,6 +175,10 @@ export class SquashageBootstrapState extends NodeStateBase {
       runErrors:         this.runErrors         as unknown as JsonValueType,
       results:           this.results           as unknown as JsonValueType,
       _dispatchedItems:  this._dispatchedItems  as unknown as JsonValueType,
+      squashedCount:     this.squashedCount,
+      quarantinedCount:  this.quarantinedCount,
+      errorCount:        this.errorCount,
+      sampleSummaries:   this.sampleSummaries   as unknown as JsonValueType,
     };
   }
 
@@ -217,5 +246,14 @@ export class SquashageBootstrapState extends NodeStateBase {
 
     const dispatched = snap['_dispatchedItems'];
     if (Array.isArray(dispatched)) this._dispatchedItems = dispatched as unknown[];
+
+    const squashedCount = snap['squashedCount'];
+    if (typeof squashedCount === 'number') this.squashedCount = squashedCount;
+    const quarantinedCount = snap['quarantinedCount'];
+    if (typeof quarantinedCount === 'number') this.quarantinedCount = quarantinedCount;
+    const errorCount = snap['errorCount'];
+    if (typeof errorCount === 'number') this.errorCount = errorCount;
+    const sampleSummaries = snap['sampleSummaries'];
+    if (Array.isArray(sampleSummaries)) this.sampleSummaries = sampleSummaries as unknown as RecordSummary[];
   }
 }

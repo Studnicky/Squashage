@@ -36,7 +36,6 @@ import { DAGBuilder } from '@studnicky/dagonizer/builder';
 import type { SquashageRecordState } from '../state/SquashageRecordState.js';
 import type { SquashageServices } from '../services/SquashageServices.js';
 import { recordInitNode } from './recordInitNode.js';
-import { recordSummaryCollectNode } from './recordSummaryCollectNode.js';
 
 type StubFor<TOutput extends string> =
   NodeInterface<SquashageRecordState, TOutput, SquashageServices>;
@@ -117,20 +116,14 @@ export const recordDag: DAGType = new DAGBuilder('squashage:record', '1.0')
   })
 
   .node('output-provenance', stub('output-provenance', ['written', 'skipped'] as const), {
-    written: 'record-summary-collect',
-    skipped: 'record-summary-collect',
+    written: 'end',
+    skipped: 'end',
   })
 
   .node('record-quarantine', stub('record-quarantine', ['recorded'] as const), {
-    recorded: 'record-summary-collect',
+    recorded: 'end',
   })
 
-  // record-summary-collect collects the RecordSummary into services.recordSummaries
-  // on every exit path. Placed as a regular node (not post-phase) because scatter
-  // bodies run with embedded:true, which suppresses phase placements.
-  .node('record-summary-collect', recordSummaryCollectNode, {
-    done: 'end',
-  })
 
   .terminal('end')
   .entrypoint('record-init')

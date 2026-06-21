@@ -120,18 +120,24 @@ class OntologyProjectionNodeImpl
     );
 
     // ── e. advisory schema validation (warnings only — never prevents projection) ──
+    // Emit ONE summary warning per record when validation fails, not one per
+    // violated constraint.  Per-item warnings accumulate unboundedly on the parent
+    // SquashageRunState._warnings (the dagonizer propagates all clone warnings
+    // upward via ackItem), which causes multi-GB heap growth on large corpora.
+    // The bounded summary is sufficient for diagnostics; the violation count is
+    // included in the message so operators can tell how noisy the schema fit is.
     try {
       const validation = services.ontology.validate(schema.$id, state.input);
       if (!validation.ok) {
-        for (const item of validation.items) {
-          const constraintWarning: NodeWarningType = {
-            code:      'PROJECTION_CONSTRAINT_VIOLATION',
-            message:   `Schema constraint violation on "${schema.$id}": ${item.message ?? 'unknown constraint'}`,
-            operation: 'squash',
-            timestamp: new Date().toISOString(),
-          };
-          state.collectWarning(constraintWarning);
-        }
+        const violationCount = validation.items.length;
+        const firstMessage   = validation.items[0]?.message ?? 'unknown constraint';
+        const constraintWarning: NodeWarningType = {
+          code:      'PROJECTION_CONSTRAINT_VIOLATION',
+          message:   `Schema constraint violation on "${schema.$id}": ${violationCount} violation(s); first: ${firstMessage}`,
+          operation: 'squash',
+          timestamp: new Date().toISOString(),
+        };
+        state.collectWarning(constraintWarning);
       }
     } catch {
       // Validation is best-effort; a failure here must never prevent projection.
@@ -245,6 +251,14 @@ class OntologyProjectionNodeImpl
     if (writer !== null) {
       // Streaming path: write directly to the open file stream.
       await writer.write(finalQuads);
+      // Release large per-record objects from clone state now that serialization is
+      // complete.  V8 will not GC these while the clone holds references; clearing
+      // both fields makes ~450 Quads (+ their term objects) and the parsed JSON
+      // record eligible for collection before RecordFoldGather.reduce() drops the
+      // clone — critical for keeping peak RSS well under the 4 GB V8 heap limit on
+      // large corpora.
+      state.squashedQuads = [];
+      state.input         = {};
     } else {
       // Batched path (JSON-LD, writer unavailable, or partial test mock): accumulate in dataset.
       for (const quad of finalQuads) {

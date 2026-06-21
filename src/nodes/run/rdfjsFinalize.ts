@@ -145,7 +145,7 @@ class RdfjsFinalizeNodeImpl extends ScalarNode<SquashageRunState, Output, Squash
   }
 
   protected override async executeOne(
-    _state:  SquashageRunState,
+    state:   SquashageRunState,
     context: NodeContextType<SquashageServices>,
   ): Promise<NodeOutputType<Output>> {
     const log = context.services.logger.forComponent('rdfjs-finalize');
@@ -159,8 +159,15 @@ class RdfjsFinalizeNodeImpl extends ScalarNode<SquashageRunState, Output, Squash
     if (recordWriter !== null) {
       await recordWriter.close();
       log.info('executeOne', 'streaming writer closed');
-      streamedQuadCount = context.services.recordSummaries
-        .filter((r) => r.outcome === 'squashed').length;
+      streamedQuadCount = state.squashedCount;
+    }
+
+    // Close the PROV sidecar sink if it was opened by SquashageRun.
+    // PROV quads are already on disk — no in-memory accumulation when streaming.
+    const provSink = context.services.provSink ?? null;
+    if (provSink !== null) {
+      await provSink.close();
+      log.info('executeOne', 'prov sink closed');
     }
 
     const { provQuads, ontologyQuads } = RdfjsFinalizeNodeImpl.partitionDatasetForSidecars(
@@ -170,6 +177,8 @@ class RdfjsFinalizeNodeImpl extends ScalarNode<SquashageRunState, Output, Squash
 
     // Streaming path: the success graph is already on disk.  Only sidecars remain.
     const isStreaming = recordWriter !== null;
+    // When provSink was open, PROV quads are already on disk — skip writing them again.
+    const isProvStreaming = provSink !== null;
 
     if (!isStreaming) {
       // Batched path (JSON-LD or no records): read success quads from dataset.
@@ -216,14 +225,16 @@ class RdfjsFinalizeNodeImpl extends ScalarNode<SquashageRunState, Output, Squash
         ontologyQuads:  ontologyCount,
         provQuads:      provCount,
         successPath:    report.path,
-        failedRecords:  context.services.recordSummaries.filter((r) => r.outcome === 'quarantined').length,
+        failedRecords:  state.quarantinedCount,
       });
 
       return NodeOutputBuilder.of('written');
     }
 
     // Streaming path: success graph already written; write ontology + prov sidecars only.
-    if (provQuads.length === 0 && ontologyQuads.length === 0 && streamedQuadCount === 0) {
+    // When prov was streamed, provQuads will be empty (quads went to provWriter, not dataset)
+    // but the run still produced output — so include isProvStreaming in the "has output" check.
+    if (provQuads.length === 0 && ontologyQuads.length === 0 && streamedQuadCount === 0 && !isProvStreaming) {
       log.info('executeOne', 'no quads produced; nothing to write');
       return NodeOutputBuilder.of('empty');
     }
@@ -238,10 +249,12 @@ class RdfjsFinalizeNodeImpl extends ScalarNode<SquashageRunState, Output, Squash
       runDir,
     );
 
-    const provCount = await RdfjsFinalizeNodeImpl.writeNquadsSidecar(
-      provQuads,
-      RdfjsFinalizeNodeImpl.sidecarPath(context.services.output.path, 'prov'),
-    );
+    const provCount = isProvStreaming
+      ? 0  // already streamed; prov file written by provWriter
+      : await RdfjsFinalizeNodeImpl.writeNquadsSidecar(
+          provQuads,
+          RdfjsFinalizeNodeImpl.sidecarPath(context.services.output.path, 'prov'),
+        );
 
     await RdfjsFinalizeNodeImpl.writePrefixesSidecar(
       context.services.output.path,
@@ -251,9 +264,9 @@ class RdfjsFinalizeNodeImpl extends ScalarNode<SquashageRunState, Output, Squash
     log.info('executeOne', 'finalize complete (streaming)', {
       streamedRecords: streamedQuadCount,
       ontologyQuads:   ontologyCount,
-      provQuads:       provCount,
+      provQuads:       isProvStreaming ? 'streamed' : provCount,
       successPath:     context.services.output.path,
-      failedRecords:   context.services.recordSummaries.filter((r) => r.outcome === 'quarantined').length,
+      failedRecords:   state.quarantinedCount,
     });
 
     return NodeOutputBuilder.of('written');

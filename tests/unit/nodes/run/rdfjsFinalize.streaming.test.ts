@@ -32,10 +32,9 @@ import { ontologyGraphIri }   from '../../../../src/nodes/run/ontologyEmit.js';
 import { SquashageRunState }  from '../../../../src/state/SquashageRunState.js';
 import { Serializer }         from '../../../../src/rdf/Serializer.js';
 import { Parser }             from '../../../../src/rdf/Parser.js';
-import type { RecordWriterInterface } from '../../../../src/rdf/Serializer.js';
+import type { RecordWriterInterface, ProvSinkInterface } from '../../../../src/rdf/Serializer.js';
 import type { SquashageServices }     from '../../../../src/services/SquashageServices.js';
 import type { OutputConfigInterface } from '../../../../src/config/OutputConfig.js';
-import type { RecordSummary }         from '../../../../src/state/schemas/RecordSummary.js';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -100,7 +99,8 @@ function successQuad(): Quad {
 type TestServices = Pick<
   SquashageServices,
   | 'factory' | 'dataset' | 'output' | 'target' | 'outDir'
-  | 'prefixes' | 'logger' | 'recordSummaries' | 'recordWriter' | 'recordWriterReady'
+  | 'prefixes' | 'logger' | 'recordWriter' | 'recordWriterReady'
+  | 'provSink' | 'provSinkReady'
 >;
 
 function makeServices(
@@ -108,6 +108,7 @@ function makeServices(
   outPath:      string,
   runDir:       string,
   recordWriter: RecordWriterInterface | null = null,
+  provSink:     ProvSinkInterface | null = null,
 ): TestServices {
   return {
     factory:          dataFactory,
@@ -117,14 +118,22 @@ function makeServices(
     outDir:           runDir,
     prefixes:         undefined as unknown as SquashageServices['prefixes'],
     logger:           noopLogger,
-    recordSummaries:  [],
     recordWriter,
     recordWriterReady: null,
+    provSink,
+    provSinkReady:     null,
   };
 }
 
 function makeState(): SquashageRunState {
   return new SquashageRunState(TARGET, new Date().toISOString());
+}
+
+function makeStateWithCounts(squashedCount: number, quarantinedCount: number = 0): SquashageRunState {
+  const s = new SquashageRunState(TARGET, new Date().toISOString());
+  s.squashedCount    = squashedCount;
+  s.quarantinedCount = quarantinedCount;
+  return s;
 }
 
 async function runNode(
@@ -160,13 +169,9 @@ describe('rdfjsFinalize:streaming:writer-open', () => {
     // Dataset only holds prov quads (success quads went to stream).
     const dataset  = buildDataset([provQuad()]);
     const services = makeServices(dataset, outPath, runDir, writer);
-    // recordSummaries has one squashed record so streaming path short-circuits
-    // the 'empty' guard.
-    (services.recordSummaries as SquashageServices['recordSummaries']).push({
-      outcome: 'squashed', recordPath: 'test.json', recordLine: 0,
-    } as unknown as RecordSummary);
+    // squashedCount=1 so streaming path short-circuits the 'empty' guard.
 
-    const output = await runNode(makeState(), { services: services as unknown as SquashageServices });
+    const output = await runNode(makeStateWithCounts(1), { services: services as unknown as SquashageServices });
 
     assert.equal(output, 'written');
 
@@ -185,11 +190,8 @@ describe('rdfjsFinalize:streaming:writer-open', () => {
 
     const dataset  = buildDataset([]);
     const services = makeServices(dataset, outPath, runDir, writer);
-    (services.recordSummaries as SquashageServices['recordSummaries']).push({
-      outcome: 'squashed', recordPath: 'test.json', recordLine: 0,
-    } as unknown as RecordSummary);
 
-    await runNode(makeState(), { services: services as unknown as SquashageServices });
+    await runNode(makeStateWithCounts(1), { services: services as unknown as SquashageServices });
 
     // The file should exist and contain the quad written before finalize.
     const content   = await readFile(outPath, 'utf8');
@@ -209,14 +211,39 @@ describe('rdfjsFinalize:streaming:writer-open', () => {
 
     const dataset  = buildDataset([ontologyQuad()]);
     const services = makeServices(dataset, outPath, runDir, writer);
-    (services.recordSummaries as SquashageServices['recordSummaries']).push({
-      outcome: 'squashed', recordPath: 'test.json', recordLine: 0,
-    } as unknown as RecordSummary);
 
-    await runNode(makeState(), { services: services as unknown as SquashageServices });
+    await runNode(makeStateWithCounts(1), { services: services as unknown as SquashageServices });
 
     const ontologyPath = join(tmpDir, 'out3.ontology.nq');
     assert.ok(await exists(ontologyPath), 'ontology sidecar must exist');
+  });
+
+  it('provSink is closed by finalize; prov sidecar not double-written', async () => {
+    const outPath  = join(tmpDir, 'out4.nq');
+    const provPath = join(tmpDir, 'out4.prov.nq');
+    const runDir   = join(tmpDir, 'run4');
+
+    // Open record writer (success) and prov sink (prov quads already streaming).
+    const recordWriter = await Serializer.openStream(outPath, 'nquads');
+    await recordWriter.write([successQuad()]);
+
+    const provSink = await Serializer.openProvSink(provPath);
+    provSink.writeQuad(provQuad());
+
+    // Dataset is empty — prov quads went to provSink, not dataset.
+    const dataset  = buildDataset([]);
+    const services = makeServices(dataset, outPath, runDir, recordWriter, provSink);
+
+    const output = await runNode(makeStateWithCounts(1), { services: services as unknown as SquashageServices });
+
+    // Finalize closes provSink; prov sidecar already exists from pre-write.
+    assert.equal(output, 'written');
+    assert.ok(await exists(provPath), 'prov sidecar file must exist');
+
+    // Verify prov file has content (the provQuad we wrote before finalize).
+    const content   = await readFile(provPath, 'utf8');
+    const { quads } = await Parser.parse(content, { format: 'nquads' });
+    assert.ok(quads.length >= 1, 'prov sidecar must contain at least the pre-written prov quad');
   });
 });
 

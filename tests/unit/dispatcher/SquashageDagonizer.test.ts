@@ -6,8 +6,6 @@ import { DAGBuilder } from '@studnicky/dagonizer/builder';
 import type { NodeInterface, RoutedBatchType } from '@studnicky/dagonizer';
 
 import { SquashageDagonizer } from '../../../src/dispatcher/SquashageDagonizer.js';
-import { NullObserver } from '../../../src/observer/NullObserver.js';
-import type { ProvObserverInterface } from '../../../src/observer/ProvObserverInterface.js';
 import { SquashageServices } from '../../../src/services/SquashageServices.js';
 import type { TargetConfigInterface } from '../../../src/config/SquashageConfig.js';
 import type { OutputConfigInterface } from '../../../src/config/OutputConfig.js';
@@ -36,20 +34,12 @@ async function buildServices(): Promise<SquashageServices> {
   });
 }
 
-class RecordingObserver implements ProvObserverInterface {
-  readonly calls: string[] = [];
-  recordFlowStart(dagName: string): void { this.calls.push(`flowStart:${dagName}`); }
-  recordFlowEnd(dagName: string, kind: string): void { this.calls.push(`flowEnd:${dagName}:${kind}`); }
-  recordNodeStart(name: string): void { this.calls.push(`nodeStart:${name}`); }
-  recordNodeEnd(name: string, output: string | undefined): void { this.calls.push(`nodeEnd:${name}:${output ?? '∅'}`); }
-  recordError(name: string, err: Error): void { this.calls.push(`error:${name}:${err.message}`); }
-}
-
 test('happy path', async (t) => {
-  await t.test('forwards every lifecycle event to the injected observer in order', async () => {
+  await t.test('PROV quads land in services.dataset after executing a 2-node DAG', async () => {
     const services = await buildServices();
-    const observer = new RecordingObserver();
-    const dispatcher = new SquashageDagonizer<S>({ services, observer });
+    const dispatcher = new SquashageDagonizer<S>({ services });
+
+    const PROV = 'http://www.w3.org/ns/prov#';
 
     const stepA: NodeInterface<S, 'success', SquashageServices> = {
       name: 'a', outputs: ['success'],
@@ -84,20 +74,29 @@ test('happy path', async (t) => {
 
     assert.deepEqual(result.state.steps, ['a', 'b']);
     assert.equal(result.state.lifecycle.variant, 'completed');
-    assert.deepEqual(observer.calls, [
-      'flowStart:two-step',
-      'nodeStart:a', 'nodeEnd:a:success',
-      'nodeStart:b', 'nodeEnd:b:success',
-      'nodeStart:end', 'nodeEnd:end:completed',
-      'flowEnd:two-step:completed',
-    ]);
+
+    // PROV quads must have landed in services.dataset (no provSink configured).
+    assert.ok(services.dataset.size > 0, 'dataset must contain PROV quads after execution');
+
+    const activityQuads = [...services.dataset].filter(
+      (q) => q.predicate.value === 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type' &&
+             q.object.value    === `${PROV}Activity`,
+    );
+    // run activity + a activity + b activity + end activity = at least 3
+    assert.ok(activityQuads.length >= 3, 'at least 3 prov:Activity quads expected');
+
+    // Every quad must be in the PROV named graph.
+    const provGraphCount = [...services.dataset].filter(
+      (q) => q.graph.value.startsWith('urn:squashage:prov:'),
+    ).length;
+    assert.equal(provGraphCount, services.dataset.size, 'all quads must be in the PROV graph');
   });
 });
 
 test('edge cases', async (t) => {
-  await t.test('accepts NullObserver and executes without observer side effects', async () => {
+  await t.test('executes a run and PROV quads land in services.dataset', async () => {
     const services = await buildServices();
-    const dispatcher = new SquashageDagonizer<S>({ services, observer: new NullObserver() });
+    const dispatcher = new SquashageDagonizer<S>({ services });
 
     const tick: NodeInterface<S, 'success', SquashageServices> = {
       name: 'tick', outputs: ['success'],
@@ -117,5 +116,7 @@ test('edge cases', async (t) => {
 
     const result = await dispatcher.execute('one', new S());
     assert.deepEqual(result.state.steps, ['tick']);
+    assert.equal(result.state.lifecycle.variant, 'completed');
+    assert.ok(services.dataset.size > 0, 'PROV quads must exist in dataset');
   });
 });

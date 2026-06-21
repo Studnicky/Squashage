@@ -67,7 +67,7 @@ export class RunDag {
         { dag: 'squashage:record' },
         { 'all-success': 'enrich-entity-link', partial: 'enrich-entity-link', 'all-error': 'rdfjs-finalize', empty: 'rdfjs-finalize' },
         {
-          gather:      { strategy: 'discard' },
+          gather:      { strategy: 'squashage:record-fold' },
           concurrency,
           itemKey:     'currentLocator',
         },

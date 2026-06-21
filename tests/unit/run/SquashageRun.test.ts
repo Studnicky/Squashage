@@ -6,6 +6,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { SquashageRun } from '../../../src/SquashageRun.js';
+import { SquashageRunState } from '../../../src/state/SquashageRunState.js';
 import type { TargetConfigInterface } from '../../../src/config/SquashageConfig.js';
 import type { OutputConfigInterface } from '../../../src/config/OutputConfig.js';
 
@@ -61,12 +62,14 @@ test('happy path', async (t) => {
       });
 
       const result   = await run.execute();
-      const summaries = run.services.recordSummaries;
+      const runState = result.state as SquashageRunState;
       assert.equal(result.state.lifecycle.variant, 'completed');
       assert.equal(result.state.locators.length, 1);
-      assert.equal(summaries.length, 1);
-      assert.equal(summaries[0]!.outcome, 'squashed');
-      assert.equal(summaries[0]!.className, 'feat');
+      assert.equal(runState.squashedCount, 1, 'one squashed record');
+      assert.equal(runState.quarantinedCount, 0, 'no quarantined records');
+      assert.ok(runState.sampleSummaries.length >= 1, 'sample summaries populated');
+      assert.equal(runState.sampleSummaries[0]!.outcome, 'squashed');
+      assert.equal(runState.sampleSummaries[0]!.className, 'feat');
     } finally {
       await rm(work, { recursive: true, force: true });
     }

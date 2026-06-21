@@ -3,13 +3,11 @@
  *
  * Constructor wires:
  *   1. SquashageServices (from targetConfig + RunOptions).
- *   2. ProvObserver (writes PROV-O into the dataset's PROV graph).
- *   3. SquashageDagonizer (subclass of Dagonizer that forwards lifecycle
- *      hooks to the observer).
- *   4. ClassifyConflictNode, optional classifier classes, and the per-target
+ *   2. SquashageDagonizer (subclass of Dagonizer with inlined PROV-O hooks).
+ *   3. ClassifyConflictNode, optional classifier classes, and the per-target
  *      squash node — instantiated from their config slices.
- *   5. Run-scope DAG, registered under name 'squashage:run'.
- *   6. Per-record deep-DAG (`recordDag`), registered under name
+ *   4. Run-scope DAG, registered under name 'squashage:run'.
+ *   5. Per-record deep-DAG (`recordDag`), registered under name
  *      'squashage:record'.
  *
  * `.execute()` returns the dagonizer `Execution<SquashageRunState>` — both
@@ -19,14 +17,12 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { OutputConfigInterface } from './config/OutputConfig.js';
+import { FormatResolver } from './output/FormatResolver.js';
 import type { TargetConfigInterface } from './config/SquashageConfig.js';
 import { DAGDocument } from '@studnicky/dagonizer';
 import type { ChildStateFactoryType } from '@studnicky/dagonizer';
 
 import { SquashageDagonizer } from './dispatcher/SquashageDagonizer.js';
-import { ProvObserver } from './observer/ProvObserver.js';
-import { NullObserver } from './observer/NullObserver.js';
-import type { ProvObserverInterface } from './observer/ProvObserverInterface.js';
 import { SquashageServices } from './services/SquashageServices.js';
 import type { SquashageServicesOptionsInterface } from './services/SquashageServices.js';
 import { ClassifyConflictNode } from './nodes/record/classifyConflict.js';
@@ -80,7 +76,7 @@ import type { SquashNodeInterface } from './nodes/record/squashNode.js';
 import { RunDag } from './dag/runDag.js';
 import { bootstrapEndNode } from './dag/bootstrapDag.js';
 import { recordInitNode } from './dag/recordInitNode.js';
-import { recordSummaryCollectNode } from './dag/recordSummaryCollectNode.js';
+import './core/RecordFoldGather.js';
 import { refineInitNode } from './dag/refineInitNode.js';
 import { refineSummaryCollectNode } from './dag/refineSummaryCollectNode.js';
 import { SquashageRecordState } from './state/SquashageRecordState.js';
@@ -99,8 +95,6 @@ export interface SquashageRunOptionsInterface {
   readonly schemasBase:  string;
   /** Optional squash node — defaults to `defaultSquashNode`. */
   readonly squashNode?:  SquashNodeInterface;
-  /** Optional observer — defaults to a ProvObserver writing into the run dataset. */
-  readonly observer?:    ProvObserverInterface;
 }
 
 const RUN_DAG_NAME       = 'squashage:run';
@@ -111,16 +105,13 @@ const BOOTSTRAP_DAG_NAME = 'squashage:bootstrap';
 
 export class SquashageRun {
   readonly services:   SquashageServices;
-  readonly observer:   ProvObserverInterface;
   readonly dispatcher: SquashageDagonizer<NodeStateInterface>;
 
   private constructor(slots: {
     services:   SquashageServices;
-    observer:   ProvObserverInterface;
     dispatcher: SquashageDagonizer<NodeStateInterface>;
   }) {
     this.services   = slots.services;
-    this.observer   = slots.observer;
     this.dispatcher = slots.dispatcher;
   }
 
@@ -138,15 +129,22 @@ export class SquashageRun {
     };
     const services = await SquashageServices.forTarget(servicesOpts);
 
-    const observer = options.observer ?? new ProvObserver({
-      factory:           services.factory,
-      dataset:           services.dataset,
-      runId:             runStartTime,
-      dispatcherAgentId: `squashage/${options.target}`,
-      logger:            services.logger,
-    });
+    // In stream mode, open the PROV sidecar sink eagerly so SquashageDagonizer
+    // can write PROV quads synchronously to the stream rather than accumulating
+    // them in the dataset.
+    if (options.output.mode === 'stream') {
+      try {
+        const resolvedFormat = FormatResolver.resolve(options.output);
+        if (options.output.path.length > 0) {
+          await services.openProvSink(options.output.path, resolvedFormat);
+        }
+      } catch {
+        // Format not streamable (e.g. jsonld) or path unresolvable — fall back
+        // to dataset mode for prov quads (provSink remains null).
+      }
+    }
 
-    const dispatcher = new SquashageDagonizer<NodeStateInterface>({ services, observer });
+    const dispatcher = new SquashageDagonizer<NodeStateInterface>({ services });
 
     // Build per-record node instances from config slices.
     const classification = (options.targetConfig.classification ?? {}) as Record<string, unknown>;
@@ -295,7 +293,6 @@ export class SquashageRun {
         bootstrapEndNode,
         // scatter phase nodes
         recordInitNode,
-        recordSummaryCollectNode,
         refineInitNode,
         refineSummaryCollectNode,
       ],
@@ -317,7 +314,7 @@ export class SquashageRun {
     };
     dispatcher.registerBundle(bundle);
 
-    return new SquashageRun({ services, observer, dispatcher });
+    return new SquashageRun({ services, dispatcher });
   }
 
   /** Returns the dagonizer Execution for the run-scope DAG. */
@@ -367,17 +364,19 @@ export class SquashageRun {
       };
     }
 
-    // Populate results from services.recordSummaries (populated during the
-    // build scatter by the per-record child DAGs via services side-effect).
-    if (this.services.recordSummaries.length > 0) {
-      bootstrapState.results = [...this.services.recordSummaries];
+    // Populate results from the bounded fold gather.
+    // RecordFoldGather wrote squashedCount/quarantinedCount/sampleSummaries into
+    // bootstrapState during the build scatter (the bootstrap state IS the run-scope
+    // state during the build scatter — clones fold back into it).
+    if (bootstrapState.squashedCount > 0 || bootstrapState.quarantinedCount > 0) {
+      bootstrapState.results = [...bootstrapState.sampleSummaries];
     }
 
     return { state: bootstrapState };
   }
 
-  /** Convenience constructor for a NullObserver-equipped run (tests). */
+  /** Convenience constructor alias (tests and smoke paths). */
   static async forTargetWithNullObserver(options: SquashageRunOptionsInterface): Promise<SquashageRun> {
-    return SquashageRun.forTarget({ ...options, observer: new NullObserver() });
+    return SquashageRun.forTarget(options);
   }
 }

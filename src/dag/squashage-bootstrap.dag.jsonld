@@ -142,7 +142,15 @@
         "success": "bootstrap-end",
         "error": "bootstrap-end"
       },
-      "dag": "squashage:run"
+      "dag": "squashage:run",
+      "stateMapping": {
+        "output": {
+          "squashedCount": "squashedCount",
+          "quarantinedCount": "quarantinedCount",
+          "errorCount": "errorCount",
+          "sampleSummaries": "sampleSummaries"
+        }
+      }
     },
     {
       "@id": "urn:noocodex:dag:squashage:bootstrap/node/bootstrap-end",

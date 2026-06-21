@@ -14,7 +14,7 @@
 
 import { readFile, readdir } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
-import { dirname, join, resolve as resolvePath } from 'node:path';
+import { dirname, extname, join, resolve as resolvePath } from 'node:path';
 
 import AjvModule        from 'ajv';
 import addFormatsModule from 'ajv-formats';
@@ -38,9 +38,8 @@ import type { NamespaceBuilder } from '../rdf/Namespaces.js';
 import type { AjvCtorType, AddFormatsFnInterface } from '../types/AjvInterop.js';
 import type { LoggerFactoryInterface } from '../types/Logger.js';
 import type { InputSource } from '../state/schemas/InputSource.js';
-import type { RecordSummary } from '../state/schemas/RecordSummary.js';
 import { Serializer } from '../rdf/Serializer.js';
-import type { RecordWriterInterface } from '../rdf/Serializer.js';
+import type { RecordWriterInterface, ProvSinkInterface } from '../rdf/Serializer.js';
 import type { RDFFormat } from '../rdf/Formats.js';
 
 const Ajv        = (AjvModule        as unknown as { default?: AjvCtorType }).default        ?? (AjvModule        as unknown as AjvCtorType);
@@ -112,8 +111,6 @@ export class SquashageServices {
   readonly subjectIri:   SubjectIriPolicy;
   /** Mutable per-run shape accumulator; populated by the `shape-observe` node. */
   readonly shapeCache:   Map<string, ShapeObservation>;
-  /** Mutable per-run record summaries; populated by `record-dispatch` during the fan-out. */
-  readonly recordSummaries: RecordSummary[];
   /** Mutable per-run refine tallies; populated by `draft-dispatch` during the fan-out. */
   readonly refineSummaries: { refinedCount: number; passthroughCount: number; runErrors: string[] };
   /**
@@ -140,6 +137,29 @@ export class SquashageServices {
    * @internal
    */
   recordWriterReady: Promise<RecordWriterInterface> | null;
+  /**
+   * Mutable synchronous sink for per-run PROV-O quads.
+   *
+   * When non-null, `ProvObserver` writes PROV quads directly to this sink
+   * instead of accumulating them in `services.dataset`, avoiding unbounded
+   * Promise and string accumulation across ~1M+ synchronous PROV events on
+   * large corpora.
+   *
+   * Set eagerly by `SquashageRun.forTarget` (before the run starts) when
+   * output mode is `'stream'`; closed by `rdfjs-finalize` after the fan-out
+   * drains.
+   *
+   * Null when the output format requires batch serialization (e.g. JSON-LD),
+   * when the output path is unknown, or in dataset mode.
+   */
+  provSink: ProvSinkInterface | null;
+  /**
+   * Internal Promise that serializes concurrent lazy-open calls to
+   * `openProvSink()`.
+   *
+   * @internal
+   */
+  provSinkReady: Promise<ProvSinkInterface> | null;
 
   /**
    * Resolved paths for schema artefacts produced by the induction pipeline.
@@ -177,11 +197,12 @@ export class SquashageServices {
     targetConfig: TargetConfigInterface;
     subjectIri:   SubjectIriPolicy;
     shapeCache:       Map<string, ShapeObservation>;
-    recordSummaries:  RecordSummary[];
     refineSummaries:  { refinedCount: number; passthroughCount: number; runErrors: string[] };
     schemaPaths:  { inferred: string; refinements: string; finals: string };
     recordWriter:       RecordWriterInterface | null;
     recordWriterReady:  Promise<RecordWriterInterface> | null;
+    provSink:           ProvSinkInterface | null;
+    provSinkReady:      Promise<ProvSinkInterface> | null;
   }) {
     this.logger       = slots.logger;
     this.ajv          = slots.ajv;
@@ -201,11 +222,12 @@ export class SquashageServices {
     this.targetConfig = slots.targetConfig;
     this.subjectIri   = slots.subjectIri;
     this.shapeCache      = slots.shapeCache;
-    this.recordSummaries = slots.recordSummaries;
     this.refineSummaries = slots.refineSummaries;
     this.schemaPaths     = slots.schemaPaths;
     this.recordWriter      = slots.recordWriter;
     this.recordWriterReady = slots.recordWriterReady;
+    this.provSink          = slots.provSink;
+    this.provSinkReady     = slots.provSinkReady;
   }
 
   /**
@@ -254,6 +276,48 @@ export class SquashageServices {
   }
 
   /**
+   * Concurrency-safe lazy opener for the PROV-O sidecar synchronous sink.
+   *
+   * @remarks
+   * Mirrors `openRecordWriter()` but returns a {@link ProvSinkInterface} rather
+   * than a {@link RecordWriterInterface}.  The sidecar path is derived from
+   * `outputPath` by inserting `.prov` before the extension (e.g.
+   * `out.nq` → `out.prov.nq`).
+   *
+   * Returns `null` for JSON-LD (which requires batch serialization).
+   *
+   * @param outputPath - Absolute path for the success graph output file.
+   * @param format     - Resolved RDF format for the run.
+   * @returns The open {@link ProvSinkInterface}, or `null` for JSON-LD.
+   */
+  async openProvSink(
+    outputPath: string,
+    format:     RDFFormat,
+  ): Promise<ProvSinkInterface | null> {
+    if (format === 'jsonld') return null;
+
+    // Already open — return immediately.
+    if (this.provSink !== null) return this.provSink;
+
+    // Concurrent lazy-open: first caller wins.
+    if (this.provSinkReady !== null) {
+      return this.provSinkReady;
+    }
+
+    const ext      = extname(outputPath);
+    const stem     = outputPath.slice(0, outputPath.length - ext.length);
+    const provPath = `${stem}.prov${ext.length > 0 ? ext : '.nq'}`;
+
+    const promise = Serializer.openProvSink(provPath).then((handle) => {
+      this.provSink = handle;
+      return handle;
+    });
+
+    this.provSinkReady = promise;
+    return promise;
+  }
+
+  /**
    * Eagerly build the services bag for one run.
    *
    * Construction order matches the legacy `context:*` hook order:
@@ -298,11 +362,12 @@ export class SquashageServices {
       outDir: options.outDir, schemasBase: options.schemasBase,
       runStartTime: options.runStartTime, targetConfig: options.targetConfig,
       subjectIri, shapeCache: new Map(),
-      recordSummaries: [],
       refineSummaries: { refinedCount: 0, passthroughCount: 0, runErrors: [] },
       schemaPaths,
       recordWriter:      null,
       recordWriterReady: null,
+      provSink:          null,
+      provSinkReady:     null,
     });
   }
 

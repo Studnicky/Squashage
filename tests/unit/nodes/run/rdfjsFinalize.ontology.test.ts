@@ -75,7 +75,7 @@ function makeServices(
   dataset: DatasetCore,
   outPath: string,
   runDir:  string,
-): Pick<SquashageServices, 'factory' | 'dataset' | 'output' | 'target' | 'outDir' | 'prefixes' | 'logger' | 'recordSummaries'> {
+): Pick<SquashageServices, 'factory' | 'dataset' | 'output' | 'target' | 'outDir' | 'prefixes' | 'logger'> {
   return {
     factory:         dataFactory,
     dataset,
@@ -84,7 +84,6 @@ function makeServices(
     outDir:          runDir,
     prefixes:        undefined as unknown as SquashageServices['prefixes'],
     logger:          noopLogger,
-    recordSummaries: [],
   };
 }
 
