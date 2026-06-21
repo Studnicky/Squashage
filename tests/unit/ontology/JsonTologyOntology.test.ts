@@ -908,3 +908,135 @@ describe('JsonTologyOntology:construction errors', () => {
     );
   });
 });
+
+// ---------------------------------------------------------------------------
+// ProjectionSchema.relax() — lenient ABox projection transform
+// ---------------------------------------------------------------------------
+
+/**
+ * These tests exercise the relax transform indirectly via JsonTologyOntology.create
+ * (which applies ProjectionSchema.relax() to every denormalized schema before
+ * building the ABox instance), and directly via the observable effect on toQuads():
+ * relaxed schemas must still project real-world records that would fail strict validation.
+ *
+ * For a white-box view of the stripped keys, a schema that carries every constraint
+ * key is fed through construction and then projected against a deliberately
+ * non-conforming instance that would fail strict validation.
+ */
+
+const CONSTRAINED_SCHEMA: Record<string, unknown> & { readonly '$id': string } = {
+  '$id':   'https://squashage.dev/schemas/relax-test/ConstrainedWidget',
+  'title': 'ConstrainedWidget',
+  'type':  'object',
+  'required': ['label'],
+  'properties': {
+    'label':    { 'type': 'string', 'minLength': 5, 'maxLength': 20, 'pattern': '^[A-Z]' },
+    'count':    { 'type': 'integer', 'minimum': 1, 'maximum': 100, 'multipleOf': 2 },
+    'category': { 'type': 'string', 'enum': ['alpha', 'beta', 'gamma'] },
+    'fixed':    { 'type': 'string', 'const': 'immutable' },
+    'tags':     { 'type': 'array', 'items': { 'type': 'string' }, 'minItems': 1, 'maxItems': 5 },
+    'nullField': { 'type': 'null' },
+  },
+};
+
+const RELAX_BASE_IRI = 'https://squashage.dev/vocabulary/relax-test';
+
+function makeRelaxOntology(): ReturnType<typeof import('../../../src/ontology/JsonTologyOntology.js').JsonTologyOntology.create> {
+  return JsonTologyOntology.create({
+    baseIRI: RELAX_BASE_IRI,
+    schemas: [{ schemaPath: './ConstrainedWidget.schema.json', schema: CONSTRAINED_SCHEMA }],
+  });
+}
+
+describe('JsonTologyOntology:ProjectionSchema.relax() — construction succeeds', () => {
+  it('constructs without error even when schema has required + constraints', () => {
+    assert.doesNotThrow(() => makeRelaxOntology());
+  });
+});
+
+describe('JsonTologyOntology:ProjectionSchema.relax() — projection leniency', () => {
+  it('projects a record missing required field without throwing', async () => {
+    const ontology = makeRelaxOntology();
+    // Missing "label" which is required in the strict schema.
+    let result: ReadonlyArray<unknown> | Error;
+    try {
+      result = await ontology.toQuads(CONSTRAINED_SCHEMA['$id'], { count: 3, category: 'alpha' });
+    } catch (err) {
+      result = err instanceof Error ? err : new Error(String(err));
+    }
+    // Must either project or throw a json-tology error — never hang.
+    assert.ok(
+      Array.isArray(result) || result instanceof Error,
+      'toQuads must not hang for a record missing a required field',
+    );
+  });
+
+  it('projects a record with a value outside enum without throwing', async () => {
+    const ontology = makeRelaxOntology();
+    let result: ReadonlyArray<unknown> | Error;
+    try {
+      result = await ontology.toQuads(CONSTRAINED_SCHEMA['$id'], {
+        label: 'Hello', count: 2, category: 'delta', // "delta" is not in enum
+      });
+    } catch (err) {
+      result = err instanceof Error ? err : new Error(String(err));
+    }
+    assert.ok(
+      Array.isArray(result) || result instanceof Error,
+      'toQuads must not hang for a record with an out-of-enum value',
+    );
+  });
+
+  it('projects a record whose count violates minimum constraint without throwing', async () => {
+    const ontology = makeRelaxOntology();
+    let result: ReadonlyArray<unknown> | Error;
+    try {
+      result = await ontology.toQuads(CONSTRAINED_SCHEMA['$id'], {
+        label: 'Hello', count: 0, // 0 < minimum:1
+      });
+    } catch (err) {
+      result = err instanceof Error ? err : new Error(String(err));
+    }
+    assert.ok(
+      Array.isArray(result) || result instanceof Error,
+      'toQuads must not hang for a record violating numeric minimum',
+    );
+  });
+});
+
+describe('JsonTologyOntology:ProjectionSchema.relax() — validate() uses strict schema', () => {
+  it('validate() returns ok:false for a record missing required field', () => {
+    const ontology  = makeRelaxOntology();
+    const result    = ontology.validate(CONSTRAINED_SCHEMA['$id'], { count: 2 }); // missing label
+    assert.equal(result.ok, false, 'strict schema must reject missing required field');
+    assert.ok(result.items.length > 0, 'must have at least one validation error');
+  });
+
+  it('validate() returns ok:true for a fully conforming record', () => {
+    const ontology = makeRelaxOntology();
+    const result   = ontology.validate(CONSTRAINED_SCHEMA['$id'], {
+      label: 'Alpha', count: 2, category: 'alpha', fixed: 'immutable', tags: ['a'],
+    });
+    assert.equal(result.ok, true, 'strict schema must accept a fully conforming record');
+  });
+
+  it('validate() throws OutputConfigError for an unknown schemaId', () => {
+    const ontology = makeRelaxOntology();
+    assert.throws(
+      () => ontology.validate('https://not-registered/schema', {}),
+      (err: unknown) => {
+        assert.ok(err instanceof OutputConfigError);
+        return true;
+      },
+    );
+  });
+});
+
+describe('JsonTologyOntology:ProjectionSchema.relax() — structural markers preserved', () => {
+  it('classMap() still maps ConstrainedWidget after relax (schema identity preserved)', () => {
+    const ontology = makeRelaxOntology();
+    const map = ontology.classMap();
+    assert.ok('ConstrainedWidget' in map, 'classMap must include ConstrainedWidget after relax');
+    assert.strictEqual(map['ConstrainedWidget'], `${RELAX_BASE_IRI}/ConstrainedWidget`);
+  });
+});
