@@ -201,6 +201,60 @@ describe('ontologyEmitNode:emitted', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Suite: tbox/shacl throws → error port
+// ---------------------------------------------------------------------------
+
+describe('ontologyEmitNode:error-routing', () => {
+  it('returns error port when tbox() throws', async () => {
+    const throwingOntology = {
+      tbox:  async () => { throw new Error('malformed schema: bad $ref'); },
+      shacl: async () => [],
+    } as unknown as SquashageServices['ontology'];
+    const dataset  = makeDataset();
+    const services = makeServices(throwingOntology, dataset);
+    const state    = makeState();
+    const output   = await runNode(state, { services: services as unknown as SquashageServices });
+    assert.equal(output, 'error');
+  });
+
+  it('dataset is unchanged when tbox() throws', async () => {
+    const throwingOntology = {
+      tbox:  async () => { throw new Error('malformed schema: bad $ref'); },
+      shacl: async () => [],
+    } as unknown as SquashageServices['ontology'];
+    const dataset  = makeDataset();
+    const services = makeServices(throwingOntology, dataset);
+    await runNode(makeState(), { services: services as unknown as SquashageServices });
+    assert.equal(dataset.size, 0);
+  });
+
+  it('collects ONTOLOGY_EMIT_ERROR warning when tbox() throws', async () => {
+    const errorMessage = 'malformed schema: bad $ref';
+    const throwingOntology = {
+      tbox:  async () => { throw new Error(errorMessage); },
+      shacl: async () => [],
+    } as unknown as SquashageServices['ontology'];
+    const dataset  = makeDataset();
+    const services = makeServices(throwingOntology, dataset);
+    const state    = makeState();
+    await runNode(state, { services: services as unknown as SquashageServices });
+    assert.equal(state.warnings.length, 1);
+    assert.equal(state.warnings[0]?.code, 'ONTOLOGY_EMIT_ERROR');
+    assert.match(state.warnings[0]?.message ?? '', /malformed schema: bad \$ref/);
+  });
+
+  it('returns error port when shacl() throws', async () => {
+    const throwingOntology = {
+      tbox:  async () => [],
+      shacl: async () => { throw new Error('shacl error'); },
+    } as unknown as SquashageServices['ontology'];
+    const services = makeServices(throwingOntology);
+    const output   = await runNode(makeState(), { services: services as unknown as SquashageServices });
+    assert.equal(output, 'error');
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Suite: ontologyGraphIri helper
 // ---------------------------------------------------------------------------
 

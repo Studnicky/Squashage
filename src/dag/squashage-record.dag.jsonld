@@ -217,7 +217,7 @@
       "node": "record-health-gate",
       "outputs": {
         "has-proposals": "classify-conflict",
-        "none": "record-quarantine",
+        "generic-fallback": "squash",
         "errors": "record-quarantine"
       }
     },

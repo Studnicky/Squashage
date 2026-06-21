@@ -14,7 +14,7 @@
  *     ──empty       ──► rdfjs-finalize
  *
  *   enrich-entity-link ──enriched/skipped──► ontology-emit
- *   ontology-emit       ──emitted/skipped──► rdfjs-finalize
+ *   ontology-emit       ──emitted/skipped/error──► rdfjs-finalize
  *   rdfjs-finalize      ──written──► catalog-emit
  *                       ──empty  ──► run-end
  *   catalog-emit        ──emitted/skipped──► run-end
@@ -76,8 +76,8 @@ export class RunDag {
         stub('enrich-entity-link', ['enriched', 'skipped'] as const),
         { enriched: 'ontology-emit', skipped: 'ontology-emit' })
       .node('ontology-emit',
-        stub('ontology-emit', ['emitted', 'skipped'] as const),
-        { emitted: 'rdfjs-finalize', skipped: 'rdfjs-finalize' })
+        stub('ontology-emit', ['emitted', 'skipped', 'error'] as const),
+        { emitted: 'rdfjs-finalize', skipped: 'rdfjs-finalize', error: 'rdfjs-finalize' })
       .node('rdfjs-finalize',
         stub('rdfjs-finalize', ['written', 'empty'] as const),
         { written: 'catalog-emit', empty: 'run-end' })

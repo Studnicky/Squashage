@@ -12,10 +12,10 @@
  *                                            │
  *                                  record-health-gate
  *                                            │
- *                  has-proposals / errors / none
- *                       │           │         │
- *                       ▼           ▼         ▼
- *               classify-conflict  rq        rq
+ *                  has-proposals / generic-fallback / errors
+ *                       │                 │              │
+ *                       ▼                 ▼              ▼
+ *               classify-conflict       squash           rq
  *                       │
  *           resolved / tie / unknown
  *                       │
@@ -99,10 +99,10 @@ export const recordDag: DAGType = new DAGBuilder('squashage:record', '1.0')
     'no-op':  'record-health-gate',
   })
 
-  .node('record-health-gate', stub('record-health-gate', ['has-proposals', 'none', 'errors'] as const), {
-    'has-proposals': 'classify-conflict',
-    none:            'record-quarantine',
-    errors:          'record-quarantine',
+  .node('record-health-gate', stub('record-health-gate', ['has-proposals', 'generic-fallback', 'errors'] as const), {
+    'has-proposals':    'classify-conflict',
+    'generic-fallback': 'squash',
+    errors:             'record-quarantine',
   })
 
   .node('classify-conflict', stub('classify-conflict', ['resolved', 'tie', 'unknown'] as const), {

@@ -82,10 +82,10 @@ export const recordInduceDag: DAGType = new DAGBuilder('squashage:record-induce'
     'no-op':  'record-health-gate',
   })
 
-  .node('record-health-gate', stub('record-health-gate', ['has-proposals', 'none', 'errors'] as const), {
-    'has-proposals': 'classify-conflict',
-    none:            'record-quarantine',
-    errors:          'record-quarantine',
+  .node('record-health-gate', stub('record-health-gate', ['has-proposals', 'generic-fallback', 'errors'] as const), {
+    'has-proposals':    'classify-conflict',
+    'generic-fallback': 'shape-observe',
+    errors:             'record-quarantine',
   })
 
   .node('classify-conflict', stub('classify-conflict', ['resolved', 'tie', 'unknown'] as const), {

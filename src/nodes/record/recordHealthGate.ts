@@ -2,29 +2,29 @@
  * record-health-gate — placed between the classifier parallel placement and
  * `classify-conflict`. Reads accumulated state to route the record:
  *
- *   has-proposals → 'classify-conflict' (any classifier wrote to state.proposals)
- *   none          → 'record-quarantine' (no proposals; quarantineBucket=unknown)
- *   errors        → 'record-quarantine' (state.errors non-empty after parallel;
- *                                        quarantineBucket=projection)
+ *   has-proposals    → 'classify-conflict' (any classifier wrote to state.proposals)
+ *   generic-fallback → 'squash' (no proposals at all; classification set to Generic)
+ *   errors           → 'record-quarantine' (state.errors non-empty after parallel;
+ *                                           quarantineBucket=projection)
  */
 
 import { ScalarNode, NodeOutputBuilder } from '@studnicky/dagonizer';
-import type { NodeContextType, NodeOutputType } from '@studnicky/dagonizer';
+import type { NodeContextType, NodeOutputType, NodeWarningType } from '@studnicky/dagonizer';
 
 import type { SquashageServices } from '../../services/SquashageServices.js';
 import type { SquashageRecordState } from '../../state/SquashageRecordState.js';
 
-type Output = 'has-proposals' | 'none' | 'errors';
+type Output = 'has-proposals' | 'generic-fallback' | 'errors';
 
 class RecordHealthGateNodeImpl extends ScalarNode<SquashageRecordState, Output, SquashageServices> {
   public readonly name    = 'record-health-gate';
-  public readonly outputs = ['has-proposals', 'none', 'errors'] as const;
+  public readonly outputs = ['has-proposals', 'generic-fallback', 'errors'] as const;
 
   public override get outputSchema(): Record<Output, { type: 'object' }> {
     return {
-      'has-proposals': { type: 'object' },
-      none:            { type: 'object' },
-      errors:          { type: 'object' },
+      'has-proposals':    { type: 'object' },
+      'generic-fallback': { type: 'object' },
+      errors:             { type: 'object' },
     };
   }
 
@@ -37,8 +37,20 @@ class RecordHealthGateNodeImpl extends ScalarNode<SquashageRecordState, Output, 
       return NodeOutputBuilder.of('errors');
     }
     if (Object.keys(state.proposals).length === 0) {
-      state.quarantineBucket = 'unknown';
-      return NodeOutputBuilder.of('none');
+      state.classification = {
+        type:       'Generic',
+        confidence: 0,
+        engine:     'classify:generic-fallback',
+        reasons:    ['classify:generic-fallback'],
+      };
+      const fallbackWarning: NodeWarningType = {
+        code:      'CLASSIFY_GENERIC_FALLBACK',
+        message:   'record-health-gate: no classifier proposals; falling back to Generic class',
+        operation: 'record-health-gate',
+        timestamp: new Date().toISOString(),
+      };
+      state.collectWarning(fallbackWarning);
+      return NodeOutputBuilder.of('generic-fallback');
     }
     return NodeOutputBuilder.of('has-proposals');
   }

@@ -13,7 +13,7 @@
  */
 
 import { ScalarNode, NodeOutputBuilder } from '@studnicky/dagonizer';
-import type { NodeContextType, NodeOutputType } from '@studnicky/dagonizer';
+import type { NodeContextType, NodeOutputType, NodeWarningType } from '@studnicky/dagonizer';
 
 import type { SquashageServices } from '../../services/SquashageServices.js';
 import type { ClassificationEvidence } from '../../state/schemas/ClassificationEvidence.js';
@@ -58,8 +58,24 @@ export class ClassifyConflictNode
     );
 
     if (all.length === 0) {
-      state.quarantineBucket = 'unknown';
-      return NodeOutputBuilder.of('unknown');
+      const genericProposal: ClassificationProposal = {
+        source:     'classify:generic-fallback',
+        className:  'Generic',
+        priority:   0,
+        confidence: 0,
+        reasons:    ['classify:generic-fallback'],
+      };
+      state.classification = ClassifyConflictNode.buildEvidence(
+        'Generic', [genericProposal], undefined, this.#config.evidence,
+      );
+      const fallbackWarning: NodeWarningType = {
+        code:      'CLASSIFY_GENERIC_FALLBACK',
+        message:   `classify-conflict: no real proposals; falling back to Generic class`,
+        operation: 'classify-conflict',
+        timestamp: new Date().toISOString(),
+      };
+      state.collectWarning(fallbackWarning);
+      return NodeOutputBuilder.of('resolved');
     }
 
     const classNames = new Set<string>(all.map((p) => p.className));

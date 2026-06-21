@@ -59,14 +59,27 @@ test('edge cases', async (t) => {
     assert.equal(s.classification?.type, 'feat');
   });
 
-  await t.test('only sentinel proposals → unknown', async () => {
+  await t.test('only sentinel proposals → Generic fallback resolved', async () => {
     const node = new ClassifyConflictNode({ onConflict: 'quarantine', evidence: true });
     const s = new SquashageRecordState(source, '/r/a.json', 0);
     s.proposals['x'] = { source: 'x', className: '__source__', priority: 0, confidence: 1, reasons: [] };
     const out = await runNode(node, s, ctx);
-    assert.equal(out, 'unknown');
-    assert.equal(s.quarantineBucket, 'unknown');
-    assert.equal(s.classification, null);
+    assert.equal(out, 'resolved');
+    assert.equal(s.quarantineBucket, null);
+    assert.equal(s.classification?.type, 'Generic');
+    assert.equal(s.classification?.engine, 'classify:generic-fallback');
+    assert.deepEqual(s.classification?.reasons, ['classify:generic-fallback']);
+    assert.equal(s.warnings.length, 1);
+    assert.equal(s.warnings[0]?.code, 'CLASSIFY_GENERIC_FALLBACK');
+  });
+
+  await t.test('no proposals at all → Generic fallback resolved', async () => {
+    const node = new ClassifyConflictNode({ onConflict: 'quarantine', evidence: false });
+    const s = new SquashageRecordState(source, '/r/a.json', 0);
+    const out = await runNode(node, s, ctx);
+    assert.equal(out, 'resolved');
+    assert.equal(s.quarantineBucket, null);
+    assert.equal(s.classification?.type, 'Generic');
   });
 });
 

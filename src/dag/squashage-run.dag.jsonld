@@ -129,7 +129,8 @@
       "node": "ontology-emit",
       "outputs": {
         "emitted": "rdfjs-finalize",
-        "skipped": "rdfjs-finalize"
+        "skipped": "rdfjs-finalize",
+        "error": "rdfjs-finalize"
       }
     },
     {

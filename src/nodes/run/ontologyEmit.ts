@@ -21,21 +21,22 @@
  */
 
 import { ScalarNode, NodeOutputBuilder } from '@studnicky/dagonizer';
-import type { NodeContextType, NodeOutputType } from '@studnicky/dagonizer';
+import type { NodeContextType, NodeOutputType, NodeWarningType } from '@studnicky/dagonizer';
 
 import type { SquashageServices } from '../../services/SquashageServices.js';
 import type { SquashageRunState } from '../../state/SquashageRunState.js';
 
-type Output = 'emitted' | 'skipped';
+type Output = 'emitted' | 'skipped' | 'error';
 
 class OntologyEmitNodeImpl extends ScalarNode<SquashageRunState, Output, SquashageServices> {
   public readonly name    = 'ontology-emit';
-  public readonly outputs = ['emitted', 'skipped'] as const;
+  public readonly outputs = ['emitted', 'skipped', 'error'] as const;
 
   public override get outputSchema(): Record<Output, { type: 'object' }> {
     return {
       emitted: { type: 'object' },
       skipped: { type: 'object' },
+      error:   { type: 'object' },
     };
   }
 
@@ -50,7 +51,7 @@ class OntologyEmitNodeImpl extends ScalarNode<SquashageRunState, Output, Squasha
   }
 
   protected override async executeOne(
-    _state:  SquashageRunState,
+    state:   SquashageRunState,
     context: NodeContextType<SquashageServices>,
   ): Promise<NodeOutputType<Output>> {
     const { services } = context;
@@ -63,33 +64,46 @@ class OntologyEmitNodeImpl extends ScalarNode<SquashageRunState, Output, Squasha
       return NodeOutputBuilder.of('skipped');
     }
 
-    const [tboxQuads, shaclQuads] = await Promise.all([
-      services.ontology.tbox(),
-      services.ontology.shacl(),
-    ]);
+    try {
+      const [tboxQuads, shaclQuads] = await Promise.all([
+        services.ontology.tbox(),
+        services.ontology.shacl(),
+      ]);
 
-    const ontologyGraph = services.factory.namedNode(
-      OntologyEmitNodeImpl.ontologyGraphIri(services.target),
-    );
-
-    for (const quad of tboxQuads) {
-      services.dataset.add(
-        services.factory.quad(quad.subject, quad.predicate, quad.object, ontologyGraph),
+      const ontologyGraph = services.factory.namedNode(
+        OntologyEmitNodeImpl.ontologyGraphIri(services.target),
       );
-    }
-    for (const quad of shaclQuads) {
-      services.dataset.add(
-        services.factory.quad(quad.subject, quad.predicate, quad.object, ontologyGraph),
-      );
-    }
 
-    log.info('executeOne', 'ontology emitted', {
-      target:     services.target,
-      tboxCount:  tboxQuads.length,
-      shaclCount: shaclQuads.length,
-    });
+      for (const quad of tboxQuads) {
+        services.dataset.add(
+          services.factory.quad(quad.subject, quad.predicate, quad.object, ontologyGraph),
+        );
+      }
+      for (const quad of shaclQuads) {
+        services.dataset.add(
+          services.factory.quad(quad.subject, quad.predicate, quad.object, ontologyGraph),
+        );
+      }
 
-    return NodeOutputBuilder.of('emitted');
+      log.info('executeOne', 'ontology emitted', {
+        target:     services.target,
+        tboxCount:  tboxQuads.length,
+        shaclCount: shaclQuads.length,
+      });
+
+      return NodeOutputBuilder.of('emitted');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      const emitWarning: NodeWarningType = {
+        code:      'ONTOLOGY_EMIT_ERROR',
+        message:   `ontology-emit: tbox/shacl emission failed: ${message}`,
+        operation: 'executeOne',
+        timestamp: new Date().toISOString(),
+      };
+      state.collectWarning(emitWarning);
+      log.warn('executeOne', 'ontology emit failed; continuing run', { target: services.target, error: message });
+      return NodeOutputBuilder.of('error');
+    }
   }
 }
 
