@@ -30,8 +30,8 @@
  * @since 0.5.0
  */
 
-import { JsonTology, Curie } from 'json-tology';
-import type { ValidationErrors } from 'json-tology';
+import { JsonTology, Curie } from '@studnicky/json-tology';
+import type { ValidationErrors } from '@studnicky/json-tology';
 
 import type { Quad, NamedNode, Literal } from '@rdfjs/types';
 import { dataFactory } from '../rdf/DataFactory.js';
