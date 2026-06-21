@@ -16,7 +16,7 @@ while (stack.length > 0) {
     const path = join(dir, name);
     if (statSync(path).isDirectory()) {
       stack.push(path);
-    } else if (name.endsWith('.dag.jsonld')) {
+    } else if (name.endsWith('.dag.jsonld') || name.endsWith('.schema.json')) {
       const dest = join(DIST, relative(SRC, path));
       mkdirSync(dirname(dest), { recursive: true });
       cpSync(path, dest);

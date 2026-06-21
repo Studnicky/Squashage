@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Native `@studnicky/dagonizer@0.25` engine.** The projection pipeline runs on the published `@studnicky/dagonizer@^0.25.0` batch API, resolved from GitHub Packages via `.npmrc` scope routing, replacing the prior file-linked engine. Every pipeline node is a `ScalarNode` implementing `executeOne`, returning output ports via `NodeOutputBuilder` and collecting errors via `NodeErrorBuilder`; each declares its `outputSchema`. State classes expose typed mutable fields and `clone(): this`; the dispatcher and `ProvObserver` use the 0.25 hook signatures (`placementPath`, `output: string | null`, `lifecycle.variant`).
+- **DAGs are authored documents.** Each run/record/induce/refine/bootstrap DAG is a committed `src/dag/*.dag.jsonld` document loaded at runtime via `DAGDocument.load`; a `build:assets` step mirrors the documents and JSON schemas into `dist/`. Node and DAG registration uses the native `dispatcher.registerBundle(DispatcherBundleType)`.
+- **Native record/draft fan-out.** Per-record and per-draft processing use the engine's native `scatter { dag }` placement — child state is metadata-seeded by a `record-init` node and per-record summaries collect through shared services — replacing the hand-dispatch nodes (`recordDispatch`/`draftDispatch` removed).
+
+### Added
+
+- **Transient json-tology #126 workaround.** ABox projection inline-resolves cross-schema `$ref` property bodies so referenced object properties are not dropped during `toQuads`; TBox/SHACL emission stays on the strict-graph schemas. Removed when json-tology #126 ships upstream.
+
 ## [0.7.1] - 2026-05-18
 
 ### Fixed
