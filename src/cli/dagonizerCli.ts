@@ -81,7 +81,7 @@ export class DagonizerCli {
           outDir:          './graphs',
           schemasBase:     dirname(opts.config),
           pluginNamespace: opts.plugin,
-          pluginsDir:      opts.plugin !== undefined ? resolve(dirname(opts.config), '..') : undefined,
+          pluginsDir:      opts.plugin !== undefined ? join(process.cwd(), 'plugins') : undefined,
           workers:         opts.workers !== undefined ? parseInt(opts.workers, 10) : undefined,
         });
 
