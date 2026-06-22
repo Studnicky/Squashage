@@ -1,0 +1,362 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/Armor.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": true,
+  "properties": {
+    "_type": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/ArmorType.draft.json"
+    },
+    "ac_bonus": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/ArmorAcBonus.draft.json"
+    },
+    "alt_edition_url": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/ArmorAltEditionUrl.draft.json"
+    },
+    "armor_id": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/ArmorArmorId.draft.json"
+    },
+    "bulk": {
+      "maximum": 4,
+      "minimum": 1,
+      "oneOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "string"
+        }
+      ]
+    },
+    "category": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/ArmorCategory.draft.json"
+    },
+    "check_penalty": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/ArmorCheckPenalty.draft.json"
+    },
+    "description_html": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/ArmorDescriptionHtml.draft.json"
+    },
+    "description_text": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/ArmorDescriptionText.draft.json"
+    },
+    "dex_cap": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/ArmorDexCap.draft.json"
+    },
+    "group": {
+      "properties": {
+        "group_id": {
+          "maximum": 5,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "name": {
+          "enum": [
+            "Chain",
+            "Cloth",
+            "Composite",
+            "Leather",
+            "Plate"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        }
+      },
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "legacy": {
+      "type": "boolean"
+    },
+    "links": {
+      "items": {
+        "$ref": "https://2e.aonprd.com/schemas/inferred/objects/ArmorLink.draft.json"
+      },
+      "type": "array"
+    },
+    "meta_description": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/ArmorMetaDescription.draft.json"
+    },
+    "meta_keywords": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/ArmorMetaKeywords.draft.json"
+    },
+    "name": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/ArmorName.draft.json"
+    },
+    "pfs": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/ArmorPfs.draft.json"
+    },
+    "price": {
+      "properties": {
+        "cp": {
+          "type": "null"
+        },
+        "gp": {
+          "maximum": 30,
+          "minimum": 1,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "raw": {
+          "enum": [
+            "1 gp",
+            "1 sp",
+            "18 gp",
+            "2 gp",
+            "2 sp",
+            "3 gp",
+            "30 gp",
+            "4 gp",
+            "5 gp",
+            "6 gp",
+            "8 gp"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "sp": {
+          "maximum": 2,
+          "minimum": 1,
+          "type": [
+            "integer",
+            "null"
+          ]
+        }
+      },
+      "type": "object"
+    },
+    "rarity": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/ArmorRarity.draft.json"
+    },
+    "raw_fields": {
+      "properties": {
+        "AC Bonus": {
+          "enum": [
+            "+0",
+            "+1",
+            "+2",
+            "+3",
+            "+4",
+            "+5",
+            "+6"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Bulk": {
+          "enum": [
+            "1",
+            "2",
+            "3",
+            "4",
+            "L"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Category": {
+          "enum": [
+            "Heavy",
+            "Light",
+            "Medium",
+            "Unarmored"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Check Penalty": {
+          "enum": [
+            "-1",
+            "-2",
+            "-3",
+            "—"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Dex Cap": {
+          "enum": [
+            "+0",
+            "+1",
+            "+2",
+            "+3",
+            "+4",
+            "+5"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Group": {
+          "enum": [
+            "Chain",
+            "Cloth",
+            "Composite",
+            "Leather",
+            "Plate"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "HP (BT)": {
+          "enum": [
+            "12 (6)",
+            "20 (10)",
+            "6 (3)"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Hardness": {
+          "enum": [
+            "3",
+            "5"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Price": {
+          "enum": [
+            "1 gp",
+            "1 sp",
+            "18 gp",
+            "2 gp",
+            "2 sp",
+            "3 gp",
+            "30 gp",
+            "4 gp",
+            "5 gp",
+            "6 gp",
+            "8 gp"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Speed Penalty": {
+          "enum": [
+            "-10 ft.",
+            "-5 ft.",
+            "—"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Strength": {
+          "enum": [
+            "+0",
+            "+1",
+            "+2",
+            "+3",
+            "+4",
+            "—"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        }
+      },
+      "type": "object"
+    },
+    "source": {
+      "properties": {
+        "book": {
+          "enum": [
+            "Player Core"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "page": {
+          "maximum": 274,
+          "minimum": 273,
+          "type": "integer"
+        },
+        "source_id": {
+          "maximum": 216,
+          "minimum": 216,
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    },
+    "sources": {
+      "items": {
+        "$ref": "https://2e.aonprd.com/schemas/inferred/objects/ArmorSource.draft.json"
+      },
+      "type": "array"
+    },
+    "speed_penalty": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/ArmorSpeedPenalty.draft.json"
+    },
+    "strength": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/ArmorStrength.draft.json"
+    },
+    "trait_ids": {
+      "properties": {
+        "Bulwark": {
+          "maximum": 202,
+          "minimum": 202,
+          "type": "integer"
+        },
+        "Comfort": {
+          "maximum": 203,
+          "minimum": 203,
+          "type": "integer"
+        },
+        "Flexible": {
+          "maximum": 204,
+          "minimum": 204,
+          "type": "integer"
+        },
+        "Noisy": {
+          "maximum": 205,
+          "minimum": 205,
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    },
+    "traits": {
+      "items": {
+        "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/ArmorTrait.draft.json"
+      },
+      "type": "array"
+    },
+    "url": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/IriString_2.draft.json"
+    }
+  },
+  "required": [
+    "_type",
+    "ac_bonus",
+    "alt_edition_url",
+    "armor_id",
+    "bulk",
+    "category",
+    "check_penalty",
+    "description_html",
+    "description_text",
+    "dex_cap",
+    "group",
+    "legacy",
+    "links",
+    "meta_description",
+    "meta_keywords",
+    "name",
+    "pfs",
+    "price",
+    "rarity",
+    "raw_fields",
+    "source",
+    "sources",
+    "speed_penalty",
+    "strength",
+    "trait_ids",
+    "traits",
+    "url"
+  ],
+  "title": "Armor",
+  "type": "object",
+  "x-squashage-class": "https://2e.aonprd.com/Armor"
+}

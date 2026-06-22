@@ -1,0 +1,25 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/objects/SpellHeightened.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+    "body_html": {
+      "type": "string",
+      "x-squashage-open-vocab": true
+    },
+    "body_text": {
+      "type": "string",
+      "x-squashage-open-vocab": true
+    },
+    "increment": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/SpellHeightenedIncrement.draft.json"
+    },
+    "rank": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/SpellHeightenedRank.draft.json"
+    },
+    "rank_label": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/SpellHeightenedRankLabel.draft.json"
+    }
+  },
+  "title": "SpellHeightened",
+  "type": "object"
+}

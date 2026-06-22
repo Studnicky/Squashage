@@ -1,0 +1,1108 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/Weapon.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": true,
+  "properties": {
+    "_type": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/WeaponType.draft.json"
+    },
+    "alt_edition_url": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "ammunition": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "bulk": {
+      "maximum": 3,
+      "minimum": 1,
+      "oneOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "category": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/WeaponCategory.draft.json"
+    },
+    "critical_specialization": {
+      "properties": {
+        "by_group": {
+          "properties": {
+            "Axe": {
+              "enum": [
+                "Choose one creature adjacent to the initial target and within reach. If its AC is lower than your attack roll result for the critical hit, you deal damage to that creature equal to the result of the weapon damage die you rolled (including extra dice for its"
+              ],
+              "type": "string",
+              "x-squashage-closed-enum": true
+            },
+            "Bomb": {
+              "enum": [
+                "Increase the radius of the bomb's splash damage (if any) to 10 feet."
+              ],
+              "type": "string",
+              "x-squashage-closed-enum": true
+            },
+            "Bow": {
+              "enum": [
+                "If the target of the critical hit is adjacent to a surface, it gets stuck to that surface by the missile. The target is immobilized and must spend an Interact action to attempt a DC 10 Athletics check to pull the missile free; it can't move from its space until it succeeds. The creature doesn't become stuck if it is incorporeal, is liquid (like a water elemental or some oozes), or could otherwise escape without effort."
+              ],
+              "type": "string",
+              "x-squashage-closed-enum": true
+            },
+            "Brawling": {
+              "enum": [
+                "The target must succeed at a Fortitude save against your class DC or be slowed 1 until the end of your next turn."
+              ],
+              "type": "string",
+              "x-squashage-closed-enum": true
+            },
+            "Club": {
+              "enum": [
+                "You knock the target away from you up to 10 feet (you choose the distance). This is forced movement."
+              ],
+              "type": "string",
+              "x-squashage-closed-enum": true
+            },
+            "Crossbow": {
+              "enum": [
+                "The target takes 1d8 persistent bleed damage. You gain an item bonus to this bleed damage equal to the weapon's item bonus to attack rolls."
+              ],
+              "type": "string",
+              "x-squashage-closed-enum": true
+            },
+            "Dart": {
+              "enum": [
+                "The target takes 1d6 persistent bleed damage. You gain an item bonus to this bleed damage equal to the weapon's item bonus to attack rolls."
+              ],
+              "type": "string",
+              "x-squashage-closed-enum": true
+            },
+            "Firearm": {
+              "enum": [
+                "The target must succeed at a Fortitude save against your class DC or be stunned 1."
+              ],
+              "type": "string",
+              "x-squashage-closed-enum": true
+            },
+            "Flail": {
+              "enum": [
+                "The target is knocked prone unless they succeed at a Reflex save against your class DC."
+              ],
+              "type": "string",
+              "x-squashage-closed-enum": true
+            },
+            "Hammer": {
+              "enum": [
+                "The target is knocked prone unless they succeed at a Fortitude save against your class DC."
+              ],
+              "type": "string",
+              "x-squashage-closed-enum": true
+            },
+            "Knife": {
+              "enum": [
+                "The target takes 1d6 persistent bleed damage. You gain an item bonus to this bleed damage equal to the weapon's item bonus to attack rolls."
+              ],
+              "type": "string",
+              "x-squashage-closed-enum": true
+            },
+            "Pick": {
+              "enum": [
+                "The weapon viciously pierces the target, who takes 2 additional damage per weapon damage die."
+              ],
+              "type": "string",
+              "x-squashage-closed-enum": true
+            },
+            "Polearm": {
+              "enum": [
+                "The target is moved 5 feet in a direction of your choice. This is forced movement."
+              ],
+              "type": "string",
+              "x-squashage-closed-enum": true
+            },
+            "Shield": {
+              "enum": [
+                "You knock the target back from you 5 feet. This is forced movement."
+              ],
+              "type": "string",
+              "x-squashage-closed-enum": true
+            },
+            "Sling": {
+              "enum": [
+                "The target must succeed at a Fortitude save against your class DC or be stunned 1."
+              ],
+              "type": "string",
+              "x-squashage-closed-enum": true
+            },
+            "Spear": {
+              "enum": [
+                "The weapon pierces the target, weakening its attacks. The target is clumsy 1 until the start of your next turn."
+              ],
+              "type": "string",
+              "x-squashage-closed-enum": true
+            },
+            "Sword": {
+              "enum": [
+                "The target is made off-balance by your attack, becoming off-guard until the start of your next turn."
+              ],
+              "type": "string",
+              "x-squashage-closed-enum": true
+            }
+          },
+          "type": "object"
+        },
+        "source": {
+          "enum": [
+            "Core Rulebook pg. 283"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        }
+      },
+      "type": "object"
+    },
+    "damage": {
+      "properties": {
+        "dice": {
+          "enum": [
+            "1d10",
+            "1d12",
+            "1d4",
+            "1d6",
+            "1d8"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "rider": {
+          "enum": [
+            "+ 1d4 F",
+            "modular",
+            null
+          ],
+          "type": [
+            "string",
+            "null"
+          ],
+          "x-squashage-closed-enum": true
+        },
+        "type": {
+          "enum": [
+            "B",
+            "P",
+            "S",
+            null
+          ],
+          "type": [
+            "string",
+            "null"
+          ],
+          "x-squashage-closed-enum": true
+        }
+      },
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "description_html": {
+      "type": "string",
+      "x-squashage-open-vocab": true
+    },
+    "description_text": {
+      "type": "string",
+      "x-squashage-open-vocab": true
+    },
+    "favored_weapon": {
+      "items": {
+        "$ref": "https://2e.aonprd.com/schemas/inferred/objects/WeaponFavoredWeapon.draft.json"
+      },
+      "type": "array"
+    },
+    "group": {
+      "properties": {
+        "group_id": {
+          "maximum": 17,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "name": {
+          "type": "string"
+        }
+      },
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "hands": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/WeaponHands.draft.json"
+    },
+    "legacy": {
+      "type": "boolean"
+    },
+    "links": {
+      "items": {
+        "$ref": "https://2e.aonprd.com/schemas/inferred/objects/WeaponLink.draft.json"
+      },
+      "type": "array"
+    },
+    "meta_description": {
+      "type": "string",
+      "x-squashage-open-vocab": true
+    },
+    "meta_keywords": {
+      "type": "string",
+      "x-squashage-open-vocab": true
+    },
+    "name": {
+      "type": "string",
+      "x-squashage-open-vocab": true
+    },
+    "pfs": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/WeaponPfs.draft.json"
+    },
+    "price": {
+      "properties": {
+        "cp": {
+          "maximum": 5,
+          "minimum": 1,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "gp": {
+          "maximum": 550,
+          "minimum": 1,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "raw": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "sp": {
+          "maximum": 9,
+          "minimum": 1,
+          "type": [
+            "integer",
+            "null"
+          ]
+        }
+      },
+      "type": "object"
+    },
+    "range": {
+      "type": "null"
+    },
+    "rarity": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/ActionRarity.draft.json"
+    },
+    "raw_fields": {
+      "properties": {
+        "Access": {
+          "enum": [
+            "Characters from Alkenstar have access to this option.",
+            "Characters from Irrisen have access to the sickle-saber.",
+            "Characters from Jalmeray or Vudra have access to this weapon",
+            "Characters from Taldor have access to the spiral rapier.",
+            "Hongali characters have access to the Hongali hornbow.",
+            "If the player character comes from a region in Tian Xia, this weapon is common",
+            "Member of the Pathfinder Society on a mission for the Arcadian Mariner’s Lodge.",
+            "Member of the Pathfinder Society.",
+            "Members of the Firebrands have access to this weapon.",
+            "Residents of Belkzen",
+            "Second-mark members of the Firebrands have access to this item.",
+            "Song'o ethnicity",
+            "The following regions have access to firearms: Alkenstar, Dongun Hold, Tian Xia, Vudra, Arcadia, Ustalav, the Shackles",
+            "Tian Xia origin",
+            "You’re from Isger or an agent of the Aspis Consortium."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Ammunition": {
+          "type": "string"
+        },
+        "Bulk": {
+          "enum": [
+            "1",
+            "2",
+            "3",
+            "L",
+            "—"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Category": {
+          "enum": [
+            "Advanced",
+            "Ammunition",
+            "Martial",
+            "Simple",
+            "Unarmed"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Damage": {
+          "type": "string"
+        },
+        "Favored Weapon": {
+          "type": "string"
+        },
+        "Group": {
+          "type": "string"
+        },
+        "Hands": {
+          "enum": [
+            "0+",
+            "1",
+            "1 or 2",
+            "1+",
+            "2"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Price": {
+          "type": "string"
+        },
+        "Range": {
+          "enum": [
+            "10 ft.",
+            "100 ft.",
+            "110 ft.",
+            "120 ft.",
+            "150 ft.",
+            "180 ft.",
+            "20 ft.",
+            "200 ft.",
+            "240 ft.",
+            "30 ft.",
+            "40 ft.",
+            "50 ft.",
+            "60 ft.",
+            "70 ft.",
+            "80 ft.",
+            "90 ft."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Reload": {
+          "enum": [
+            "0",
+            "1",
+            "1 minute",
+            "2"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Type": {
+          "enum": [
+            "Melee",
+            "Ranged"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        }
+      },
+      "type": "object"
+    },
+    "reload": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/WeaponReload.draft.json"
+    },
+    "source": {
+      "properties": {
+        "book": {
+          "type": "string"
+        },
+        "page": {
+          "maximum": 337,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "source_id": {
+          "maximum": 276,
+          "minimum": 2,
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    },
+    "sources": {
+      "items": {
+        "$ref": "https://2e.aonprd.com/schemas/inferred/objects/WeaponSource.draft.json"
+      },
+      "type": "array"
+    },
+    "specific_magic_weapons": {
+      "items": {
+        "$ref": "https://2e.aonprd.com/schemas/inferred/objects/WeaponSpecificMagicWeapon.draft.json"
+      },
+      "type": "array"
+    },
+    "trait_glossary": {
+      "items": {
+        "$ref": "https://2e.aonprd.com/schemas/inferred/objects/FeatTraitGlossary.draft.json"
+      },
+      "type": "array"
+    },
+    "trait_ids": {
+      "properties": {
+        "Agile": {
+          "maximum": 526,
+          "minimum": 170,
+          "type": "integer"
+        },
+        "Alchemical": {
+          "maximum": 6,
+          "minimum": 6,
+          "type": "integer"
+        },
+        "Attached": {
+          "maximum": 171,
+          "minimum": 171,
+          "type": "integer"
+        },
+        "Attached to Shield": {
+          "maximum": 171,
+          "minimum": 171,
+          "type": "integer"
+        },
+        "Attached to crossbow or firearm": {
+          "maximum": 171,
+          "minimum": 171,
+          "type": "integer"
+        },
+        "Attached to shield": {
+          "maximum": 171,
+          "minimum": 171,
+          "type": "integer"
+        },
+        "Azarketi": {
+          "maximum": 336,
+          "minimum": 336,
+          "type": "integer"
+        },
+        "Backstabber": {
+          "maximum": 544,
+          "minimum": 172,
+          "type": "integer"
+        },
+        "Backswing": {
+          "maximum": 545,
+          "minimum": 173,
+          "type": "integer"
+        },
+        "Brace": {
+          "maximum": 471,
+          "minimum": 471,
+          "type": "integer"
+        },
+        "Capacity 2": {
+          "maximum": 399,
+          "minimum": 399,
+          "type": "integer"
+        },
+        "Capacity 3": {
+          "maximum": 399,
+          "minimum": 399,
+          "type": "integer"
+        },
+        "Capacity 4": {
+          "maximum": 399,
+          "minimum": 399,
+          "type": "integer"
+        },
+        "Capacity 5": {
+          "maximum": 399,
+          "minimum": 399,
+          "type": "integer"
+        },
+        "Catfolk": {
+          "maximum": 746,
+          "minimum": 746,
+          "type": "integer"
+        },
+        "Climbing": {
+          "maximum": 347,
+          "minimum": 347,
+          "type": "integer"
+        },
+        "Clockwork": {
+          "maximum": 331,
+          "minimum": 331,
+          "type": "integer"
+        },
+        "Cobbled": {
+          "maximum": 400,
+          "minimum": 400,
+          "type": "integer"
+        },
+        "Combination": {
+          "maximum": 417,
+          "minimum": 417,
+          "type": "integer"
+        },
+        "Concealable": {
+          "maximum": 560,
+          "minimum": 327,
+          "type": "integer"
+        },
+        "Concussive": {
+          "maximum": 401,
+          "minimum": 401,
+          "type": "integer"
+        },
+        "Conrasu": {
+          "maximum": 343,
+          "minimum": 343,
+          "type": "integer"
+        },
+        "Critical Fusion": {
+          "maximum": 402,
+          "minimum": 402,
+          "type": "integer"
+        },
+        "Deadly D10": {
+          "maximum": 570,
+          "minimum": 570,
+          "type": "integer"
+        },
+        "Deadly d10": {
+          "maximum": 570,
+          "minimum": 174,
+          "type": "integer"
+        },
+        "Deadly d12": {
+          "maximum": 174,
+          "minimum": 174,
+          "type": "integer"
+        },
+        "Deadly d4": {
+          "maximum": 570,
+          "minimum": 570,
+          "type": "integer"
+        },
+        "Deadly d6": {
+          "maximum": 174,
+          "minimum": 174,
+          "type": "integer"
+        },
+        "Deadly d8": {
+          "maximum": 570,
+          "minimum": 174,
+          "type": "integer"
+        },
+        "Disarm": {
+          "maximum": 577,
+          "minimum": 175,
+          "type": "integer"
+        },
+        "Double Barrel": {
+          "maximum": 403,
+          "minimum": 403,
+          "type": "integer"
+        },
+        "Dwarf": {
+          "maximum": 54,
+          "minimum": 54,
+          "type": "integer"
+        },
+        "Elf": {
+          "maximum": 58,
+          "minimum": 58,
+          "type": "integer"
+        },
+        "Fatal 1d10": {
+          "maximum": 178,
+          "minimum": 178,
+          "type": "integer"
+        },
+        "Fatal 1d12": {
+          "maximum": 178,
+          "minimum": 178,
+          "type": "integer"
+        },
+        "Fatal 1d8": {
+          "maximum": 178,
+          "minimum": 178,
+          "type": "integer"
+        },
+        "Fatal Aim d10": {
+          "maximum": 404,
+          "minimum": 404,
+          "type": "integer"
+        },
+        "Fatal Aim d12": {
+          "maximum": 404,
+          "minimum": 404,
+          "type": "integer"
+        },
+        "Fatal d10": {
+          "maximum": 597,
+          "minimum": 178,
+          "type": "integer"
+        },
+        "Fatal d12": {
+          "maximum": 597,
+          "minimum": 178,
+          "type": "integer"
+        },
+        "Fatal d8": {
+          "maximum": 597,
+          "minimum": 178,
+          "type": "integer"
+        },
+        "Finesse": {
+          "maximum": 602,
+          "minimum": 179,
+          "type": "integer"
+        },
+        "Forceful": {
+          "maximum": 611,
+          "minimum": 180,
+          "type": "integer"
+        },
+        "Free-Hand": {
+          "maximum": 181,
+          "minimum": 181,
+          "type": "integer"
+        },
+        "Geniekin": {
+          "maximum": 340,
+          "minimum": 340,
+          "type": "integer"
+        },
+        "Ghoran": {
+          "maximum": 352,
+          "minimum": 352,
+          "type": "integer"
+        },
+        "Gnome": {
+          "maximum": 80,
+          "minimum": 80,
+          "type": "integer"
+        },
+        "Goblin": {
+          "maximum": 81,
+          "minimum": 81,
+          "type": "integer"
+        },
+        "Grapple": {
+          "maximum": 619,
+          "minimum": 184,
+          "type": "integer"
+        },
+        "Halfling": {
+          "maximum": 621,
+          "minimum": 87,
+          "type": "integer"
+        },
+        "Hampering": {
+          "maximum": 806,
+          "minimum": 344,
+          "type": "integer"
+        },
+        "Hobgoblin": {
+          "maximum": 757,
+          "minimum": 268,
+          "type": "integer"
+        },
+        "Injection": {
+          "maximum": 407,
+          "minimum": 407,
+          "type": "integer"
+        },
+        "Jotunborn": {
+          "maximum": 860,
+          "minimum": 860,
+          "type": "integer"
+        },
+        "Jousting 1d6": {
+          "maximum": 186,
+          "minimum": 186,
+          "type": "integer"
+        },
+        "Jousting d6": {
+          "maximum": 186,
+          "minimum": 186,
+          "type": "integer"
+        },
+        "Kholo": {
+          "maximum": 758,
+          "minimum": 758,
+          "type": "integer"
+        },
+        "Kickback": {
+          "maximum": 409,
+          "minimum": 409,
+          "type": "integer"
+        },
+        "Kobold": {
+          "maximum": 759,
+          "minimum": 759,
+          "type": "integer"
+        },
+        "Modular (B, P, or S)": {
+          "maximum": 807,
+          "minimum": 271,
+          "type": "integer"
+        },
+        "Modular (P and grapple, or S and sweep)": {
+          "maximum": 271,
+          "minimum": 271,
+          "type": "integer"
+        },
+        "Modular B, P, or S": {
+          "maximum": 807,
+          "minimum": 271,
+          "type": "integer"
+        },
+        "Monk": {
+          "maximum": 656,
+          "minimum": 112,
+          "type": "integer"
+        },
+        "Nonlethal": {
+          "maximum": 188,
+          "minimum": 188,
+          "type": "integer"
+        },
+        "Orc": {
+          "maximum": 124,
+          "minimum": 124,
+          "type": "integer"
+        },
+        "Parry": {
+          "maximum": 190,
+          "minimum": 190,
+          "type": "integer"
+        },
+        "Propulsive": {
+          "maximum": 677,
+          "minimum": 191,
+          "type": "integer"
+        },
+        "Ranged Trip": {
+          "maximum": 681,
+          "minimum": 251,
+          "type": "integer"
+        },
+        "Rare": {
+          "maximum": 137,
+          "minimum": 137,
+          "type": "integer"
+        },
+        "Razing": {
+          "maximum": 784,
+          "minimum": 488,
+          "type": "integer"
+        },
+        "Reach": {
+          "maximum": 684,
+          "minimum": 192,
+          "type": "integer"
+        },
+        "Recovery": {
+          "maximum": 489,
+          "minimum": 489,
+          "type": "integer"
+        },
+        "Reload 1": {
+          "maximum": 254,
+          "minimum": 254,
+          "type": "integer"
+        },
+        "Repeating": {
+          "maximum": 374,
+          "minimum": 374,
+          "type": "integer"
+        },
+        "Resonant": {
+          "maximum": 345,
+          "minimum": 345,
+          "type": "integer"
+        },
+        "Scatter 10 ft.": {
+          "maximum": 413,
+          "minimum": 413,
+          "type": "integer"
+        },
+        "Scatter 5 ft.": {
+          "maximum": 413,
+          "minimum": 413,
+          "type": "integer"
+        },
+        "Shove": {
+          "maximum": 694,
+          "minimum": 193,
+          "type": "integer"
+        },
+        "Sweep": {
+          "maximum": 708,
+          "minimum": 194,
+          "type": "integer"
+        },
+        "Tearing": {
+          "maximum": 841,
+          "minimum": 841,
+          "type": "integer"
+        },
+        "Tengu": {
+          "maximum": 776,
+          "minimum": 776,
+          "type": "integer"
+        },
+        "Tethered": {
+          "maximum": 804,
+          "minimum": 252,
+          "type": "integer"
+        },
+        "Thrown": {
+          "maximum": 195,
+          "minimum": 195,
+          "type": "integer"
+        },
+        "Thrown 10 ft.": {
+          "maximum": 711,
+          "minimum": 195,
+          "type": "integer"
+        },
+        "Thrown 20 feet": {
+          "maximum": 195,
+          "minimum": 195,
+          "type": "integer"
+        },
+        "Thrown 20 ft.": {
+          "maximum": 711,
+          "minimum": 195,
+          "type": "integer"
+        },
+        "Thrown 30 ft.": {
+          "maximum": 711,
+          "minimum": 711,
+          "type": "integer"
+        },
+        "Thrown 40 ft.": {
+          "maximum": 195,
+          "minimum": 195,
+          "type": "integer"
+        },
+        "Training": {
+          "maximum": 492,
+          "minimum": 492,
+          "type": "integer"
+        },
+        "Trip": {
+          "maximum": 716,
+          "minimum": 196,
+          "type": "integer"
+        },
+        "Tripkee": {
+          "maximum": 793,
+          "minimum": 793,
+          "type": "integer"
+        },
+        "Twin": {
+          "maximum": 197,
+          "minimum": 197,
+          "type": "integer"
+        },
+        "Twin (Sheath)": {
+          "maximum": 197,
+          "minimum": 197,
+          "type": "integer"
+        },
+        "Twin (Sword)": {
+          "maximum": 197,
+          "minimum": 197,
+          "type": "integer"
+        },
+        "Two-Hand 1d10": {
+          "maximum": 198,
+          "minimum": 198,
+          "type": "integer"
+        },
+        "Two-Hand 1d12": {
+          "maximum": 198,
+          "minimum": 198,
+          "type": "integer"
+        },
+        "Two-Hand 1d8": {
+          "maximum": 198,
+          "minimum": 198,
+          "type": "integer"
+        },
+        "Two-Hand d10": {
+          "maximum": 198,
+          "minimum": 198,
+          "type": "integer"
+        },
+        "Two-Hand d12": {
+          "maximum": 198,
+          "minimum": 198,
+          "type": "integer"
+        },
+        "Two-Hand d8": {
+          "maximum": 198,
+          "minimum": 198,
+          "type": "integer"
+        },
+        "Unarmed": {
+          "maximum": 199,
+          "minimum": 199,
+          "type": "integer"
+        },
+        "Uncommon": {
+          "maximum": 721,
+          "minimum": 159,
+          "type": "integer"
+        },
+        "Vanara": {
+          "maximum": 368,
+          "minimum": 368,
+          "type": "integer"
+        },
+        "Vehicular": {
+          "maximum": 493,
+          "minimum": 493,
+          "type": "integer"
+        },
+        "Versatile B": {
+          "maximum": 724,
+          "minimum": 200,
+          "type": "integer"
+        },
+        "Versatile P": {
+          "maximum": 724,
+          "minimum": 200,
+          "type": "integer"
+        },
+        "Versatile S": {
+          "maximum": 724,
+          "minimum": 200,
+          "type": "integer"
+        },
+        "Vishkanya": {
+          "maximum": 369,
+          "minimum": 369,
+          "type": "integer"
+        },
+        "Volley 20 ft.": {
+          "maximum": 201,
+          "minimum": 201,
+          "type": "integer"
+        },
+        "Volley 30 ft.": {
+          "maximum": 201,
+          "minimum": 201,
+          "type": "integer"
+        },
+        "Volley 50 ft.": {
+          "maximum": 201,
+          "minimum": 201,
+          "type": "integer"
+        },
+        "deadly d8": {
+          "maximum": 570,
+          "minimum": 570,
+          "type": "integer"
+        },
+        "scatter 5 ft.": {
+          "maximum": 413,
+          "minimum": 413,
+          "type": "integer"
+        },
+        "thrown 20 ft.": {
+          "maximum": 711,
+          "minimum": 711,
+          "type": "integer"
+        },
+        "thrown 30 ft.": {
+          "maximum": 711,
+          "minimum": 711,
+          "type": "integer"
+        },
+        "two-hand d10": {
+          "maximum": 718,
+          "minimum": 718,
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    },
+    "traits": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "url": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/IriString.draft.json"
+    },
+    "weapon_id": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/WeaponWeaponId.draft.json"
+    },
+    "weapon_type": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/WeaponWeaponType.draft.json"
+    }
+  },
+  "required": [
+    "_type",
+    "alt_edition_url",
+    "ammunition",
+    "bulk",
+    "category",
+    "critical_specialization",
+    "damage",
+    "description_html",
+    "description_text",
+    "favored_weapon",
+    "group",
+    "hands",
+    "legacy",
+    "links",
+    "meta_description",
+    "meta_keywords",
+    "name",
+    "pfs",
+    "price",
+    "range",
+    "rarity",
+    "raw_fields",
+    "reload",
+    "source",
+    "sources",
+    "specific_magic_weapons",
+    "trait_glossary",
+    "trait_ids",
+    "traits",
+    "url",
+    "weapon_id",
+    "weapon_type"
+  ],
+  "title": "Weapon",
+  "type": "object",
+  "x-squashage-class": "https://2e.aonprd.com/Weapon"
+}

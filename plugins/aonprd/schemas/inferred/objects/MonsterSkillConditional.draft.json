@@ -1,0 +1,14 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/objects/MonsterSkillConditional.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+    "bonus": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/MonsterSkillConditionalBonus.draft.json"
+    },
+    "context": {
+      "type": "string"
+    }
+  },
+  "title": "MonsterSkillConditional",
+  "type": "object"
+}

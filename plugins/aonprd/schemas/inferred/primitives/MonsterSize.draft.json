@@ -1,0 +1,15 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/primitives/MonsterSize.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "enum": [
+    "Gargantuan",
+    "Huge",
+    "Large",
+    "Medium",
+    "Small",
+    "Tiny"
+  ],
+  "title": "MonsterSize",
+  "type": "string",
+  "x-squashage-closed-enum": true
+}

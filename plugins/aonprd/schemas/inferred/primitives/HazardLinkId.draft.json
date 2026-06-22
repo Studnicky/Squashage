@@ -1,0 +1,8 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/primitives/HazardLinkId.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "maximum": 4041,
+  "minimum": 1,
+  "title": "HazardLinkId",
+  "type": "integer"
+}

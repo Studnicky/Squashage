@@ -1,0 +1,8 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/primitives/SpellCatalystEquipmentId.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "maximum": 4118,
+  "minimum": 1003,
+  "title": "SpellCatalystEquipmentId",
+  "type": "integer"
+}

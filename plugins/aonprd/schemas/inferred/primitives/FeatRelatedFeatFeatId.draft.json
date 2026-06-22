@@ -1,0 +1,8 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/primitives/FeatRelatedFeatFeatId.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "maximum": 3576,
+  "minimum": 923,
+  "title": "FeatRelatedFeatFeatId",
+  "type": "integer"
+}

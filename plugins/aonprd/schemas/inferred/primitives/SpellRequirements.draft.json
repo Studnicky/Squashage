@@ -1,0 +1,25 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/primitives/SpellRequirements.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "enum": [
+    "The target is taking persistent bleed damage or your last action dealt slashing damage to the target.",
+    "You can bleed",
+    "You have a deity.",
+    "You have a planar key for the destination plane, used as a locus",
+    "You have at least one free hand.",
+    "You have the humanoid trait.",
+    "You're wielding a melee weapon in two hands.",
+    "You're wielding a ranged weapon or a thrown weapon.",
+    "You're wielding a staff.",
+    "You're wielding qi-infused fabric",
+    "You’re wielding a one-handed weapon in the sword group.",
+    "You’re wielding an improvised weapon.",
+    null
+  ],
+  "title": "SpellRequirements",
+  "type": [
+    "string",
+    "null"
+  ],
+  "x-squashage-closed-enum": true
+}

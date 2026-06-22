@@ -1,0 +1,18 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/primitives/ActionFrequency.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "enum": [
+    "once per 10 minutes",
+    "once per day",
+    "once per hour",
+    "once per round",
+    "until recharged (see below)",
+    null
+  ],
+  "title": "ActionFrequency",
+  "type": [
+    "string",
+    "null"
+  ],
+  "x-squashage-closed-enum": true
+}

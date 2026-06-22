@@ -1,0 +1,8 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/primitives/MonsterDefensiveAbilitieSavingThrowDc.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "maximum": 23,
+  "minimum": 23,
+  "title": "MonsterDefensiveAbilitieSavingThrowDc",
+  "type": "integer"
+}

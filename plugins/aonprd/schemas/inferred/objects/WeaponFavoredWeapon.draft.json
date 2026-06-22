@@ -1,0 +1,15 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/objects/WeaponFavoredWeapon.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+    "deity": {
+      "type": "string",
+      "x-squashage-open-vocab": true
+    },
+    "deity_id": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/WeaponFavoredWeaponDeityId.draft.json"
+    }
+  },
+  "title": "WeaponFavoredWeapon",
+  "type": "object"
+}

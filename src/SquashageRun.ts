@@ -204,12 +204,6 @@ export class SquashageRun {
     // (e.g. new OntologyProjectionNode(ontology)). When a plugin registers
     // 'squash', `squashNodeForBundle` is null and the bundle skips it —
     // the already-registered node is used by the DAG engine directly.
-    const _runLog = services.logger.forComponent('SquashageRun');
-    _runLog.info('forRun', 'squash node check', {
-      pluginDags: pluginDags?.map((d) => d.name) ?? null,
-      squashNodeFromDispatcher: dispatcher.getNode('squash') !== undefined,
-      explicitSquashNode: options.squashNode !== undefined,
-    });
     let squashNodeForBundle: SquashNodeInterface | null;
     if (options.squashNode !== undefined) {
       squashNodeForBundle = options.squashNode;
@@ -217,7 +211,8 @@ export class SquashageRun {
       // Plugin already registered a squash node — don't add to bundle.
       squashNodeForBundle = null;
     } else {
-      _runLog.warn('forRun', `run "${target}" has no squash node configured; falling back to rdf:type-only defaultSquashNode`, { target });
+      const runLog = services.logger.forComponent('SquashageRun');
+      runLog.warn('forRun', `run "${target}" has no squash node configured; falling back to rdf:type-only defaultSquashNode`, { target });
       squashNodeForBundle = defaultSquashNode;
     }
 

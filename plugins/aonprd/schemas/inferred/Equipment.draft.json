@@ -1,0 +1,593 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/Equipment.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": true,
+  "properties": {
+    "_type": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/EquipmentType.draft.json"
+    },
+    "access": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/EquipmentAccess.draft.json"
+    },
+    "activations": {
+      "items": {
+        "$ref": "https://2e.aonprd.com/schemas/inferred/objects/EquipmentActivation.draft.json"
+      },
+      "type": "array"
+    },
+    "alt_edition_url": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "benefit": {
+      "type": "null"
+    },
+    "bulk": {
+      "maximum": 40,
+      "minimum": 1,
+      "oneOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "cost": {
+      "type": "null"
+    },
+    "craft_requirements": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/EquipmentCraftRequirements.draft.json"
+    },
+    "description_html": {
+      "type": "string"
+    },
+    "description_text": {
+      "type": "string"
+    },
+    "drawback": {
+      "type": "null"
+    },
+    "duration": {
+      "type": "null"
+    },
+    "effect": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "equipment_id": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/EquipmentEquipmentId.draft.json"
+    },
+    "frequency": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/EquipmentFrequency.draft.json"
+    },
+    "hands": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/EquipmentHands.draft.json"
+    },
+    "item_level": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/EquipmentItemLevel.draft.json"
+    },
+    "legacy": {
+      "type": "boolean"
+    },
+    "links": {
+      "items": {
+        "$ref": "https://2e.aonprd.com/schemas/inferred/objects/EquipmentLink.draft.json"
+      },
+      "type": "array"
+    },
+    "meta_description": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "meta_keywords": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "onset": {
+      "type": "null"
+    },
+    "pfs": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/EquipmentPfs.draft.json"
+    },
+    "price": {
+      "properties": {
+        "cp": {
+          "maximum": 8,
+          "minimum": 1,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "gp": {
+          "maximum": 90000,
+          "minimum": 1,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "raw": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "sp": {
+          "maximum": 5,
+          "minimum": 1,
+          "type": [
+            "integer",
+            "null"
+          ]
+        }
+      },
+      "type": "object"
+    },
+    "rarity": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/EquipmentRarity.draft.json"
+    },
+    "raw_fields": {
+      "properties": {
+        "Activate": {
+          "enum": [
+            "1 minute (manipulate)",
+            "[one-action] (manipulate)",
+            "[one-action] Interact",
+            "[one-action] Strike",
+            "[two-actions] (concentrate, manipulate)",
+            "[two-actions] (manipulate)"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Alignment": {
+          "enum": [
+            "chaotic good",
+            "chaotic neutral"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Base Armor": {
+          "enum": [
+            "Breastplate",
+            "Chain Shirt"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Base Weapon": {
+          "enum": [
+            "Bastard Sword",
+            "Fist",
+            "Longsword",
+            "Scimitar"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Bulk": {
+          "enum": [
+            "1",
+            "2",
+            "40",
+            "6",
+            "L",
+            "—",
+            "— varies by armor",
+            "— varies by weapon"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Hands": {
+          "enum": [
+            "1",
+            "1 or 2",
+            "2"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Price": {
+          "type": "string"
+        },
+        "Suit": {
+          "enum": [
+            "Hammers (Str)"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Usage": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "requirements": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/EquipmentRequirements.draft.json"
+    },
+    "saving_throw": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/EquipmentSavingThrow.draft.json"
+    },
+    "source": {
+      "properties": {
+        "book": {
+          "type": "string"
+        },
+        "page": {
+          "maximum": 595,
+          "minimum": 38,
+          "type": "integer"
+        },
+        "source_id": {
+          "maximum": 290,
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    },
+    "sources": {
+      "items": {
+        "$ref": "https://2e.aonprd.com/schemas/inferred/objects/EquipmentSource.draft.json"
+      },
+      "type": "array"
+    },
+    "tiered_variants": {
+      "type": "boolean"
+    },
+    "trait_ids": {
+      "properties": {
+        "Abjuration": {
+          "maximum": 2,
+          "minimum": 2,
+          "type": "integer"
+        },
+        "Acid": {
+          "maximum": 524,
+          "minimum": 524,
+          "type": "integer"
+        },
+        "Alchemical": {
+          "maximum": 528,
+          "minimum": 6,
+          "type": "integer"
+        },
+        "Apex": {
+          "maximum": 532,
+          "minimum": 532,
+          "type": "integer"
+        },
+        "Arcane": {
+          "maximum": 11,
+          "minimum": 11,
+          "type": "integer"
+        },
+        "Artifact": {
+          "maximum": 537,
+          "minimum": 253,
+          "type": "integer"
+        },
+        "Auditory": {
+          "maximum": 541,
+          "minimum": 541,
+          "type": "integer"
+        },
+        "Bomb": {
+          "maximum": 548,
+          "minimum": 548,
+          "type": "integer"
+        },
+        "Cold": {
+          "maximum": 27,
+          "minimum": 27,
+          "type": "integer"
+        },
+        "Conjuration": {
+          "maximum": 33,
+          "minimum": 33,
+          "type": "integer"
+        },
+        "Consumable": {
+          "maximum": 564,
+          "minimum": 36,
+          "type": "integer"
+        },
+        "Cursed": {
+          "maximum": 274,
+          "minimum": 274,
+          "type": "integer"
+        },
+        "Death": {
+          "maximum": 40,
+          "minimum": 40,
+          "type": "integer"
+        },
+        "Divine": {
+          "maximum": 579,
+          "minimum": 579,
+          "type": "integer"
+        },
+        "Earth": {
+          "maximum": 55,
+          "minimum": 55,
+          "type": "integer"
+        },
+        "Electricity": {
+          "maximum": 586,
+          "minimum": 586,
+          "type": "integer"
+        },
+        "Elixir": {
+          "maximum": 589,
+          "minimum": 59,
+          "type": "integer"
+        },
+        "Enchantment": {
+          "maximum": 61,
+          "minimum": 61,
+          "type": "integer"
+        },
+        "Evil": {
+          "maximum": 64,
+          "minimum": 64,
+          "type": "integer"
+        },
+        "Evocation": {
+          "maximum": 65,
+          "minimum": 65,
+          "type": "integer"
+        },
+        "Extradimensional": {
+          "maximum": 596,
+          "minimum": 596,
+          "type": "integer"
+        },
+        "Fire": {
+          "maximum": 604,
+          "minimum": 604,
+          "type": "integer"
+        },
+        "Harrow Court": {
+          "maximum": 496,
+          "minimum": 496,
+          "type": "integer"
+        },
+        "Healing": {
+          "maximum": 623,
+          "minimum": 623,
+          "type": "integer"
+        },
+        "Holy": {
+          "maximum": 517,
+          "minimum": 517,
+          "type": "integer"
+        },
+        "Illusion": {
+          "maximum": 629,
+          "minimum": 92,
+          "type": "integer"
+        },
+        "Incapacitation": {
+          "maximum": 93,
+          "minimum": 93,
+          "type": "integer"
+        },
+        "Injury": {
+          "maximum": 635,
+          "minimum": 635,
+          "type": "integer"
+        },
+        "Intelligent": {
+          "maximum": 636,
+          "minimum": 636,
+          "type": "integer"
+        },
+        "Invested": {
+          "maximum": 637,
+          "minimum": 98,
+          "type": "integer"
+        },
+        "Light": {
+          "maximum": 640,
+          "minimum": 640,
+          "type": "integer"
+        },
+        "Magical": {
+          "maximum": 644,
+          "minimum": 103,
+          "type": "integer"
+        },
+        "Mechanical": {
+          "maximum": 646,
+          "minimum": 646,
+          "type": "integer"
+        },
+        "Necromancy": {
+          "maximum": 117,
+          "minimum": 117,
+          "type": "integer"
+        },
+        "Negative": {
+          "maximum": 118,
+          "minimum": 118,
+          "type": "integer"
+        },
+        "Occult": {
+          "maximum": 120,
+          "minimum": 120,
+          "type": "integer"
+        },
+        "Oil": {
+          "maximum": 663,
+          "minimum": 663,
+          "type": "integer"
+        },
+        "Olfactory": {
+          "maximum": 664,
+          "minimum": 664,
+          "type": "integer"
+        },
+        "Poison": {
+          "maximum": 669,
+          "minimum": 669,
+          "type": "integer"
+        },
+        "Potion": {
+          "maximum": 672,
+          "minimum": 672,
+          "type": "integer"
+        },
+        "Precious": {
+          "maximum": 673,
+          "minimum": 673,
+          "type": "integer"
+        },
+        "Primal": {
+          "maximum": 134,
+          "minimum": 134,
+          "type": "integer"
+        },
+        "Rare": {
+          "maximum": 683,
+          "minimum": 137,
+          "type": "integer"
+        },
+        "Shadow": {
+          "maximum": 693,
+          "minimum": 143,
+          "type": "integer"
+        },
+        "Snare": {
+          "maximum": 809,
+          "minimum": 809,
+          "type": "integer"
+        },
+        "Sonic": {
+          "maximum": 697,
+          "minimum": 697,
+          "type": "integer"
+        },
+        "Splash": {
+          "maximum": 699,
+          "minimum": 699,
+          "type": "integer"
+        },
+        "Staff": {
+          "maximum": 700,
+          "minimum": 151,
+          "type": "integer"
+        },
+        "Trap": {
+          "maximum": 715,
+          "minimum": 715,
+          "type": "integer"
+        },
+        "Uncommon": {
+          "maximum": 721,
+          "minimum": 159,
+          "type": "integer"
+        },
+        "Unholy": {
+          "maximum": 521,
+          "minimum": 521,
+          "type": "integer"
+        },
+        "Unique": {
+          "maximum": 723,
+          "minimum": 161,
+          "type": "integer"
+        },
+        "Vitality": {
+          "maximum": 509,
+          "minimum": 509,
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    },
+    "traits": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "trigger": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/EquipmentTrigger.draft.json"
+    },
+    "url": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/IriString_2.draft.json"
+    },
+    "usage": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "variants": {
+      "items": {
+        "$ref": "https://2e.aonprd.com/schemas/inferred/objects/EquipmentVariant.draft.json"
+      },
+      "type": "array"
+    }
+  },
+  "required": [
+    "_type",
+    "access",
+    "activations",
+    "alt_edition_url",
+    "benefit",
+    "bulk",
+    "cost",
+    "craft_requirements",
+    "description_html",
+    "description_text",
+    "drawback",
+    "duration",
+    "effect",
+    "equipment_id",
+    "frequency",
+    "hands",
+    "item_level",
+    "legacy",
+    "links",
+    "meta_description",
+    "meta_keywords",
+    "name",
+    "onset",
+    "pfs",
+    "price",
+    "rarity",
+    "raw_fields",
+    "requirements",
+    "saving_throw",
+    "source",
+    "sources",
+    "tiered_variants",
+    "trait_ids",
+    "traits",
+    "trigger",
+    "url",
+    "usage",
+    "variants"
+  ],
+  "title": "Equipment",
+  "type": "object",
+  "x-squashage-class": "https://2e.aonprd.com/Equipment"
+}

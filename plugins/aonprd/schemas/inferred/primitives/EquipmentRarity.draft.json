@@ -1,0 +1,13 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/primitives/EquipmentRarity.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "enum": [
+    "common",
+    "rare",
+    "uncommon",
+    "unique"
+  ],
+  "title": "EquipmentRarity",
+  "type": "string",
+  "x-squashage-closed-enum": true
+}

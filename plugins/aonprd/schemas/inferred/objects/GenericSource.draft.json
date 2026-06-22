@@ -1,0 +1,21 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/objects/GenericSource.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+    "book": {
+      "type": "string"
+    },
+    "page": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/GenericSourcePage.draft.json"
+    },
+    "raw": {
+      "type": "string",
+      "x-squashage-open-vocab": true
+    },
+    "source_id": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/GenericSourceSourceId.draft.json"
+    }
+  },
+  "title": "GenericSource",
+  "type": "object"
+}

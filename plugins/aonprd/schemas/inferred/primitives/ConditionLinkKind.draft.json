@@ -1,0 +1,16 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/primitives/ConditionLinkKind.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "enum": [
+    "Actions",
+    "Conditions",
+    "Equipment",
+    "Rules",
+    "Skills",
+    "Sources",
+    "Traits"
+  ],
+  "title": "ConditionLinkKind",
+  "type": "string",
+  "x-squashage-closed-enum": true
+}

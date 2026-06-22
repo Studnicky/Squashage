@@ -1,0 +1,15 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/objects/FeatLeadsTo.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+    "feat_id": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/FeatLeadsToFeatId.draft.json"
+    },
+    "name": {
+      "type": "string",
+      "x-squashage-open-vocab": true
+    }
+  },
+  "title": "FeatLeadsTo",
+  "type": "object"
+}

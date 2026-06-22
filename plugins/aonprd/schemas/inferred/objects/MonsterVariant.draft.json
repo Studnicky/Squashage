@@ -1,0 +1,15 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/objects/MonsterVariant.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+    "kind": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/MonsterVariantKind.draft.json"
+    },
+    "url": {
+      "type": "string",
+      "x-squashage-open-vocab": true
+    }
+  },
+  "title": "MonsterVariant",
+  "type": "object"
+}

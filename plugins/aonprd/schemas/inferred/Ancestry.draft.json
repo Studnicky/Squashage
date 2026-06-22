@@ -1,0 +1,725 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/Ancestry.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": true,
+  "properties": {
+    "_type": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/AncestryType.draft.json"
+    },
+    "alt_edition_url": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "body_html": {
+      "type": "string"
+    },
+    "body_text": {
+      "type": "string"
+    },
+    "entity_id": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/AncestryEntityId.draft.json"
+    },
+    "legacy": {
+      "type": "boolean"
+    },
+    "links": {
+      "items": {
+        "$ref": "https://2e.aonprd.com/schemas/inferred/objects/AncestryLink.draft.json"
+      },
+      "type": "array"
+    },
+    "mechanics": {
+      "properties": {
+        "attribute_boosts": {
+          "items": {
+            "enum": [
+              "Charisma",
+              "Constitution",
+              "Dexterity",
+              "Free",
+              "Intelligence",
+              "Strength",
+              "Two free ability boosts",
+              "Wisdom"
+            ],
+            "type": "string",
+            "x-squashage-closed-enum": true
+          },
+          "type": "array"
+        },
+        "attribute_flaws": {
+          "items": {
+            "enum": [
+              "Charisma",
+              "Constitution",
+              "Dexterity",
+              "Intelligence",
+              "Strength",
+              "Wisdom"
+            ],
+            "type": "string",
+            "x-squashage-closed-enum": true
+          },
+          "type": "array"
+        },
+        "granted": {
+          "items": {
+            "enum": [
+              "Clan Dagger"
+            ],
+            "type": "string",
+            "x-squashage-closed-enum": true
+          },
+          "type": "array"
+        },
+        "hit_points": {
+          "maximum": 10,
+          "minimum": 6,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "languages": {
+          "properties": {
+            "bonus_choice": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "fixed": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "raw": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "type": "object"
+        },
+        "size": {
+          "enum": [
+            "Choose the size appropriate to your animal: Tiny, Small, Medium, or Large",
+            "Large",
+            "Medium",
+            "Medium or Small",
+            "Small",
+            "Tiny",
+            null
+          ],
+          "type": [
+            "string",
+            "null"
+          ],
+          "x-squashage-closed-enum": true
+        },
+        "speed": {
+          "maximum": 30,
+          "minimum": 5,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "vision": {
+          "enum": [
+            "Darkvision",
+            "Low-Light Vision",
+            null
+          ],
+          "type": [
+            "string",
+            "null"
+          ],
+          "x-squashage-closed-enum": true
+        }
+      },
+      "type": "object"
+    },
+    "meta_description": {
+      "type": "string"
+    },
+    "meta_keywords": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "pfs": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/AncestryPfs.draft.json"
+    },
+    "popular_anathema": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "popular_edicts": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "rarity": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/ActionRarity.draft.json"
+    },
+    "raw_fields": {
+      "properties": {
+        "Ancestry Page": {
+          "enum": [
+            "Beastkin"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Frequency": {
+          "enum": [
+            "once per day"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        }
+      },
+      "type": "object"
+    },
+    "sections": {
+      "items": {
+        "$ref": "https://2e.aonprd.com/schemas/inferred/objects/AncestrySection.draft.json"
+      },
+      "type": "array"
+    },
+    "source": {
+      "properties": {
+        "book": {
+          "type": "string"
+        },
+        "page": {
+          "maximum": 393,
+          "minimum": 9,
+          "type": "integer"
+        },
+        "source_id": {
+          "maximum": 293,
+          "minimum": 29,
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    },
+    "sources": {
+      "items": {
+        "$ref": "https://2e.aonprd.com/schemas/inferred/objects/AncestrySource.draft.json"
+      },
+      "type": "array"
+    },
+    "trait_ids": {
+      "properties": {
+        "Aasimar": {
+          "maximum": 256,
+          "minimum": 256,
+          "type": "integer"
+        },
+        "Aberration": {
+          "maximum": 1,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "Aeon": {
+          "maximum": 208,
+          "minimum": 208,
+          "type": "integer"
+        },
+        "Aiuvarin": {
+          "maximum": 515,
+          "minimum": 515,
+          "type": "integer"
+        },
+        "Amphibious": {
+          "maximum": 207,
+          "minimum": 207,
+          "type": "integer"
+        },
+        "Anadi": {
+          "maximum": 255,
+          "minimum": 255,
+          "type": "integer"
+        },
+        "Android": {
+          "maximum": 334,
+          "minimum": 334,
+          "type": "integer"
+        },
+        "Aphorite": {
+          "maximum": 335,
+          "minimum": 335,
+          "type": "integer"
+        },
+        "Arcane": {
+          "maximum": 11,
+          "minimum": 11,
+          "type": "integer"
+        },
+        "Ardande": {
+          "maximum": 498,
+          "minimum": 498,
+          "type": "integer"
+        },
+        "Athamaru": {
+          "maximum": 741,
+          "minimum": 741,
+          "type": "integer"
+        },
+        "Automaton": {
+          "maximum": 398,
+          "minimum": 398,
+          "type": "integer"
+        },
+        "Awakened Animal": {
+          "maximum": 787,
+          "minimum": 787,
+          "type": "integer"
+        },
+        "Azarketi": {
+          "maximum": 336,
+          "minimum": 336,
+          "type": "integer"
+        },
+        "Beast": {
+          "maximum": 20,
+          "minimum": 20,
+          "type": "integer"
+        },
+        "Beastkin": {
+          "maximum": 337,
+          "minimum": 337,
+          "type": "integer"
+        },
+        "Catfolk": {
+          "maximum": 746,
+          "minimum": 746,
+          "type": "integer"
+        },
+        "Centaur": {
+          "maximum": 747,
+          "minimum": 747,
+          "type": "integer"
+        },
+        "Changeling": {
+          "maximum": 552,
+          "minimum": 552,
+          "type": "integer"
+        },
+        "Concentrate": {
+          "maximum": 32,
+          "minimum": 32,
+          "type": "integer"
+        },
+        "Conrasu": {
+          "maximum": 343,
+          "minimum": 343,
+          "type": "integer"
+        },
+        "Construct": {
+          "maximum": 35,
+          "minimum": 35,
+          "type": "integer"
+        },
+        "Dhampir": {
+          "maximum": 750,
+          "minimum": 750,
+          "type": "integer"
+        },
+        "Divine": {
+          "maximum": 48,
+          "minimum": 48,
+          "type": "integer"
+        },
+        "Dragon": {
+          "maximum": 581,
+          "minimum": 581,
+          "type": "integer"
+        },
+        "Dragonblood": {
+          "maximum": 794,
+          "minimum": 794,
+          "type": "integer"
+        },
+        "Dragonet": {
+          "maximum": 893,
+          "minimum": 893,
+          "type": "integer"
+        },
+        "Dromaar": {
+          "maximum": 516,
+          "minimum": 516,
+          "type": "integer"
+        },
+        "Duskwalker": {
+          "maximum": 751,
+          "minimum": 751,
+          "type": "integer"
+        },
+        "Dwarf": {
+          "maximum": 584,
+          "minimum": 584,
+          "type": "integer"
+        },
+        "Elf": {
+          "maximum": 588,
+          "minimum": 588,
+          "type": "integer"
+        },
+        "Fetchling": {
+          "maximum": 300,
+          "minimum": 300,
+          "type": "integer"
+        },
+        "Fey": {
+          "maximum": 69,
+          "minimum": 69,
+          "type": "integer"
+        },
+        "Fleshwarp": {
+          "maximum": 338,
+          "minimum": 338,
+          "type": "integer"
+        },
+        "Ganzi": {
+          "maximum": 339,
+          "minimum": 339,
+          "type": "integer"
+        },
+        "Ghoran": {
+          "maximum": 352,
+          "minimum": 352,
+          "type": "integer"
+        },
+        "Giant": {
+          "maximum": 79,
+          "minimum": 79,
+          "type": "integer"
+        },
+        "Gnome": {
+          "maximum": 617,
+          "minimum": 617,
+          "type": "integer"
+        },
+        "Goblin": {
+          "maximum": 618,
+          "minimum": 618,
+          "type": "integer"
+        },
+        "Goloma": {
+          "maximum": 381,
+          "minimum": 381,
+          "type": "integer"
+        },
+        "Halfling": {
+          "maximum": 621,
+          "minimum": 621,
+          "type": "integer"
+        },
+        "Hobgoblin": {
+          "maximum": 757,
+          "minimum": 757,
+          "type": "integer"
+        },
+        "Human": {
+          "maximum": 627,
+          "minimum": 627,
+          "type": "integer"
+        },
+        "Humanoid": {
+          "maximum": 628,
+          "minimum": 91,
+          "type": "integer"
+        },
+        "Hungerseed": {
+          "maximum": 827,
+          "minimum": 827,
+          "type": "integer"
+        },
+        "Ifrit": {
+          "maximum": 301,
+          "minimum": 301,
+          "type": "integer"
+        },
+        "Jotunborn": {
+          "maximum": 860,
+          "minimum": 860,
+          "type": "integer"
+        },
+        "Kashrishi": {
+          "maximum": 462,
+          "minimum": 462,
+          "type": "integer"
+        },
+        "Kholo": {
+          "maximum": 758,
+          "minimum": 758,
+          "type": "integer"
+        },
+        "Kitsune": {
+          "maximum": 341,
+          "minimum": 341,
+          "type": "integer"
+        },
+        "Kobold": {
+          "maximum": 759,
+          "minimum": 759,
+          "type": "integer"
+        },
+        "Leshy": {
+          "maximum": 639,
+          "minimum": 639,
+          "type": "integer"
+        },
+        "Lizardfolk": {
+          "maximum": 760,
+          "minimum": 760,
+          "type": "integer"
+        },
+        "Merfolk": {
+          "maximum": 227,
+          "minimum": 227,
+          "type": "integer"
+        },
+        "Minotaur": {
+          "maximum": 788,
+          "minimum": 788,
+          "type": "integer"
+        },
+        "Nagaji": {
+          "maximum": 359,
+          "minimum": 359,
+          "type": "integer"
+        },
+        "Nephilim": {
+          "maximum": 518,
+          "minimum": 518,
+          "type": "integer"
+        },
+        "Orc": {
+          "maximum": 666,
+          "minimum": 666,
+          "type": "integer"
+        },
+        "Oread": {
+          "maximum": 304,
+          "minimum": 304,
+          "type": "integer"
+        },
+        "Plant": {
+          "maximum": 668,
+          "minimum": 125,
+          "type": "integer"
+        },
+        "Polymorph": {
+          "maximum": 127,
+          "minimum": 127,
+          "type": "integer"
+        },
+        "Poppet": {
+          "maximum": 418,
+          "minimum": 418,
+          "type": "integer"
+        },
+        "Primal": {
+          "maximum": 134,
+          "minimum": 134,
+          "type": "integer"
+        },
+        "Rare": {
+          "maximum": 683,
+          "minimum": 137,
+          "type": "integer"
+        },
+        "Ratfolk": {
+          "maximum": 769,
+          "minimum": 769,
+          "type": "integer"
+        },
+        "Reflection": {
+          "maximum": 902,
+          "minimum": 902,
+          "type": "integer"
+        },
+        "Samsaran": {
+          "maximum": 828,
+          "minimum": 828,
+          "type": "integer"
+        },
+        "Sarangay": {
+          "maximum": 829,
+          "minimum": 829,
+          "type": "integer"
+        },
+        "Shadow": {
+          "maximum": 693,
+          "minimum": 693,
+          "type": "integer"
+        },
+        "Shisk": {
+          "maximum": 382,
+          "minimum": 382,
+          "type": "integer"
+        },
+        "Shoony": {
+          "maximum": 296,
+          "minimum": 296,
+          "type": "integer"
+        },
+        "Skeleton": {
+          "maximum": 236,
+          "minimum": 236,
+          "type": "integer"
+        },
+        "Spirit": {
+          "maximum": 737,
+          "minimum": 737,
+          "type": "integer"
+        },
+        "Sprite": {
+          "maximum": 238,
+          "minimum": 238,
+          "type": "integer"
+        },
+        "Strix": {
+          "maximum": 342,
+          "minimum": 342,
+          "type": "integer"
+        },
+        "Suli": {
+          "maximum": 310,
+          "minimum": 310,
+          "type": "integer"
+        },
+        "Surki": {
+          "maximum": 789,
+          "minimum": 789,
+          "type": "integer"
+        },
+        "Sylph": {
+          "maximum": 311,
+          "minimum": 311,
+          "type": "integer"
+        },
+        "Talos": {
+          "maximum": 507,
+          "minimum": 507,
+          "type": "integer"
+        },
+        "Tanuki": {
+          "maximum": 830,
+          "minimum": 830,
+          "type": "integer"
+        },
+        "Tengu": {
+          "maximum": 776,
+          "minimum": 776,
+          "type": "integer"
+        },
+        "Tiefling": {
+          "maximum": 258,
+          "minimum": 258,
+          "type": "integer"
+        },
+        "Transmutation": {
+          "maximum": 157,
+          "minimum": 157,
+          "type": "integer"
+        },
+        "Tripkee": {
+          "maximum": 793,
+          "minimum": 793,
+          "type": "integer"
+        },
+        "Uncommon": {
+          "maximum": 721,
+          "minimum": 159,
+          "type": "integer"
+        },
+        "Undead": {
+          "maximum": 160,
+          "minimum": 160,
+          "type": "integer"
+        },
+        "Undine": {
+          "maximum": 314,
+          "minimum": 314,
+          "type": "integer"
+        },
+        "Vanara": {
+          "maximum": 368,
+          "minimum": 368,
+          "type": "integer"
+        },
+        "Vishkanya": {
+          "maximum": 369,
+          "minimum": 369,
+          "type": "integer"
+        },
+        "Wayang": {
+          "maximum": 831,
+          "minimum": 831,
+          "type": "integer"
+        },
+        "Yaksha": {
+          "maximum": 832,
+          "minimum": 832,
+          "type": "integer"
+        },
+        "Yaoguai": {
+          "maximum": 833,
+          "minimum": 833,
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    },
+    "traits": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "url": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/IriString_2.draft.json"
+    }
+  },
+  "required": [
+    "_type",
+    "alt_edition_url",
+    "body_html",
+    "body_text",
+    "entity_id",
+    "legacy",
+    "links",
+    "mechanics",
+    "meta_description",
+    "meta_keywords",
+    "name",
+    "pfs",
+    "popular_anathema",
+    "popular_edicts",
+    "rarity",
+    "raw_fields",
+    "sections",
+    "source",
+    "sources",
+    "trait_ids",
+    "traits",
+    "url"
+  ],
+  "title": "Ancestry",
+  "type": "object",
+  "x-squashage-class": "https://2e.aonprd.com/Ancestry"
+}

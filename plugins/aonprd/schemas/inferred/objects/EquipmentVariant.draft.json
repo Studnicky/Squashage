@@ -1,0 +1,38 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/objects/EquipmentVariant.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+    "bulk": {
+      "maximum": 1,
+      "minimum": 1,
+      "oneOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "description_text": {
+      "type": "string"
+    },
+    "item_level": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/EquipmentVariantItemLevel.draft.json"
+    },
+    "name": {
+      "type": "string"
+    },
+    "price": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/objects/EquipmentVariantPrice.draft.json"
+    },
+    "source": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/objects/EquipmentVariantSource.draft.json"
+    }
+  },
+  "title": "EquipmentVariant",
+  "type": "object"
+}

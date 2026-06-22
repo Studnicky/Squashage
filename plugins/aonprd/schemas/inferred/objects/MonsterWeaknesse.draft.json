@@ -1,0 +1,14 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/objects/MonsterWeaknesse.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+    "type": {
+      "type": "string"
+    },
+    "value": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/MonsterWeaknesseValue.draft.json"
+    }
+  },
+  "title": "MonsterWeaknesse",
+  "type": "object"
+}

@@ -1,0 +1,29 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/objects/MonsterSpellList.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+    "attack": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/MonsterSpellListAttack.draft.json"
+    },
+    "dc": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/HazardDisableDc.draft.json"
+    },
+    "kind": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/MonsterSpellListKind.draft.json"
+    },
+    "slots": {
+      "items": {
+        "$ref": "https://2e.aonprd.com/schemas/inferred/objects/MonsterSpellListSlot.draft.json"
+      },
+      "type": "array"
+    },
+    "tradition": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "title": "MonsterSpellList",
+  "type": "object"
+}

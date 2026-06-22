@@ -1,0 +1,22 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/objects/RuleLink.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+    "href": {
+      "type": "string",
+      "x-squashage-open-vocab": true
+    },
+    "id": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/RuleLinkId.draft.json"
+    },
+    "kind": {
+      "type": "string"
+    },
+    "text": {
+      "type": "string",
+      "x-squashage-open-vocab": true
+    }
+  },
+  "title": "RuleLink",
+  "type": "object"
+}

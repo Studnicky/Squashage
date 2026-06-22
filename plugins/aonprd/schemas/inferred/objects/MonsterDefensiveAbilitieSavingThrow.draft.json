@@ -1,0 +1,20 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/objects/MonsterDefensiveAbilitieSavingThrow.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+    "basic": {
+      "type": "boolean"
+    },
+    "dc": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/MonsterDefensiveAbilitieSavingThrowDc.draft.json"
+    },
+    "save": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/MonsterDefensiveAbilitieSavingThrowSave.draft.json"
+    }
+  },
+  "title": "MonsterDefensiveAbilitieSavingThrow",
+  "type": [
+    "object",
+    "null"
+  ]
+}

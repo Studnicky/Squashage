@@ -1,0 +1,14 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/objects/SpellBloodline.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+    "bloodline_id": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/SpellBloodlineBloodlineId.draft.json"
+    },
+    "name": {
+      "type": "string"
+    }
+  },
+  "title": "SpellBloodline",
+  "type": "object"
+}

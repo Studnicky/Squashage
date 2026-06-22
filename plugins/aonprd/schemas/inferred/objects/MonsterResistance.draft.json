@@ -1,0 +1,20 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/objects/MonsterResistance.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+    "exceptions": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "type": {
+      "type": "string"
+    },
+    "value": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/MonsterResistanceValue.draft.json"
+    }
+  },
+  "title": "MonsterResistance",
+  "type": "object"
+}

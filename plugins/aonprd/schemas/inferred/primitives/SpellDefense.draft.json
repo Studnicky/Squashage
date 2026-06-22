@@ -1,0 +1,24 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/primitives/SpellDefense.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "enum": [
+    "AC",
+    "AC and basic Fortitude",
+    "Fortitude",
+    "Fortitude (see text)",
+    "Reflex",
+    "Will",
+    "basic Fortitude",
+    "basic Reflex",
+    "basic Reflex (see text)",
+    "basic Will",
+    "basic will",
+    null
+  ],
+  "title": "SpellDefense",
+  "type": [
+    "string",
+    "null"
+  ],
+  "x-squashage-closed-enum": true
+}

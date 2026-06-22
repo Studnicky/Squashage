@@ -1,0 +1,16 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/primitives/HazardRoutineName.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "enum": [
+    "34(master) to notice the reflective field is dangerous; noticing the field has a DC of 0",
+    "C3",
+    "Escaping",
+    "Event 11: Nosois’ Brunch",
+    "H7",
+    "Perception",
+    "Performance"
+  ],
+  "title": "HazardRoutineName",
+  "type": "string",
+  "x-squashage-closed-enum": true
+}

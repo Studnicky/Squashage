@@ -1,0 +1,23 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/primitives/EquipmentCraftRequirements.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "enum": [
+    "Provide fur or a similar tissue sample from the designated kind of animal.",
+    "Supply a casting of 9th-level ethereal jaunt.",
+    "Supply one casting of all listed levels of all listed spells.",
+    "Supply one casting of all listed ranks of all listed spells.",
+    "The initial raw materials must include 33 gp of silver.",
+    "You are an expert in Crafting.",
+    "You're an expert in Crafting.",
+    "at least 175 gp of adamantine + 17.5 gp per Bulk",
+    "at least 20 sp of cold iron + 2 sp per Bulk",
+    "at least 20 sp of silver + 2 sp per Bulk",
+    null
+  ],
+  "title": "EquipmentCraftRequirements",
+  "type": [
+    "string",
+    "null"
+  ],
+  "x-squashage-closed-enum": true
+}

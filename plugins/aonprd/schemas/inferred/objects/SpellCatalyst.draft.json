@@ -1,0 +1,14 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/objects/SpellCatalyst.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+    "equipment_id": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/SpellCatalystEquipmentId.draft.json"
+    },
+    "name": {
+      "type": "string"
+    }
+  },
+  "title": "SpellCatalyst",
+  "type": "object"
+}

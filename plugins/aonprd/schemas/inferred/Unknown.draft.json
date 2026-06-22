@@ -1,0 +1,111 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/Unknown.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": true,
+  "properties": {
+    "_type": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/UnknownType.draft.json"
+    },
+    "alt_edition_url": {
+      "type": "null"
+    },
+    "body_html": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/UnknownBodyHtml.draft.json"
+    },
+    "body_text": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/UnknownBodyHtml.draft.json"
+    },
+    "entity_id": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/UnknownEntityId.draft.json"
+    },
+    "legacy": {
+      "type": "boolean"
+    },
+    "links": {
+      "items": {
+        "type": "null"
+      },
+      "type": "array"
+    },
+    "meta_description": {
+      "type": "null"
+    },
+    "meta_keywords": {
+      "type": "null"
+    },
+    "name": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/UnknownBodyHtml.draft.json"
+    },
+    "pfs": {
+      "type": "null"
+    },
+    "rarity": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/ArmorRarity.draft.json"
+    },
+    "raw_fields": {
+      "type": "object"
+    },
+    "sections": {
+      "items": {
+        "type": "null"
+      },
+      "type": "array"
+    },
+    "source": {
+      "properties": {
+        "book": {
+          "type": "null"
+        },
+        "page": {
+          "type": "null"
+        },
+        "source_id": {
+          "type": "null"
+        }
+      },
+      "type": "object"
+    },
+    "sources": {
+      "items": {
+        "type": "null"
+      },
+      "type": "array"
+    },
+    "trait_ids": {
+      "type": "object"
+    },
+    "traits": {
+      "items": {
+        "type": "null"
+      },
+      "type": "array"
+    },
+    "url": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/IriString_4.draft.json"
+    }
+  },
+  "required": [
+    "_type",
+    "alt_edition_url",
+    "body_html",
+    "body_text",
+    "entity_id",
+    "legacy",
+    "links",
+    "meta_description",
+    "meta_keywords",
+    "name",
+    "pfs",
+    "rarity",
+    "raw_fields",
+    "sections",
+    "source",
+    "sources",
+    "trait_ids",
+    "traits",
+    "url"
+  ],
+  "title": "Unknown",
+  "type": "object",
+  "x-squashage-class": "https://2e.aonprd.com/Unknown"
+}

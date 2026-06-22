@@ -1,0 +1,17 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/primitives/ClassSourceBook.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "enum": [
+    "Battlecry!",
+    "Dark Archives (Remastered)",
+    "Guns &amp; Gears (Remastered)",
+    "Player Core",
+    "Player Core 2",
+    "Rage of Elements",
+    "Secrets of Magic",
+    "War of Immortals"
+  ],
+  "title": "ClassSourceBook",
+  "type": "string",
+  "x-squashage-closed-enum": true
+}

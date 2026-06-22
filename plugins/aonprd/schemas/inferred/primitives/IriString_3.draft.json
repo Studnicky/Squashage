@@ -1,0 +1,16 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/primitives/IriString_3.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "enum": [
+    "https://2e.aonprd.com/Backgrounds.aspx?ID=127",
+    "https://2e.aonprd.com/Backgrounds.aspx?ID=128",
+    "https://2e.aonprd.com/Backgrounds.aspx?ID=129",
+    "https://2e.aonprd.com/Backgrounds.aspx?ID=131",
+    "https://2e.aonprd.com/Backgrounds.aspx?ID=36",
+    "https://2e.aonprd.com/Backgrounds.aspx?ID=438"
+  ],
+  "title": "IriString_3",
+  "type": "string",
+  "x-squashage-closed-enum": true,
+  "x-squashage-iri-promotion": true
+}

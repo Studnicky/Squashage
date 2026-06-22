@@ -1,0 +1,21 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/objects/MonsterSkill.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+    "conditionals": {
+      "items": {
+        "$ref": "https://2e.aonprd.com/schemas/inferred/objects/MonsterSkillConditional.draft.json"
+      },
+      "type": "array"
+    },
+    "modifier": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/MonsterSkillModifier.draft.json"
+    },
+    "name": {
+      "type": "string",
+      "x-squashage-open-vocab": true
+    }
+  },
+  "title": "MonsterSkill",
+  "type": "object"
+}

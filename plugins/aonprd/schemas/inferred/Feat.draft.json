@@ -1,0 +1,1265 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/Feat.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": true,
+  "properties": {
+    "_type": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/FeatType.draft.json"
+    },
+    "access": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/FeatAccess.draft.json"
+    },
+    "action_cost": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/ActionActionCost.draft.json"
+    },
+    "alt_edition_url": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "x-squashage-open-vocab": true
+    },
+    "archetype_footnotes": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "archetypes": {
+      "items": {
+        "$ref": "https://2e.aonprd.com/schemas/inferred/objects/FeatArchetype.draft.json"
+      },
+      "type": "array"
+    },
+    "class_archetypes": {
+      "items": {
+        "$ref": "https://2e.aonprd.com/schemas/inferred/objects/FeatClassArchetype.draft.json"
+      },
+      "type": "array"
+    },
+    "cost": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/FeatCost.draft.json"
+    },
+    "description_html": {
+      "type": "string",
+      "x-squashage-open-vocab": true
+    },
+    "description_text": {
+      "type": "string",
+      "x-squashage-open-vocab": true
+    },
+    "feat_id": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/FeatFeatId.draft.json"
+    },
+    "frequency": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/FeatFrequency.draft.json"
+    },
+    "is_mythic": {
+      "type": "boolean"
+    },
+    "leads_to": {
+      "items": {
+        "$ref": "https://2e.aonprd.com/schemas/inferred/objects/FeatLeadsTo.draft.json"
+      },
+      "type": "array"
+    },
+    "legacy": {
+      "type": "boolean"
+    },
+    "level": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/FeatLevel.draft.json"
+    },
+    "links": {
+      "items": {
+        "$ref": "https://2e.aonprd.com/schemas/inferred/objects/FeatLink.draft.json"
+      },
+      "type": "array"
+    },
+    "meta_description": {
+      "type": "string",
+      "x-squashage-open-vocab": true
+    },
+    "meta_keywords": {
+      "type": "string",
+      "x-squashage-open-vocab": true
+    },
+    "name": {
+      "type": "string",
+      "x-squashage-open-vocab": true
+    },
+    "pfs": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/EquipmentPfs.draft.json"
+    },
+    "prerequisites": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "x-squashage-open-vocab": true
+    },
+    "rarity": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/ActionRarity.draft.json"
+    },
+    "raw_fields": {
+      "properties": {
+        "Access": {
+          "enum": [
+            "A character who is Magaambyan of at least attendant rank has access to this option.",
+            "Bright Lion background",
+            "Character follows the ways of Sangpotshi or studies texts and lore containing Sangpotshi secrets",
+            "Defeat a member of the Butterfly Blades in a sanctioned bout.",
+            "Pine leshies have access to this feat",
+            "This feat is available to all players in a Stolen Fate campaign",
+            "You are from Absalom.",
+            "You are from Jalmeray.",
+            "You are from Mediogalti Island.",
+            "You have been initiated by the grand duchess of Alkenstar or one of her agents.",
+            "You must befriend at least one Turpin Rowe logger.",
+            "You're from Alkenstar or the Mana Wastes.",
+            "You've encountered a kaiju and survived.",
+            "You’re a member of the Hellbreakers league.",
+            "member of the Magaambya"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Adowyn": {
+          "enum": [
+            "(untamed female human hunter) and"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Alejandro the Green": {
+          "enum": [
+            "(excitable male human druid) poured out raw magic into his forest refuge in the River Kingdoms, over time causing the trees to walk and attracting hordes of curious fey from the First World. With the help of these newly made arboreals and fey visitors, he’s been able to drive out numerous hostile invaders. However, his wild magic has recently attracted the attention of malevolent proteans from the Maelstrom, and he’ll need more allies than he currently has to keep his home safe from their unpredictable predations."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Arba Dwindletree": {
+          "enum": [
+            "(destructive female gnome druid) staves off her Bleaching by wreaking havoc on crops and pitting fledgling settlements in the River Kingdoms against one another. Her delight in this chaos is tempered only when meddlesome fey creatures try to join in on the “fun.” Posing as an Order of the Nail Hellknight,"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Archetype": {
+          "type": "string"
+        },
+        "Archetypes": {
+          "type": "string"
+        },
+        "Arnisant": {
+          "enum": [
+            "(mysterious male human knight), who hunts undead alongside a band of stalwart knights."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Chogyel": {
+          "enum": [
+            "(diligent nonbinary human nephilim priest) has begun to notice strange signs of supernatural activity in Tamdrin Vale. Their faith will soon be tested, putting them on the path toward becoming an ascended celestial."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Class": {
+          "enum": [
+            "Alchemist",
+            "Barbarian",
+            "Cleric",
+            "Druid",
+            "Fighter",
+            "Inventor",
+            "Kineticist"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Cost": {
+          "enum": [
+            "1 or more saguimancy Hit Points",
+            "5 or more sanguimancy Hit Points",
+            "all your remaining sanguimancy Hit Points (minimum 3)",
+            "the Price of the chosen item"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Darl Jubannich": {
+          "enum": [
+            "(inspirational male human poet) and"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Deng Fo-Murk": {
+          "enum": [
+            "(cruel male human necromancer) uses his alchemical skills to reanimate the corpses of nobles and diplomats to sew political conflict between Hwanggot and its neighbors. He is poised to light the fuse on a powder keg of bloody consequences, through which he will gallop through on his terror bird mount."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Dr. Ashley Arrowbaud": {
+          "enum": [
+            "(distractable female human inventor) labored for years within her laboratory until she one day emerged with a large, arthropod-shaped metal creature marked"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Ernhilda Truestone": {
+          "enum": [
+            "(patient female dwarf sorcerer) used her wildspell powers to create an oasis of stable magic in the Mana Wastes, allowing her to give succor to harried travelers. Her home in the wastes grew to a bustling trading post, protected by her powers, though it rapidly faded after her passing. Some believe that Ernhilda’s spirit now resides in a cave somewhere under the settlement and that she could be brought back to life with the proper ritual. Finding the proper site for such magic has been hindered by the subterranean tunnels, which seem to shift randomly and without warning."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Frequency": {
+          "enum": [
+            "Once per day",
+            "Once per hour",
+            "Once per minute",
+            "once every 10 minutes",
+            "once per 10 minutes",
+            "once per Crimson Shroud",
+            "once per day",
+            "once per hour",
+            "once per minute",
+            "once per round",
+            "once per round.",
+            "once per turn",
+            "three times a day"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Gal": {
+          "enum": [
+            "(clever female centaur ranger) moves hoof in hoof with her boar companion"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Ghunda Gutrim": {
+          "enum": [
+            "(boisterous male ganzi musician) patrols the border of the Field of Maidens to rescue and lift the spirits of those who accidentally wandered into the haunted area."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Halimess": {
+          "enum": [
+            "(ferocious female dromaar freedom fighter), whose cloak is made of white tiger pelt, whose helm is plated with the scales of dragons, and whose blades are crafted from the teeth of deep-sea leviathans. She travels the land not slaying monsters, but helping commoners, standing up to tyrants, and working the fields when others cannot. She is rarely forced to unsheathe her blade, but when she does, her legend grows. Many intelligent monsters even fear her approach."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Hew": {
+          "enum": [
+            "(fearsome male gorilla companion) close. The two have found some success in Senghor, and are saving up to buy their first trading ship."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Hosetter": {
+          "enum": [
+            "(deceased male aiuvarin philosopher) led the people to revolt and fight against House Thrune, eventually forming the Revolutionary Council to rule the newly independent nation of Galt. Little did they know their lofty ideals would be turned against them when the council executed Hosetter with one of their final blade guillotines, trapping the philosopher’s soul. Fearing for his own life, Jubannich fled the country."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Jinx": {
+          "enum": [
+            "(steadfast female boar companion), plunging tusk and arrow into the hearts of any would-be intruders. They are friendly with the local druids who reside on the Isle of Arenway, but aren’t beholden to their politics."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Leryn": {
+          "enum": [
+            "(protective male wolf companion) travel protecting sacred natural lands and hunting those unfortunate enough to draw their ire. Their most recent exploits involved stopping an illegal strip-mining operation in the foothills of the Mindspin Mountains."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Mkosa": {
+          "enum": [
+            "(curious nonbinary halfling student) who has begun to exhibit signs of being a nascent wildspell. They don’t wish to hinder Mkosa’s education but are afraid of accidental explosions of magic harming others. The teachers haven’t informed Mkosa about their worries, and the time to make a decision is rapidly approaching."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Moloch": {
+          "enum": [
+            "(tyrannical male devil general), General of Hell, rules Malebolge and directs Hell’s armies from Melqart Keep at the heart of Citadel Ba’al. The Lord of the Sixth personifies wrathful destruction held in check by absolute discipline, and those who honor him often find their enemies crushed by the might of his armies."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Namzaruum": {
+          "enum": [
+            "(prophesied male human hero-god) tell of the day he’ll awaken from his long rest in the Hall of Slumbering Kings to lead a new Azlanti empire."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Nibbub": {
+          "enum": [
+            "(plucky male chuspiqui scout) travel from remote community to remote community, protecting travelers from bandits and monsters while collecting an ever-growing congregation of grateful worshippers."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Owyn Darkoath": {
+          "enum": [
+            "(manipulative male humanwarrior) pushes border tensions between Andoran and Cheliax, riding a pitch black destrier into battle. His goal is to force default on the Thrunes’ contract with Hell, bringing even greater war when Asmodeus’ forces come to collect what they’re owed."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Prerequisites": {
+          "type": "string",
+          "x-squashage-open-vocab": true
+        },
+        "Queen Galfrey": {
+          "enum": [
+            "(heroic female human herald), ruler of Mendev, and her closest allies rose up to stop him, bringing an end to the Fifth Mendevian Crusade. Queen Galfrey became an ascended celestial upon the closure of the Worldwound, rising to the celestial ranks as Iomedae’s herald."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Raetorgash": {
+          "enum": [
+            "(cruel female velstrac demagogue), the Skull-Hoarder, resides in a bone tower at the heart of the charnel house Targothieh with the Netherworld. She often judges potential subjects by the shape and composition of their skulls, usually by first having them removed from the containing skin and muscle."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Razmir": {
+          "enum": [
+            "(arrogant male human wouldbe- god) pursues divinity and immortality by whatever means he can acquire it, in locales across the Inner Sea both obvious and obscure."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Relkin": {
+          "enum": [
+            "(mirthful male human ranger) guards his abode from undead, Molthuni troops, and Nirmathan militias alike, assisted by a knavish group of bandits with hearts of gold."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Requirements": {
+          "type": "string"
+        },
+        "SC- 04910": {
+          "enum": [
+            "(sturdy genderless construct companion) who almost has a will of its own. The two have recently begun to discover the sinister actions of a secret society that includes members of the administration of Dr. Arrowbaud’s alma mater, Blythir College."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Sihar": {
+          "enum": [
+            "(revolutionary female human fighter), wage a cloak-anddagger war of attrition against the forces of the tyrannical God-King Walkena. Sihar has also revived the worship of the Old Sun Gods, a trio of deities once forgotten."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Steel at Dawn": {
+          "enum": [
+            "(compassionate female human gunslinger) and her sidekick hierophant"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Tessa Fairwind": {
+          "enum": [
+            "(fearsome female aiuvarin pirate) and her crew rule over a kingdom of salt and blood."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Thais": {
+          "enum": [
+            ", Cayden Cailean’s herald, embodies freedom and courage. She has gone as far as to fight the ruler of nine Hells, Asmodeus, to liberate one thousand innocent souls who were tricked into the clutches of hell by a vaguely worded diabolical contract. In the process, she paid a personal sacrifice: the loss of one of her feathery wings."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "The Old Man": {
+          "enum": [
+            "(wise male human herald), whose real name has been forgotten, replaced by an epithet. Did he ever have a real name? As a herald of the god Irori, The Old Man has helped many monks achieve their full potential and been the inspiration for several fighting styles. But don’t let his wizened appearance fool you. His fists are as hard as stone, his movements as swift as the wind. Do not cross The Old Man if you wish for all your bones to remain unbroken and your skin unbruised."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Torman Iates": {
+          "enum": [
+            "(risk-taking male human nomarch), renowned gladiator of Absalom. After emerging triumphant from countless battles within the Irorium arena, the grizzled human has parlayed his fame into successful careers as a tavern owner and local politician. He sits as a nomarch on the Low Council of Absalom, where he helps pass legislation to aid exfighters like himself. Because of this, Torman is respected and well-liked by those who fight for coin."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Treerazer": {
+          "enum": [
+            "(corrupting male demon deforester), seeks dominion over the Tanglebriar. Once a powerful aspiring demon lord, the fiend was banished to the Universe long ago and seeks revenge against the elven deities who imprisoned him within the surrounding forest and all they hold dear."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Trigger": {
+          "type": "string"
+        },
+        "Urghan": {
+          "enum": [
+            "(tormented male cyclops primalist 17) is said to be trapped in a constant repetition of the decisions he made just before the Starstone fell, living in one reality for the most part but frequently responding to the stimuli of variant timelines, his ultimate goal being the protection of an empire from global devastation. Before then, several runelords created demiplanes or used advanced magic to lock themselves out of their own natural chronology, either to gain more time to prepare or one day return to a world that has already survived calamity."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Usage": {
+          "enum": [
+            "imbued into a body ikon",
+            "imbued into a body ikon or worn ikon",
+            "imbued into a melee weapon ikon or worn ikon made of metal, stone, or a similarly hard material",
+            "imbued into a melee weapon ikon that deals slashing damage",
+            "imbued into a ranged weapon ikon, or a melee weapon ikon with the thrown trait",
+            "imbued into a weapon ikon",
+            "imbued into a worn ikon made of cloth or a weapon ikon with a tassel, wrapping, or similar feature.",
+            "imbued into the mirrored aegis"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Vidni": {
+          "enum": [
+            "(charismatic nonbinary kobold merchant) travels in hopes of selling their varied wares, keeping their most trusted friend and bodyguard"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Warshard Weapon": {
+          "enum": [
+            "This is a specific weapon you have chosen to infuse your destiny into during your daily preparations. Most warshard warrior feats work best when coupled with a warshard weapon. You can only have one warshard weapon at a time. A warshard weapon gains the mythic trait."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Yrrelin": {
+          "enum": [
+            "(malicious male serpentfolk lich 21) now resides within his scythe Villainy. He now seeks to behead Golarion’s greatest heroes, one after another, in a zealous push to “bring all life closer to the headless god, Ydersius.” Those who hold the blade are overcome by the wickedness of its former master and aren’t in control of their own actions."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        }
+      },
+      "type": "object"
+    },
+    "related_feats": {
+      "items": {
+        "$ref": "https://2e.aonprd.com/schemas/inferred/objects/FeatRelatedFeat.draft.json"
+      },
+      "type": "array"
+    },
+    "requirements": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "source": {
+      "properties": {
+        "book": {
+          "type": "string"
+        },
+        "page": {
+          "maximum": 321,
+          "minimum": 9,
+          "type": "integer"
+        },
+        "source_id": {
+          "maximum": 307,
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    },
+    "sources": {
+      "items": {
+        "$ref": "https://2e.aonprd.com/schemas/inferred/objects/FeatSource.draft.json"
+      },
+      "type": "array"
+    },
+    "special": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "spoiler_source": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "trait_glossary": {
+      "items": {
+        "$ref": "https://2e.aonprd.com/schemas/inferred/objects/FeatTraitGlossary.draft.json"
+      },
+      "type": "array"
+    },
+    "trait_ids": {
+      "properties": {
+        "Aasimar": {
+          "maximum": 256,
+          "minimum": 256,
+          "type": "integer"
+        },
+        "Abjuration": {
+          "maximum": 2,
+          "minimum": 2,
+          "type": "integer"
+        },
+        "Acid": {
+          "maximum": 3,
+          "minimum": 3,
+          "type": "integer"
+        },
+        "Additive": {
+          "maximum": 795,
+          "minimum": 795,
+          "type": "integer"
+        },
+        "Additive 2": {
+          "maximum": 4,
+          "minimum": 4,
+          "type": "integer"
+        },
+        "Aftermath": {
+          "maximum": 424,
+          "minimum": 424,
+          "type": "integer"
+        },
+        "Air": {
+          "maximum": 5,
+          "minimum": 5,
+          "type": "integer"
+        },
+        "Alchemist": {
+          "maximum": 812,
+          "minimum": 7,
+          "type": "integer"
+        },
+        "Amp": {
+          "maximum": 897,
+          "minimum": 897,
+          "type": "integer"
+        },
+        "Animist": {
+          "maximum": 836,
+          "minimum": 836,
+          "type": "integer"
+        },
+        "Apparition": {
+          "maximum": 837,
+          "minimum": 837,
+          "type": "integer"
+        },
+        "Arcane": {
+          "maximum": 534,
+          "minimum": 11,
+          "type": "integer"
+        },
+        "Archetype": {
+          "maximum": 535,
+          "minimum": 12,
+          "type": "integer"
+        },
+        "Ardande": {
+          "maximum": 498,
+          "minimum": 498,
+          "type": "integer"
+        },
+        "Attack": {
+          "maximum": 540,
+          "minimum": 15,
+          "type": "integer"
+        },
+        "Auditory": {
+          "maximum": 541,
+          "minimum": 16,
+          "type": "integer"
+        },
+        "Aura": {
+          "maximum": 542,
+          "minimum": 542,
+          "type": "integer"
+        },
+        "Barbarian": {
+          "maximum": 813,
+          "minimum": 18,
+          "type": "integer"
+        },
+        "Bard": {
+          "maximum": 546,
+          "minimum": 19,
+          "type": "integer"
+        },
+        "Brandish": {
+          "maximum": 857,
+          "minimum": 857,
+          "type": "integer"
+        },
+        "Champion": {
+          "maximum": 811,
+          "minimum": 24,
+          "type": "integer"
+        },
+        "Class": {
+          "maximum": 397,
+          "minimum": 397,
+          "type": "integer"
+        },
+        "Cleric": {
+          "maximum": 554,
+          "minimum": 26,
+          "type": "integer"
+        },
+        "Cold": {
+          "maximum": 27,
+          "minimum": 27,
+          "type": "integer"
+        },
+        "Commander": {
+          "maximum": 855,
+          "minimum": 855,
+          "type": "integer"
+        },
+        "Complex": {
+          "maximum": 30,
+          "minimum": 30,
+          "type": "integer"
+        },
+        "Concentrate": {
+          "maximum": 561,
+          "minimum": 32,
+          "type": "integer"
+        },
+        "Conjuration": {
+          "maximum": 33,
+          "minimum": 33,
+          "type": "integer"
+        },
+        "Curse": {
+          "maximum": 38,
+          "minimum": 38,
+          "type": "integer"
+        },
+        "Cursebound": {
+          "maximum": 800,
+          "minimum": 800,
+          "type": "integer"
+        },
+        "Death": {
+          "maximum": 571,
+          "minimum": 40,
+          "type": "integer"
+        },
+        "Dedication": {
+          "maximum": 572,
+          "minimum": 41,
+          "type": "integer"
+        },
+        "Destiny": {
+          "maximum": 838,
+          "minimum": 838,
+          "type": "integer"
+        },
+        "Detection": {
+          "maximum": 43,
+          "minimum": 43,
+          "type": "integer"
+        },
+        "Deviant": {
+          "maximum": 426,
+          "minimum": 426,
+          "type": "integer"
+        },
+        "Divine": {
+          "maximum": 579,
+          "minimum": 48,
+          "type": "integer"
+        },
+        "Downtime": {
+          "maximum": 49,
+          "minimum": 49,
+          "type": "integer"
+        },
+        "Druid": {
+          "maximum": 583,
+          "minimum": 52,
+          "type": "integer"
+        },
+        "Earth": {
+          "maximum": 55,
+          "minimum": 55,
+          "type": "integer"
+        },
+        "Eidolon": {
+          "maximum": 386,
+          "minimum": 386,
+          "type": "integer"
+        },
+        "Electricity": {
+          "maximum": 56,
+          "minimum": 56,
+          "type": "integer"
+        },
+        "Elf": {
+          "maximum": 58,
+          "minimum": 58,
+          "type": "integer"
+        },
+        "Emotion": {
+          "maximum": 590,
+          "minimum": 60,
+          "type": "integer"
+        },
+        "Enchantment": {
+          "maximum": 61,
+          "minimum": 61,
+          "type": "integer"
+        },
+        "Esoterica": {
+          "maximum": 899,
+          "minimum": 899,
+          "type": "integer"
+        },
+        "Evocation": {
+          "maximum": 65,
+          "minimum": 65,
+          "type": "integer"
+        },
+        "Evolution": {
+          "maximum": 394,
+          "minimum": 394,
+          "type": "integer"
+        },
+        "Exemplar": {
+          "maximum": 839,
+          "minimum": 839,
+          "type": "integer"
+        },
+        "Exploration": {
+          "maximum": 595,
+          "minimum": 66,
+          "type": "integer"
+        },
+        "Extradimensional": {
+          "maximum": 67,
+          "minimum": 67,
+          "type": "integer"
+        },
+        "Fear": {
+          "maximum": 598,
+          "minimum": 68,
+          "type": "integer"
+        },
+        "Fighter": {
+          "maximum": 601,
+          "minimum": 71,
+          "type": "integer"
+        },
+        "Fire": {
+          "maximum": 604,
+          "minimum": 72,
+          "type": "integer"
+        },
+        "Flourish": {
+          "maximum": 606,
+          "minimum": 73,
+          "type": "integer"
+        },
+        "Focus": {
+          "maximum": 511,
+          "minimum": 511,
+          "type": "integer"
+        },
+        "Force": {
+          "maximum": 75,
+          "minimum": 75,
+          "type": "integer"
+        },
+        "Fortune": {
+          "maximum": 612,
+          "minimum": 76,
+          "type": "integer"
+        },
+        "Fungus": {
+          "maximum": 77,
+          "minimum": 77,
+          "type": "integer"
+        },
+        "General": {
+          "maximum": 615,
+          "minimum": 78,
+          "type": "integer"
+        },
+        "Goblin": {
+          "maximum": 81,
+          "minimum": 81,
+          "type": "integer"
+        },
+        "Guardian": {
+          "maximum": 859,
+          "minimum": 859,
+          "type": "integer"
+        },
+        "Gunslinger": {
+          "maximum": 406,
+          "minimum": 406,
+          "type": "integer"
+        },
+        "Healing": {
+          "maximum": 623,
+          "minimum": 89,
+          "type": "integer"
+        },
+        "Holy": {
+          "maximum": 517,
+          "minimum": 517,
+          "type": "integer"
+        },
+        "Ikon": {
+          "maximum": 840,
+          "minimum": 840,
+          "type": "integer"
+        },
+        "Illusion": {
+          "maximum": 92,
+          "minimum": 92,
+          "type": "integer"
+        },
+        "Impulse": {
+          "maximum": 502,
+          "minimum": 502,
+          "type": "integer"
+        },
+        "Incapacitation": {
+          "maximum": 631,
+          "minimum": 93,
+          "type": "integer"
+        },
+        "Infusion": {
+          "maximum": 503,
+          "minimum": 503,
+          "type": "integer"
+        },
+        "Inventor": {
+          "maximum": 408,
+          "minimum": 408,
+          "type": "integer"
+        },
+        "Investigator": {
+          "maximum": 818,
+          "minimum": 318,
+          "type": "integer"
+        },
+        "Kineticist": {
+          "maximum": 504,
+          "minimum": 504,
+          "type": "integer"
+        },
+        "Leshy": {
+          "maximum": 225,
+          "minimum": 225,
+          "type": "integer"
+        },
+        "Light": {
+          "maximum": 640,
+          "minimum": 100,
+          "type": "integer"
+        },
+        "Lineage": {
+          "maximum": 317,
+          "minimum": 317,
+          "type": "integer"
+        },
+        "Linguistic": {
+          "maximum": 642,
+          "minimum": 101,
+          "type": "integer"
+        },
+        "Magical": {
+          "maximum": 103,
+          "minimum": 103,
+          "type": "integer"
+        },
+        "Magus": {
+          "maximum": 389,
+          "minimum": 389,
+          "type": "integer"
+        },
+        "Manipulate": {
+          "maximum": 645,
+          "minimum": 104,
+          "type": "integer"
+        },
+        "Mental": {
+          "maximum": 647,
+          "minimum": 106,
+          "type": "integer"
+        },
+        "Metal": {
+          "maximum": 505,
+          "minimum": 505,
+          "type": "integer"
+        },
+        "Metamagic": {
+          "maximum": 107,
+          "minimum": 107,
+          "type": "integer"
+        },
+        "Mindshift": {
+          "maximum": 900,
+          "minimum": 900,
+          "type": "integer"
+        },
+        "Misfortune": {
+          "maximum": 654,
+          "minimum": 654,
+          "type": "integer"
+        },
+        "Modification": {
+          "maximum": 410,
+          "minimum": 410,
+          "type": "integer"
+        },
+        "Monk": {
+          "maximum": 656,
+          "minimum": 112,
+          "type": "integer"
+        },
+        "Morph": {
+          "maximum": 657,
+          "minimum": 113,
+          "type": "integer"
+        },
+        "Move": {
+          "maximum": 114,
+          "minimum": 114,
+          "type": "integer"
+        },
+        "Multiclass": {
+          "maximum": 115,
+          "minimum": 115,
+          "type": "integer"
+        },
+        "Mythic": {
+          "maximum": 835,
+          "minimum": 835,
+          "type": "integer"
+        },
+        "Necromancy": {
+          "maximum": 117,
+          "minimum": 117,
+          "type": "integer"
+        },
+        "Negative": {
+          "maximum": 118,
+          "minimum": 118,
+          "type": "integer"
+        },
+        "Oath": {
+          "maximum": 119,
+          "minimum": 119,
+          "type": "integer"
+        },
+        "Occult": {
+          "maximum": 662,
+          "minimum": 120,
+          "type": "integer"
+        },
+        "Olfactory": {
+          "maximum": 246,
+          "minimum": 246,
+          "type": "integer"
+        },
+        "Open": {
+          "maximum": 123,
+          "minimum": 123,
+          "type": "integer"
+        },
+        "Oracle": {
+          "maximum": 817,
+          "minimum": 319,
+          "type": "integer"
+        },
+        "Orc": {
+          "maximum": 124,
+          "minimum": 124,
+          "type": "integer"
+        },
+        "Overflow": {
+          "maximum": 506,
+          "minimum": 506,
+          "type": "integer"
+        },
+        "Plant": {
+          "maximum": 125,
+          "minimum": 125,
+          "type": "integer"
+        },
+        "Poison": {
+          "maximum": 126,
+          "minimum": 126,
+          "type": "integer"
+        },
+        "Polymorph": {
+          "maximum": 670,
+          "minimum": 127,
+          "type": "integer"
+        },
+        "Prediction": {
+          "maximum": 674,
+          "minimum": 132,
+          "type": "integer"
+        },
+        "Press": {
+          "maximum": 133,
+          "minimum": 133,
+          "type": "integer"
+        },
+        "Primal": {
+          "maximum": 676,
+          "minimum": 134,
+          "type": "integer"
+        },
+        "Psyche": {
+          "maximum": 901,
+          "minimum": 901,
+          "type": "integer"
+        },
+        "Psychic": {
+          "maximum": 894,
+          "minimum": 894,
+          "type": "integer"
+        },
+        "Rage": {
+          "maximum": 680,
+          "minimum": 135,
+          "type": "integer"
+        },
+        "Ranger": {
+          "maximum": 682,
+          "minimum": 136,
+          "type": "integer"
+        },
+        "Rare": {
+          "maximum": 683,
+          "minimum": 137,
+          "type": "integer"
+        },
+        "Reincarnated": {
+          "maximum": 903,
+          "minimum": 903,
+          "type": "integer"
+        },
+        "Rogue": {
+          "maximum": 687,
+          "minimum": 139,
+          "type": "integer"
+        },
+        "Sanctified": {
+          "maximum": 519,
+          "minimum": 519,
+          "type": "integer"
+        },
+        "Secret": {
+          "maximum": 142,
+          "minimum": 142,
+          "type": "integer"
+        },
+        "Shoony": {
+          "maximum": 296,
+          "minimum": 296,
+          "type": "integer"
+        },
+        "Skill": {
+          "maximum": 695,
+          "minimum": 144,
+          "type": "integer"
+        },
+        "Sonic": {
+          "maximum": 697,
+          "minimum": 147,
+          "type": "integer"
+        },
+        "Sorcerer": {
+          "maximum": 824,
+          "minimum": 148,
+          "type": "integer"
+        },
+        "Spellshape": {
+          "maximum": 513,
+          "minimum": 513,
+          "type": "integer"
+        },
+        "Spirit": {
+          "maximum": 737,
+          "minimum": 149,
+          "type": "integer"
+        },
+        "Stance": {
+          "maximum": 701,
+          "minimum": 152,
+          "type": "integer"
+        },
+        "Summoner": {
+          "maximum": 392,
+          "minimum": 392,
+          "type": "integer"
+        },
+        "Swashbuckler": {
+          "maximum": 825,
+          "minimum": 321,
+          "type": "integer"
+        },
+        "Tandem": {
+          "maximum": 395,
+          "minimum": 395,
+          "type": "integer"
+        },
+        "Teleportation": {
+          "maximum": 710,
+          "minimum": 156,
+          "type": "integer"
+        },
+        "Thaumaturge": {
+          "maximum": 895,
+          "minimum": 895,
+          "type": "integer"
+        },
+        "Transmutation": {
+          "maximum": 157,
+          "minimum": 157,
+          "type": "integer"
+        },
+        "Uncommon": {
+          "maximum": 721,
+          "minimum": 159,
+          "type": "integer"
+        },
+        "Unstable": {
+          "maximum": 416,
+          "minimum": 416,
+          "type": "integer"
+        },
+        "Vigilante": {
+          "maximum": 326,
+          "minimum": 326,
+          "type": "integer"
+        },
+        "Visual": {
+          "maximum": 727,
+          "minimum": 163,
+          "type": "integer"
+        },
+        "Vitality": {
+          "maximum": 509,
+          "minimum": 509,
+          "type": "integer"
+        },
+        "Void": {
+          "maximum": 510,
+          "minimum": 510,
+          "type": "integer"
+        },
+        "Wandering": {
+          "maximum": 843,
+          "minimum": 843,
+          "type": "integer"
+        },
+        "Water": {
+          "maximum": 732,
+          "minimum": 165,
+          "type": "integer"
+        },
+        "Witch": {
+          "maximum": 734,
+          "minimum": 323,
+          "type": "integer"
+        },
+        "Wizard": {
+          "maximum": 735,
+          "minimum": 166,
+          "type": "integer"
+        },
+        "Wood": {
+          "maximum": 508,
+          "minimum": 508,
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    },
+    "traits": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "trigger": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "url": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/IriString.draft.json"
+    }
+  },
+  "required": [
+    "_type",
+    "access",
+    "action_cost",
+    "alt_edition_url",
+    "archetype_footnotes",
+    "archetypes",
+    "class_archetypes",
+    "cost",
+    "description_html",
+    "description_text",
+    "feat_id",
+    "frequency",
+    "is_mythic",
+    "leads_to",
+    "legacy",
+    "level",
+    "links",
+    "meta_description",
+    "meta_keywords",
+    "name",
+    "pfs",
+    "prerequisites",
+    "rarity",
+    "raw_fields",
+    "related_feats",
+    "requirements",
+    "source",
+    "sources",
+    "special",
+    "spoiler_source",
+    "trait_glossary",
+    "trait_ids",
+    "traits",
+    "trigger",
+    "url"
+  ],
+  "title": "Feat",
+  "type": "object",
+  "x-squashage-class": "https://2e.aonprd.com/Feat"
+}

@@ -1,0 +1,11 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/primitives/ArmorCheckPenalty.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "maximum": -1,
+  "minimum": -3,
+  "title": "ArmorCheckPenalty",
+  "type": [
+    "integer",
+    "null"
+  ]
+}

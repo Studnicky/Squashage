@@ -1,0 +1,14 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/objects/BackgroundTrainedSkill.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+    "name": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/BackgroundTrainedSkillName.draft.json"
+    },
+    "skill_id": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/BackgroundTrainedSkillSkillId.draft.json"
+    }
+  },
+  "title": "BackgroundTrainedSkill",
+  "type": "object"
+}

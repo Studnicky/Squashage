@@ -1,0 +1,8 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/primitives/WeaponWeaponId.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "maximum": 543,
+  "minimum": 2,
+  "title": "WeaponWeaponId",
+  "type": "integer"
+}

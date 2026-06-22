@@ -1,0 +1,10 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/primitives/UnknownBodyHtml.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "enum": [
+    ""
+  ],
+  "title": "UnknownBodyHtml",
+  "type": "string",
+  "x-squashage-closed-enum": true
+}

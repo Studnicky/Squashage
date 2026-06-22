@@ -1,0 +1,16 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/primitives/ActionCost.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "enum": [
+    "1 Resolve Point",
+    "1 versatile vial",
+    "A bribe worth at least one-tenth of the Currency per Additional PC listed on Table 10–9: Party Treasure by Level. Doubling this amount grants a +2 circumstance bonus to the check.",
+    null
+  ],
+  "title": "ActionCost",
+  "type": [
+    "string",
+    "null"
+  ],
+  "x-squashage-closed-enum": true
+}

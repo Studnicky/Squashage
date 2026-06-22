@@ -1,0 +1,14 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/objects/FeatClassArchetype.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+    "class_id": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/FeatClassArchetypeClassId.draft.json"
+    },
+    "name": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/FeatClassArchetypeName.draft.json"
+    }
+  },
+  "title": "FeatClassArchetype",
+  "type": "object"
+}

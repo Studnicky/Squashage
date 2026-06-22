@@ -1,0 +1,634 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/Hazard.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": true,
+  "properties": {
+    "_type": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/HazardType.draft.json"
+    },
+    "alt_edition_url": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "body_html": {
+      "type": "string",
+      "x-squashage-open-vocab": true
+    },
+    "body_text": {
+      "type": "string",
+      "x-squashage-open-vocab": true
+    },
+    "complexity": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/HazardComplexity.draft.json"
+    },
+    "defenses": {
+      "properties": {
+        "ac": {
+          "maximum": 48,
+          "minimum": 10,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "hardness": {
+          "items": {
+            "properties": {
+              "bt": {
+                "type": "null"
+              },
+              "component": {
+                "type": "string"
+              },
+              "notes": {
+                "enum": [
+                  "10 in theguthallath's erosion aura",
+                  "plate",
+                  "toy box",
+                  "while inside the centurion",
+                  null
+                ],
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "x-squashage-closed-enum": true
+              },
+              "value": {
+                "maximum": 35,
+                "minimum": 0,
+                "type": "integer"
+              }
+            },
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "hp": {
+          "items": {
+            "properties": {
+              "bt": {
+                "maximum": 230,
+                "minimum": 2,
+                "type": [
+                  "integer",
+                  "null"
+                ]
+              },
+              "component": {
+                "type": "string"
+              },
+              "notes": {
+                "enum": [
+                  "29",
+                  "50",
+                  "6 squares must be destroyed to disable the haunt",
+                  null
+                ],
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "x-squashage-closed-enum": true
+              },
+              "value": {
+                "maximum": 460,
+                "minimum": 1,
+                "type": "integer"
+              }
+            },
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "immunities": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "resistances": {
+          "items": {
+            "properties": {
+              "exceptions": {
+                "enum": [
+                  "fire, force, ghost touch, or positive",
+                  "force, ghost touch, or positive; double resistance vs. non-magical",
+                  "ghost touch",
+                  null
+                ],
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "x-squashage-closed-enum": true
+              },
+              "type": {
+                "enum": [
+                  "all",
+                  "all damage",
+                  "bludgeoning",
+                  "physical",
+                  "piercing",
+                  "slashing"
+                ],
+                "type": "string",
+                "x-squashage-closed-enum": true
+              },
+              "value": {
+                "maximum": 20,
+                "minimum": 5,
+                "type": "integer"
+              }
+            },
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "saves": {
+          "properties": {
+            "fort": {
+              "maximum": 36,
+              "minimum": 0,
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "ref": {
+              "maximum": 38,
+              "minimum": 0,
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "will": {
+              "maximum": 36,
+              "minimum": 6,
+              "type": [
+                "integer",
+                "null"
+              ]
+            }
+          },
+          "type": "object"
+        },
+        "weaknesses": {
+          "items": {
+            "properties": {
+              "type": {
+                "type": "string"
+              },
+              "value": {
+                "maximum": 30,
+                "minimum": 5,
+                "type": "integer"
+              }
+            },
+            "type": "object"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "description_text": {
+      "type": "string",
+      "x-squashage-open-vocab": true
+    },
+    "disable": {
+      "items": {
+        "$ref": "https://2e.aonprd.com/schemas/inferred/objects/HazardDisable.draft.json"
+      },
+      "type": "array"
+    },
+    "entity_id": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/HazardEntityId.draft.json"
+    },
+    "legacy": {
+      "type": "boolean"
+    },
+    "level": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/HazardLevel.draft.json"
+    },
+    "links": {
+      "items": {
+        "$ref": "https://2e.aonprd.com/schemas/inferred/objects/HazardLink.draft.json"
+      },
+      "type": "array"
+    },
+    "meta_description": {
+      "type": "string",
+      "x-squashage-open-vocab": true
+    },
+    "meta_keywords": {
+      "type": "string",
+      "x-squashage-open-vocab": true
+    },
+    "name": {
+      "type": "string",
+      "x-squashage-open-vocab": true
+    },
+    "pfs": {
+      "type": "null"
+    },
+    "rarity": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/EquipmentRarity.draft.json"
+    },
+    "raw_fields": {
+      "properties": {
+        "34(master) to notice the reflective field is dangerous; noticing the field has a DC of 0": {
+          "enum": [
+            "34"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "C3": {
+          "enum": [
+            "."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Complexity": {
+          "enum": [
+            "Complex",
+            "Simple"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Description": {
+          "type": "string",
+          "x-squashage-open-vocab": true
+        },
+        "Escaping": {
+          "enum": [
+            "The PCs overcome this hazard by moving out of the area that the Ox’s tail can reach. A PC escapes (and is not subject to tail Strikes) by ascending the Ox’s sloped back, traveling a distance based on the result of the PC’s Reflex save from the Shaken Loose hazard. PCs can Climb up the Ox’s back with a successful DC 24 Athletics check or—by finding and scrambling up improvised paths—a DC 26 Acrobatics, Perception, or Survival check. With a successful DC 20 Acrobatics check, a flying PC can ascend half their fly Speed (or their full Speed on a critical success). PCs can attempt to Disable the hazard whether or not they’re in range of the tail."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Event 11: Nosois’ Brunch": {
+          "enum": [
+            "): “They’re the ones! They’re the blasphemers who can’t even properly serve tea! Send them along to the Lady!”"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "H7": {
+          "enum": [
+            "below."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Perception": {
+          "enum": [
+            "+15"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Performance": {
+          "enum": [
+            "+33 (master); creatures in the area automatically notice the eerily swaying shadows"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Stealth": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "reset": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "routines": {
+      "items": {
+        "$ref": "https://2e.aonprd.com/schemas/inferred/objects/HazardRoutine.draft.json"
+      },
+      "type": "array"
+    },
+    "sections": {
+      "items": {
+        "type": "null"
+      },
+      "type": "array"
+    },
+    "source": {
+      "properties": {
+        "book": {
+          "type": "string"
+        },
+        "page": {
+          "maximum": 525,
+          "minimum": 6,
+          "type": "integer"
+        },
+        "source_id": {
+          "maximum": 315,
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    },
+    "sources": {
+      "items": {
+        "$ref": "https://2e.aonprd.com/schemas/inferred/objects/HazardSource.draft.json"
+      },
+      "type": "array"
+    },
+    "stealth": {
+      "properties": {
+        "dc": {
+          "maximum": 53,
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "notes": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "raw": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "type": "object"
+    },
+    "trait_ids": {
+      "properties": {
+        "Acid": {
+          "maximum": 3,
+          "minimum": 3,
+          "type": "integer"
+        },
+        "Air": {
+          "maximum": 5,
+          "minimum": 5,
+          "type": "integer"
+        },
+        "Alchemical": {
+          "maximum": 6,
+          "minimum": 6,
+          "type": "integer"
+        },
+        "Animal": {
+          "maximum": 9,
+          "minimum": 9,
+          "type": "integer"
+        },
+        "Auditory": {
+          "maximum": 16,
+          "minimum": 16,
+          "type": "integer"
+        },
+        "Beast": {
+          "maximum": 20,
+          "minimum": 20,
+          "type": "integer"
+        },
+        "Cold": {
+          "maximum": 27,
+          "minimum": 27,
+          "type": "integer"
+        },
+        "Complex": {
+          "maximum": 30,
+          "minimum": 30,
+          "type": "integer"
+        },
+        "Conjuration": {
+          "maximum": 33,
+          "minimum": 33,
+          "type": "integer"
+        },
+        "Curse": {
+          "maximum": 38,
+          "minimum": 38,
+          "type": "integer"
+        },
+        "Divine": {
+          "maximum": 579,
+          "minimum": 48,
+          "type": "integer"
+        },
+        "Electricity": {
+          "maximum": 56,
+          "minimum": 56,
+          "type": "integer"
+        },
+        "Elemental": {
+          "maximum": 57,
+          "minimum": 57,
+          "type": "integer"
+        },
+        "Environmental": {
+          "maximum": 591,
+          "minimum": 62,
+          "type": "integer"
+        },
+        "Evocation": {
+          "maximum": 65,
+          "minimum": 65,
+          "type": "integer"
+        },
+        "Fear": {
+          "maximum": 598,
+          "minimum": 598,
+          "type": "integer"
+        },
+        "Fire": {
+          "maximum": 604,
+          "minimum": 72,
+          "type": "integer"
+        },
+        "Force": {
+          "maximum": 75,
+          "minimum": 75,
+          "type": "integer"
+        },
+        "Fungus": {
+          "maximum": 614,
+          "minimum": 77,
+          "type": "integer"
+        },
+        "Haunt": {
+          "maximum": 622,
+          "minimum": 88,
+          "type": "integer"
+        },
+        "Illusion": {
+          "maximum": 629,
+          "minimum": 92,
+          "type": "integer"
+        },
+        "Incapacitation": {
+          "maximum": 93,
+          "minimum": 93,
+          "type": "integer"
+        },
+        "Kaiju": {
+          "maximum": 383,
+          "minimum": 383,
+          "type": "integer"
+        },
+        "Magical": {
+          "maximum": 644,
+          "minimum": 103,
+          "type": "integer"
+        },
+        "Mechanical": {
+          "maximum": 646,
+          "minimum": 105,
+          "type": "integer"
+        },
+        "Mental": {
+          "maximum": 647,
+          "minimum": 106,
+          "type": "integer"
+        },
+        "Mythic": {
+          "maximum": 835,
+          "minimum": 835,
+          "type": "integer"
+        },
+        "Necromancy": {
+          "maximum": 117,
+          "minimum": 117,
+          "type": "integer"
+        },
+        "Negative": {
+          "maximum": 118,
+          "minimum": 118,
+          "type": "integer"
+        },
+        "Plant": {
+          "maximum": 668,
+          "minimum": 125,
+          "type": "integer"
+        },
+        "Poison": {
+          "maximum": 669,
+          "minimum": 669,
+          "type": "integer"
+        },
+        "Polymorph": {
+          "maximum": 127,
+          "minimum": 127,
+          "type": "integer"
+        },
+        "Primal": {
+          "maximum": 134,
+          "minimum": 134,
+          "type": "integer"
+        },
+        "Rare": {
+          "maximum": 683,
+          "minimum": 137,
+          "type": "integer"
+        },
+        "Shadow": {
+          "maximum": 693,
+          "minimum": 693,
+          "type": "integer"
+        },
+        "Simple": {
+          "maximum": 865,
+          "minimum": 865,
+          "type": "integer"
+        },
+        "Sonic": {
+          "maximum": 147,
+          "minimum": 147,
+          "type": "integer"
+        },
+        "Trap": {
+          "maximum": 715,
+          "minimum": 158,
+          "type": "integer"
+        },
+        "Uncommon": {
+          "maximum": 721,
+          "minimum": 159,
+          "type": "integer"
+        },
+        "Unique": {
+          "maximum": 723,
+          "minimum": 161,
+          "type": "integer"
+        },
+        "Visual": {
+          "maximum": 163,
+          "minimum": 163,
+          "type": "integer"
+        },
+        "Water": {
+          "maximum": 732,
+          "minimum": 165,
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    },
+    "traits": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "url": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/IriString.draft.json"
+    }
+  },
+  "required": [
+    "_type",
+    "alt_edition_url",
+    "body_html",
+    "body_text",
+    "complexity",
+    "defenses",
+    "description_text",
+    "disable",
+    "entity_id",
+    "legacy",
+    "level",
+    "links",
+    "meta_description",
+    "meta_keywords",
+    "name",
+    "pfs",
+    "rarity",
+    "raw_fields",
+    "reset",
+    "routines",
+    "sections",
+    "source",
+    "sources",
+    "stealth",
+    "trait_ids",
+    "traits",
+    "url"
+  ],
+  "title": "Hazard",
+  "type": "object",
+  "x-squashage-class": "https://2e.aonprd.com/Hazard"
+}

@@ -1,0 +1,21 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/objects/MonsterSpellListSlotSpell.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+    "count": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/MonsterSpellListSlotSpellCount.draft.json"
+    },
+    "frequency": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "name": {
+      "type": "string",
+      "x-squashage-open-vocab": true
+    }
+  },
+  "title": "MonsterSpellListSlotSpell",
+  "type": "object"
+}

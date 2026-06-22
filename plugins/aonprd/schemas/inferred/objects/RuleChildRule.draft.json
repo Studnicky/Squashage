@@ -1,0 +1,22 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/objects/RuleChildRule.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+    "heading": {
+      "type": "string",
+      "x-squashage-open-vocab": true
+    },
+    "href": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "x-squashage-open-vocab": true
+    },
+    "rule_id": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/RuleChildRuleRuleId.draft.json"
+    }
+  },
+  "title": "RuleChildRule",
+  "type": "object"
+}

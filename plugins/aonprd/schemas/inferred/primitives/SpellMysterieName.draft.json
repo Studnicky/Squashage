@@ -1,0 +1,20 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/primitives/SpellMysterieName.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "enum": [
+    "ancestors",
+    "ash",
+    "battle",
+    "blight",
+    "bones",
+    "cosmos",
+    "flames",
+    "life",
+    "lore",
+    "tempest",
+    "time"
+  ],
+  "title": "SpellMysterieName",
+  "type": "string",
+  "x-squashage-closed-enum": true
+}

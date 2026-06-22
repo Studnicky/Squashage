@@ -1,0 +1,20 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/objects/ArmorLink.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+    "href": {
+      "type": "string"
+    },
+    "id": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/ArmorLinkId.draft.json"
+    },
+    "kind": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/ArmorLinkKind.draft.json"
+    },
+    "text": {
+      "type": "string"
+    }
+  },
+  "title": "ArmorLink",
+  "type": "object"
+}

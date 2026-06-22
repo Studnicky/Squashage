@@ -1,0 +1,8 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/primitives/ClassSourceSourceId.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "maximum": 293,
+  "minimum": 96,
+  "title": "ClassSourceSourceId",
+  "type": "integer"
+}

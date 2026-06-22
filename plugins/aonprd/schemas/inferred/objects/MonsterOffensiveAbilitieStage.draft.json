@@ -1,0 +1,15 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/objects/MonsterOffensiveAbilitieStage.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+    "stage": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/MonsterOffensiveAbilitieStageStage.draft.json"
+    },
+    "text": {
+      "type": "string",
+      "x-squashage-open-vocab": true
+    }
+  },
+  "title": "MonsterOffensiveAbilitieStage",
+  "type": "object"
+}

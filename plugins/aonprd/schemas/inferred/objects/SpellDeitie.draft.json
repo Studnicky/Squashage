@@ -1,0 +1,15 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/objects/SpellDeitie.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+    "deity_id": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/SpellDeitieDeityId.draft.json"
+    },
+    "name": {
+      "type": "string",
+      "x-squashage-open-vocab": true
+    }
+  },
+  "title": "SpellDeitie",
+  "type": "object"
+}

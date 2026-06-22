@@ -76,7 +76,6 @@ dist/
 /graphs/
 /graphs.partial/
 /viz/
-/plugins/*/schemas/inferred/
 /plugins/*/schemas/primitives/
 /plugins/*/schemas/objects/
 

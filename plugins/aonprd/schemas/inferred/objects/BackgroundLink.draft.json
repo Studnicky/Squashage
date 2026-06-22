@@ -1,0 +1,20 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/objects/BackgroundLink.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+    "href": {
+      "type": "string"
+    },
+    "id": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/BackgroundLinkId.draft.json"
+    },
+    "kind": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/BackgroundLinkKind.draft.json"
+    },
+    "text": {
+      "type": "string"
+    }
+  },
+  "title": "BackgroundLink",
+  "type": "object"
+}

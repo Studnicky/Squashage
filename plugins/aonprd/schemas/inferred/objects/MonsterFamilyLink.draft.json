@@ -1,0 +1,15 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/objects/MonsterFamilyLink.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+    "family_id": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/MonsterFamilyLinkFamilyId.draft.json"
+    },
+    "name": {
+      "type": "string",
+      "x-squashage-open-vocab": true
+    }
+  },
+  "title": "MonsterFamilyLink",
+  "type": "object"
+}

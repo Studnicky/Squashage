@@ -1,0 +1,14 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/objects/BackgroundLoreSkill.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+    "name": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/BackgroundLoreSkillName.draft.json"
+    },
+    "skill_id": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/BackgroundLoreSkillSkillId.draft.json"
+    }
+  },
+  "title": "BackgroundLoreSkill",
+  "type": "object"
+}

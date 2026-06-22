@@ -1,0 +1,11 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/primitives/EquipmentLinkId.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "maximum": 3190,
+  "minimum": 1,
+  "title": "EquipmentLinkId",
+  "type": [
+    "integer",
+    "null"
+  ]
+}

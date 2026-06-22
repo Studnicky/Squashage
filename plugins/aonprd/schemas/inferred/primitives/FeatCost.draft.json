@@ -1,0 +1,17 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/primitives/FeatCost.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "enum": [
+    "1 or more saguimancy Hit Points",
+    "5 or more sanguimancy Hit Points",
+    "all your remaining sanguimancy Hit Points (minimum 3)",
+    "the Price of the chosen item",
+    null
+  ],
+  "title": "FeatCost",
+  "type": [
+    "string",
+    "null"
+  ],
+  "x-squashage-closed-enum": true
+}

@@ -1,0 +1,790 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/Class.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": true,
+  "properties": {
+    "_type": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/ClassType.draft.json"
+    },
+    "alt_edition_url": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "body_html": {
+      "type": "string"
+    },
+    "body_text": {
+      "type": "string"
+    },
+    "class_dc": {
+      "type": "null"
+    },
+    "entity_id": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/ClassEntityId.draft.json"
+    },
+    "hit_points_text": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/ClassHitPointsText.draft.json"
+    },
+    "hp_per_level": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/ClassHpPerLevel.draft.json"
+    },
+    "initial_proficiencies": {
+      "properties": {
+        "Attacks": {
+          "enum": [
+            "Expert in simple firearms and crossbows Expert in martial firearms and crossbows Trained in advanced firearms and crossbows Trained in simple weapons Trained in martial weapons Trained in unarmed attacks",
+            "Trained in simple weapons Trained in martial weapons Trained in unarmed attacks",
+            "Trained in simple weapons Trained in the favored weapon of your deity. If your deity's favored weapon is uncommon, you also gain access to that weapon. Trained in unarmed attacks",
+            "Trained in simple weapons Trained in unarmed attacks"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Class DC": {
+          "enum": [
+            "Trained in animist class DC",
+            "Trained in bard class DC",
+            "Trained in champion class DC",
+            "Trained in cleric class DC",
+            "Trained in commander class DC",
+            "Trained in druid class DC",
+            "Trained in gunslinger class DC",
+            "Trained in oracle class DC",
+            "Trained in sorcerer class DC",
+            "Trained in witch class DC"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Defenses": {
+          "enum": [
+            "Trained in all armor Trained in unarmored defense",
+            "Trained in light armor Trained in medium armor Trained in unarmored defense",
+            "Trained in light armor Trained in unarmored defense",
+            "Untrained in all armor Trained in unarmored defense",
+            "Untrained in all armor, though your doctrine might alter this Trained in unarmored defense"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Perception": {
+          "enum": [
+            "Expert in Perception",
+            "Trained in Perception"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Saving Throws": {
+          "enum": [
+            "Expert in Fortitude Expert in Reflex Trained in Will",
+            "Expert in Fortitude Trained in Reflex Expert in Will",
+            "Trained in Fortitude Expert in Reflex Expert in Will",
+            "Trained in Fortitude Trained in Reflex Expert in Will"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Skills": {
+          "enum": [
+            "Trained in Nature Trained in one skill determined by your druidic order Trained in a number of additional skills equal to 2 plus your Intelligence modifier",
+            "Trained in Occultism Trained in Performance Trained in a number of additional skills equal to 4 plus your Intelligence modifier",
+            "Trained in Religion Trained in one or more skills determined by your mystery Trained in a number of additional skills equal to 3 plus your Intelligence modifier",
+            "Trained in Religion Trained in one skill determined by your choice of deity Trained in a number of additional skills equal to 2 plus your Intelligence modifier",
+            "Trained in Religion and either Nature or Occultism Trained in a number of additional skills equal to 2 plus your Intelligence modifier",
+            "Trained in Society and Warfare Lore Trained in a number of additional skills equal to 2 plus your Intelligence modifier",
+            "Trained in one or more skills determined by your gunslinger's way Trained in a number of additional skills equal to 3 plus your Intelligence modifier",
+            "Trained in one skill determined by your patron Trained in a number of additional skills equal to 3 plus your Intelligence modifier",
+            "Trained in two skills determined by your bloodline Trained in a number of additional skills equal to 2 plus your Intelligence modifier"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Spells": {
+          "enum": [
+            "Trained in spell attack modifier Trained in spell DC"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        }
+      },
+      "type": "object"
+    },
+    "key_attribute": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/ClassKeyAttribute.draft.json"
+    },
+    "legacy": {
+      "type": "boolean"
+    },
+    "links": {
+      "items": {
+        "$ref": "https://2e.aonprd.com/schemas/inferred/objects/ClassLink.draft.json"
+      },
+      "type": "array"
+    },
+    "meta_description": {
+      "type": "string"
+    },
+    "meta_keywords": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "pfs": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/ArmorPfs.draft.json"
+    },
+    "rarity": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/ActionRarity.draft.json"
+    },
+    "raw_fields": {
+      "properties": {
+        "10th": {
+          "enum": [
+            "13*1—————————23*2—————————33*21————————43*22————————53*221———————63*222———————73*2221——————83*2222——————93*22221—————103*22222—————113*222221————123*222222————133*2222221———143*2222222———153*22222221——163*22222222——173*222222221—183*222222222—193*2222222221†203*2222222221†* Your conscious mind gives you three additional cantrips with amps. One cantrip is unique to your conscious mind.",
+            "152—————————253—————————3532————————4533————————55332———————65333———————753332——————853333——————9533332—————10533333—————115333332————125333333————1353333332———1453333333———15533333332——16533333333——175333333332—185333333333—1953333333331*2053333333331** The archwizard’s spellcraft class feature gives you a 10th-rank spell slot that works a bit differently from other spell slots.Ancestry and BackgroundIn addition to what you get from your class at 1st level, you have the benefits of your selected ancestry and background."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "1st-Level Spells": {
+          "enum": [
+            ": horizon thunder sphere, hydraulic push, ray of enfeeblement, shocking grasp, snowballKey TermsYou'll see the following key term in many magus class features."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "9th": {
+          "enum": [
+            "151————————252————————3521———————4522———————55—22——————65—22——————75——*22—————85——*22—————95——*—22————105——*—22————115———*—22———125———*—22———135————*—22——145————*—22——155————*——22—165————*——22—175————*———22185————*———22195————*———22205————*———22* The studious spells class feature gives you extra slots of this level for specific spells. Ancestry And BackgroundIn addition to what you get from your class at 1st level, you have the benefits of your selected ancestry and background."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Access": {
+          "enum": [
+            ": Characters from Absalom, New Thassilon, Alkenstar, Dongun Hold, or especially technological regions of Arcadia like the Deadshot Lands have access to the inventor class. Uomoto characters, characters from Eihlona, automatons with memories of Jistka, and Arcadians all have access to the inventor class. Characters from Ustalav have access to the inventor class."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Activate": {
+          "enum": [
+            "[one-action] Strike"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Air": {
+          "enum": [
+            ": Aerokineticist"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Alchemical Item Formulas": {
+          "enum": [
+            ": Alchemist's fire, frost vial, cheetah's elixir, elixir of life, glue bomb, smoke ball"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Amp": {
+          "enum": [
+            "Amps are special thoughtforms that modify the properties of your psi cantrips. You can apply an amp only to a psi cantrip, spending 1 Focus Point as a free action. If the next action you take is to cast a psi cantrip, you gain its amped effects. The singular focus required to amp a psi cantrip means that unless otherwise noted, you can apply only one amp to a given psi cantrip, and you can't apply both an amp and a spellshape ability to a cantrip at the same time. If both an amp and the amped cantrip deal damage of the same type, combine their damage for the purpose of resistances and weaknesses. Feats with the amp trait provide different amps you can apply to psi cantrips in place of their normal amps. If an amp has its own effect, its rank is the same as the amped cantrip's."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Amp Heightened": {
+          "enum": [
+            "Many amps have heightened entries similar to spells. Add the amp's heightened effects when you cast the cantrip at that rank or higher. These are in addition to any heightened effects of the cantrip, though some adjust the cantrip's normal heightened entry (typically in the case of damage increases)."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Bomber": {
+          "enum": [
+            "Acid flask, bottled lightning"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Bulk": {
+          "enum": [
+            "—"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Cantrips": {
+          "enum": [
+            ": acid splash, gouging claw, produce flame, ray of frost, tanglefoot, telekinetic projectile"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Chirurgeon": {
+          "enum": [
+            "Antidote, antiplague"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Class Features": {
+          "type": "string"
+        },
+        "Cosmic Caravan": {
+          "enum": [
+            "is an astrological zodiac especially common among Varisians but used throughout various regions in the Inner Sea, imagining the 13 different signs as members of a traveling caravan as well as locations and people encountered on the journey."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Debilitation": {
+          "enum": [
+            "Debilitations apply conditions and other negative effects to a creature. When the creature is affected by a new debilitation, any previous one it was affected by ends."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Dragon Empires Zodiac": {
+          "enum": [
+            "is popular across the continent of Tian Xia, particularly with the oracles of Po Li, who use it to help craft laws. It contains 12 signs, comprising the five types of imperial dragon as well as other creatures and archetypes of import in Tian Xia.Roleplaying the ThaumaturgeDuring Combat Encounters...You use your implements and diverse arsenal of mystic tools and tricks to assist in combat, always presenting the right bane to exploit enemies' weaknesses or shield your allies against the supernatural."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Earth": {
+          "enum": [
+            ": Geokineticist"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Esoterica": {
+          "enum": [
+            "The esoterica trait is present in many thaumaturge feats and class features that incorporate the various talismans, supernatural trinkets, and other objects you carry with you. Abilities that have the esoterica trait require you to be in possession of your esoterica to use them. Normally, you're assumed to always have your esoterica with you, but in some rare circumstances, you might either not have them on hand or have your gear stripped from you."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Fire": {
+          "enum": [
+            ": Pyrokineticist"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Frequency": {
+          "enum": [
+            "once per day",
+            "once per round",
+            "until recharged (see below)"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Gadget": {
+          "enum": [
+            ": Gadgets are consumable technological inventions with innovative uses."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Harrow": {
+          "enum": [
+            "is a divination deck similar to tarot on Earth, but with six suits of nine cards each. The suits each have a symbological correspondence with one of the six attributes. For example, the suit of hammers has a connotation of strength, and the suit of books is related to learning and intelligence."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Immanence": {
+          "enum": [
+            ": At any given time, your divine spark can rest within one of your ikons, empowering it with beyond-mortal abilities. As long as your divine spark is empowering one of your ikons, that ikon gains the divine trait and grants you the benefits described in its immanence entry (which is also a divine effect). If your ikon has multiple immanence abilities, you gain all of them whenever the ikon is empowered. If an immanence ability occurs on a critical Strike with a weapon, it replaces any critical specialization effect that weapon might otherwise have."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Made of an Element": {
+          "enum": [
+            ": Some kineticist abilities work on creatures made of an element. A creature made of rock, sand, or dirt is made of earth, but a creature wearing metal armor wouldn't be considered a metal creature. If it's unclear whether a creature is made of an element, the GM decides."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Metal": {
+          "enum": [
+            ": Metallokineticist"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Mindshift": {
+          "enum": [
+            "An action with this trait can always be altered to use the raw power of your mind. When you take this action, you can choose to replace any damage it deals with mental damage, give it the mental trait, and replace any save it requires with a Will save. The action loses any traits matching damage types it no longer deals."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Modification": {
+          "enum": [
+            ": An ability with this trait alters your innovation's construction. If you have the reconfigure class feature, you can retrain these feats more easily."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Mutagenist": {
+          "enum": [
+            "Bestial mutagen, cognitive mutagen"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Overflow": {
+          "enum": [
+            ": Powerful impulses temporarily overdraw the energy of your kinetic gate. When you use an impulse that has the overflow trait, your kinetic aura deactivates until you revitalize it (typically with Channel Elements). Extinguishing your element this severely is taxing, and consequently, you can use only one overflow impulse per round, even if you reactivate your kinetic gate."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Overlapping Kinetic Auras": {
+          "enum": [
+            ": A creature that's in multiple kinetic auras at the same time is subject to the special effects of all of them. As normal for duplicate effects, a creature can't be affected by multiple copies of the same effect. For instance, if an enemy were in two fire kineticists' auras, and both kineticists had the fire kinetic aura gate junction, the creature would gain only the higher weakness from the two auras."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Precious Materials": {
+          "enum": [
+            ": Elements you create (using Base Kinesis to generate an element, for example) must typically be ordinary materials of negligible value. You can't create precious or valuable materials like silver, gemstones, or duskwood unless otherwise noted. Kinetic SpecialistsKineticists who specialize in a single element are often referred to by a special title."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Psyche": {
+          "enum": [
+            "Your psyche must be unleashed to use abilities that have the psyche trait, and they end automatically when your unleashed psyche subsides. Roleplaying the PsychicDuring Combat Encounters...You rely on your collection of psychic cantrips as a mainstay, choosing where and when to amplify them for maximum effect. You weave your more conventional spells into the fray where more complex magic is needed, unleashing your mind's full potential in a blaze of power when the time is right."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Qi Spells": {
+          "enum": [
+            ": By tapping into an inner reserve of energy, called qi, you can cast special spells called qi spells, which are a type of focus spell. It costs 1 Focus Point to cast a focus spell. When you gain your first qi spell, you decide whether your qi spells are divine or occult spells, and you become trained in spell attack modifiers and spell DCs; your key spellcasting attribute is Wisdom. You also gain a focus pool of 1 Focus Point. You refill your focus pool during your daily preparations, and you regain 1 Focus Point by spending 10 minutes using the Refocus activity to steady your mind and breath to draw in more qi from the world around you. Focus spells are automatically heightened to half your level rounded up. The maximum Focus Points your focus pool can hold is equal to the number of focus spells you have, but it can never be more than 3 points."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Requirements": {
+          "enum": [
+            "You are holding your implement.",
+            "You aren't fatigued or raging.",
+            "You're in an encounter, you Cast a Spell on your previous turn, and you aren't stupefied.",
+            "Your bonded item is on your person.",
+            "Your kinetic gate isn't active."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Temporary Items": {
+          "enum": [
+            "Several feats allow you to prepare temporary items. Much like the infused items created by alchemists, these temporary items last only a short time before becoming useless. Temporary items are clearly not up to the same quality as other items, so they typically can't be sold. If an ability doesn't list how long a temporary item lasts, the item lasts until the next time you make your daily preparations. Any effect created by a temporary item also ends at that time if it hasn't already (unless it's a permanent effect). Cards and AstrologyThe thaumaturge class draws inspiration from symbolism pertaining to both real-world and fantasy beliefs about divination via cards or reading the stars. The class references the following Golarion- specific divination deck and zodiacs."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Toxicologist": {
+          "enum": [
+            "Arsenic, giant centipede venomRoleplaying the AlchemistDuring Combat Encounters...You lob bombs at your foes, harry your enemies, and support the rest of your party with potent elixirs. You might even use mutagens to warp your body into a resilient and powerful weapon."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Trigger": {
+          "enum": [
+            "A creature within your reach uses a manipulate action or a move action, makes a ranged attack, or leaves a square during a move action it's using.",
+            "Your Strike hits an off-guard creature and deals damage.",
+            "Your turn begins."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Unstable": {
+          "enum": [
+            ": Unstable actions are experimental applications of your innovation that even you can’t fully predict. When you take an unstable action, attempt a DC 15 flat check immediately after applying its effects. This DC is 13 if you’re legendary in Crafting. On a failure, the innovation malfunctions in a spectacular (though harmless) fashion, such as a belch of smoke or shower of sparks, and it becomes incapable of being used for further unstable actions. On a critical failure, you also take an amount of fire damage equal to half your level. You can spend 10 minutes retuning your innovation and making adjustments to return it to functionality, at which point you can use unstable actions with that innovation again."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Usage": {
+          "enum": [
+            "held in 1 hand"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Warden Spells": {
+          "enum": [
+            "Your relationship with the world around you extends from the physical to the magical. Certain feats grant you warden spells, which are a type of focus spell. It costs 1 Focus Point to cast a focus spell. When you gain your first warden spell, you also gain a focus pool of 1 Focus Point. You refill your focus pool during your daily preparations, and you regain 1 Focus Point by spending 10 minutes using the Refocus activity to commune with nature."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Water": {
+          "enum": [
+            ": Hydrokineticist"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Wood": {
+          "enum": [
+            ": PhytokineticistRoleplaying the KineticistDuring Combat Encounters...Elemental magic surges from you throughout the fight. Without any restrictions on how often you can use your abilities, you become a reliable slinger of magic. You can develop powers you can use in a variety of situations... or you can choose just a few favorite attacks you use repeatedly."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        }
+      },
+      "type": "object"
+    },
+    "sections": {
+      "items": {
+        "$ref": "https://2e.aonprd.com/schemas/inferred/objects/ClassSection.draft.json"
+      },
+      "type": "array"
+    },
+    "source": {
+      "properties": {
+        "book": {
+          "enum": [
+            "Battlecry!",
+            "Dark Archives (Remastered)",
+            "Guns &amp; Gears (Remastered)",
+            "Player Core",
+            "Player Core 2",
+            "Rage of Elements",
+            "Secrets of Magic",
+            "War of Immortals"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "page": {
+          "maximum": 192,
+          "minimum": 9,
+          "type": "integer"
+        },
+        "source_id": {
+          "maximum": 293,
+          "minimum": 96,
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    },
+    "sources": {
+      "items": {
+        "$ref": "https://2e.aonprd.com/schemas/inferred/objects/ClassSource.draft.json"
+      },
+      "type": "array"
+    },
+    "subclasses": {
+      "items": {
+        "type": "null"
+      },
+      "type": "array"
+    },
+    "trait_ids": {
+      "properties": {
+        "Acid": {
+          "maximum": 524,
+          "minimum": 524,
+          "type": "integer"
+        },
+        "Alchemical": {
+          "maximum": 528,
+          "minimum": 528,
+          "type": "integer"
+        },
+        "Alchemist": {
+          "maximum": 812,
+          "minimum": 812,
+          "type": "integer"
+        },
+        "Arcane": {
+          "maximum": 11,
+          "minimum": 11,
+          "type": "integer"
+        },
+        "Attack": {
+          "maximum": 15,
+          "minimum": 15,
+          "type": "integer"
+        },
+        "Aura": {
+          "maximum": 206,
+          "minimum": 206,
+          "type": "integer"
+        },
+        "Barbarian": {
+          "maximum": 813,
+          "minimum": 813,
+          "type": "integer"
+        },
+        "Bomb": {
+          "maximum": 548,
+          "minimum": 548,
+          "type": "integer"
+        },
+        "Bravado": {
+          "maximum": 801,
+          "minimum": 801,
+          "type": "integer"
+        },
+        "Concentrate": {
+          "maximum": 561,
+          "minimum": 32,
+          "type": "integer"
+        },
+        "Conjuration": {
+          "maximum": 33,
+          "minimum": 33,
+          "type": "integer"
+        },
+        "Consumable": {
+          "maximum": 564,
+          "minimum": 564,
+          "type": "integer"
+        },
+        "Divination": {
+          "maximum": 47,
+          "minimum": 47,
+          "type": "integer"
+        },
+        "Divine": {
+          "maximum": 579,
+          "minimum": 579,
+          "type": "integer"
+        },
+        "Emotion": {
+          "maximum": 590,
+          "minimum": 590,
+          "type": "integer"
+        },
+        "Esoterica": {
+          "maximum": 899,
+          "minimum": 899,
+          "type": "integer"
+        },
+        "Exemplar": {
+          "maximum": 839,
+          "minimum": 839,
+          "type": "integer"
+        },
+        "Exploration": {
+          "maximum": 595,
+          "minimum": 595,
+          "type": "integer"
+        },
+        "Finisher": {
+          "maximum": 802,
+          "minimum": 802,
+          "type": "integer"
+        },
+        "Fire": {
+          "maximum": 72,
+          "minimum": 72,
+          "type": "integer"
+        },
+        "Flourish": {
+          "maximum": 606,
+          "minimum": 606,
+          "type": "integer"
+        },
+        "Guardian": {
+          "maximum": 859,
+          "minimum": 859,
+          "type": "integer"
+        },
+        "Impulse": {
+          "maximum": 502,
+          "minimum": 502,
+          "type": "integer"
+        },
+        "Incapacitation": {
+          "maximum": 93,
+          "minimum": 93,
+          "type": "integer"
+        },
+        "Infused": {
+          "maximum": 797,
+          "minimum": 797,
+          "type": "integer"
+        },
+        "Inventor": {
+          "maximum": 408,
+          "minimum": 408,
+          "type": "integer"
+        },
+        "Investigator": {
+          "maximum": 818,
+          "minimum": 818,
+          "type": "integer"
+        },
+        "Kineticist": {
+          "maximum": 504,
+          "minimum": 504,
+          "type": "integer"
+        },
+        "Magical": {
+          "maximum": 644,
+          "minimum": 644,
+          "type": "integer"
+        },
+        "Magus": {
+          "maximum": 389,
+          "minimum": 389,
+          "type": "integer"
+        },
+        "Manipulate": {
+          "maximum": 645,
+          "minimum": 104,
+          "type": "integer"
+        },
+        "Mental": {
+          "maximum": 647,
+          "minimum": 647,
+          "type": "integer"
+        },
+        "Monk": {
+          "maximum": 656,
+          "minimum": 656,
+          "type": "integer"
+        },
+        "Primal": {
+          "maximum": 134,
+          "minimum": 134,
+          "type": "integer"
+        },
+        "Psychic": {
+          "maximum": 894,
+          "minimum": 894,
+          "type": "integer"
+        },
+        "Ranger": {
+          "maximum": 136,
+          "minimum": 136,
+          "type": "integer"
+        },
+        "Rare": {
+          "maximum": 683,
+          "minimum": 683,
+          "type": "integer"
+        },
+        "Rogue": {
+          "maximum": 139,
+          "minimum": 139,
+          "type": "integer"
+        },
+        "Scrying": {
+          "maximum": 141,
+          "minimum": 141,
+          "type": "integer"
+        },
+        "Splash": {
+          "maximum": 699,
+          "minimum": 699,
+          "type": "integer"
+        },
+        "Stance": {
+          "maximum": 152,
+          "minimum": 152,
+          "type": "integer"
+        },
+        "Summoner": {
+          "maximum": 392,
+          "minimum": 392,
+          "type": "integer"
+        },
+        "Swashbuckler": {
+          "maximum": 825,
+          "minimum": 825,
+          "type": "integer"
+        },
+        "Tandem": {
+          "maximum": 395,
+          "minimum": 395,
+          "type": "integer"
+        },
+        "Teleportation": {
+          "maximum": 156,
+          "minimum": 156,
+          "type": "integer"
+        },
+        "Thaumaturge": {
+          "maximum": 895,
+          "minimum": 895,
+          "type": "integer"
+        },
+        "Uncommon": {
+          "maximum": 159,
+          "minimum": 159,
+          "type": "integer"
+        },
+        "Unstable": {
+          "maximum": 416,
+          "minimum": 416,
+          "type": "integer"
+        },
+        "Wizard": {
+          "maximum": 166,
+          "minimum": 166,
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    },
+    "traits": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "url": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/IriString_2.draft.json"
+    }
+  },
+  "required": [
+    "_type",
+    "alt_edition_url",
+    "body_html",
+    "body_text",
+    "class_dc",
+    "entity_id",
+    "hit_points_text",
+    "hp_per_level",
+    "initial_proficiencies",
+    "key_attribute",
+    "legacy",
+    "links",
+    "meta_description",
+    "meta_keywords",
+    "name",
+    "pfs",
+    "rarity",
+    "raw_fields",
+    "sections",
+    "source",
+    "sources",
+    "subclasses",
+    "trait_ids",
+    "traits",
+    "url"
+  ],
+  "title": "Class",
+  "type": "object",
+  "x-squashage-class": "https://2e.aonprd.com/Class"
+}

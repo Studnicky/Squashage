@@ -1,0 +1,20 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/objects/BackgroundSource.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+    "book": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/BackgroundSourceBook.draft.json"
+    },
+    "page": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/BackgroundSourcePage.draft.json"
+    },
+    "raw": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/BackgroundSourceRaw.draft.json"
+    },
+    "source_id": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/BackgroundSourceSourceId.draft.json"
+    }
+  },
+  "title": "BackgroundSource",
+  "type": "object"
+}

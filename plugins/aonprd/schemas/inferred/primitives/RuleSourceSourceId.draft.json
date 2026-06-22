@@ -1,0 +1,8 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/primitives/RuleSourceSourceId.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "maximum": 320,
+  "minimum": 1,
+  "title": "RuleSourceSourceId",
+  "type": "integer"
+}

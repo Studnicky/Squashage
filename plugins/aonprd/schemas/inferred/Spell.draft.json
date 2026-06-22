@@ -1,0 +1,1208 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/Spell.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": true,
+  "properties": {
+    "_type": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/SpellType.draft.json"
+    },
+    "access": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/SpellAccess.draft.json"
+    },
+    "action_cost": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/SpellActionCost.draft.json"
+    },
+    "affliction": {
+      "properties": {
+        "body_html": {
+          "enum": [
+            "<b>Abyssal Plague</b> (disease); <b>Level</b> 9. The target can't recover from the drained condition from Abyssal plague until the disease is cured. <b>Stage 1</b> drained 1 (1 day); <b>Stage 2</b> drained increases by 2 (1 day).<br><br>"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "level": {
+          "maximum": 9,
+          "minimum": 9,
+          "type": "integer"
+        },
+        "maximum_duration": {
+          "type": "null"
+        },
+        "name": {
+          "enum": [
+            "Abyssal Plague"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "onset": {
+          "type": "null"
+        },
+        "saving_throw": {
+          "type": "null"
+        },
+        "stages": {
+          "items": {
+            "properties": {
+              "body_text": {
+                "enum": [
+                  "drained 1",
+                  "drained increases by 2"
+                ],
+                "type": "string",
+                "x-squashage-closed-enum": true
+              },
+              "duration": {
+                "enum": [
+                  "1 day"
+                ],
+                "type": "string",
+                "x-squashage-closed-enum": true
+              },
+              "stage": {
+                "maximum": 2,
+                "minimum": 1,
+                "type": "integer"
+              }
+            },
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "type": {
+          "enum": [
+            "disease"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        }
+      },
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "alt_edition_url": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "x-squashage-open-vocab": true
+    },
+    "area": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "bloodlines": {
+      "items": {
+        "$ref": "https://2e.aonprd.com/schemas/inferred/objects/SpellBloodline.draft.json"
+      },
+      "type": "array"
+    },
+    "cast": {
+      "properties": {
+        "actions": {
+          "enum": [
+            "one-action",
+            "reaction",
+            "three-actions",
+            "two-actions",
+            null
+          ],
+          "type": [
+            "string",
+            "null"
+          ],
+          "x-squashage-closed-enum": true
+        },
+        "components": {
+          "items": {
+            "enum": [
+              "focus",
+              "material",
+              "somatic",
+              "verbal"
+            ],
+            "type": "string",
+            "x-squashage-closed-enum": true
+          },
+          "type": "array"
+        },
+        "raw": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "time": {
+          "enum": [
+            "1 day",
+            "1 hour",
+            "1 minute",
+            "1 minute ( )",
+            "10 minutes",
+            "10 minutes ( )",
+            "4 hours",
+            "7 days",
+            "or",
+            "to",
+            null
+          ],
+          "type": [
+            "string",
+            "null"
+          ],
+          "x-squashage-closed-enum": true
+        }
+      },
+      "type": "object"
+    },
+    "catalysts": {
+      "items": {
+        "$ref": "https://2e.aonprd.com/schemas/inferred/objects/SpellCatalyst.draft.json"
+      },
+      "type": "array"
+    },
+    "cost": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/SpellCost.draft.json"
+    },
+    "cult": {
+      "items": {
+        "type": "null"
+      },
+      "type": "array"
+    },
+    "defense": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/SpellDefense.draft.json"
+    },
+    "deities": {
+      "items": {
+        "$ref": "https://2e.aonprd.com/schemas/inferred/objects/SpellDeitie.draft.json"
+      },
+      "type": "array"
+    },
+    "description_html": {
+      "type": "string",
+      "x-squashage-open-vocab": true
+    },
+    "description_text": {
+      "type": "string",
+      "x-squashage-open-vocab": true
+    },
+    "domain": {
+      "items": {
+        "$ref": "https://2e.aonprd.com/schemas/inferred/objects/SpellDomain.draft.json"
+      },
+      "type": "array"
+    },
+    "duration": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "heightened": {
+      "items": {
+        "$ref": "https://2e.aonprd.com/schemas/inferred/objects/SpellHeightened.draft.json"
+      },
+      "type": "array"
+    },
+    "kind": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/SpellKind.draft.json"
+    },
+    "legacy": {
+      "type": "boolean"
+    },
+    "lesson": {
+      "properties": {
+        "lesson_id": {
+          "maximum": 34,
+          "minimum": 11,
+          "type": "integer"
+        },
+        "name": {
+          "type": "string"
+        }
+      },
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "links": {
+      "items": {
+        "$ref": "https://2e.aonprd.com/schemas/inferred/objects/SpellLink.draft.json"
+      },
+      "type": "array"
+    },
+    "meta_description": {
+      "type": "string",
+      "x-squashage-open-vocab": true
+    },
+    "meta_keywords": {
+      "type": "string",
+      "x-squashage-open-vocab": true
+    },
+    "mysteries": {
+      "items": {
+        "$ref": "https://2e.aonprd.com/schemas/inferred/objects/SpellMysterie.draft.json"
+      },
+      "type": "array"
+    },
+    "name": {
+      "type": "string",
+      "x-squashage-open-vocab": true
+    },
+    "outcomes": {
+      "properties": {
+        "critical_failure": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "critical_success": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "failure": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "success": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "type": "object"
+    },
+    "patron_themes": {
+      "items": {
+        "$ref": "https://2e.aonprd.com/schemas/inferred/objects/SpellPatronTheme.draft.json"
+      },
+      "type": "array"
+    },
+    "pfs": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/EquipmentPfs.draft.json"
+    },
+    "range": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "rank": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/SpellRank.draft.json"
+    },
+    "rarity": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/ActionRarity.draft.json"
+    },
+    "raw_fields": {
+      "properties": {
+        "Access": {
+          "enum": [
+            "Character follows the ways of Sangpotshi or studies texts and lore containing Sangpotshi secrets"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Area": {
+          "type": "string"
+        },
+        "Bloodline": {
+          "type": "string"
+        },
+        "Bloodlines": {
+          "enum": [
+            "aberrant, fey",
+            "aberrant, hag",
+            "angelic, aesir",
+            "angelic, demonic",
+            "angelic, demonic, diabolic",
+            "demonic, draconic",
+            "demonic, imperial",
+            "demonic, undead",
+            "diabolic, fey",
+            "draconic, aesir",
+            "draconic, elemental",
+            "draconic, imperial",
+            "draconic, wyrmblessed",
+            "hag, imperial",
+            "shadow, harrow",
+            "undead, aesir"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Cast": {
+          "type": "string"
+        },
+        "Catalysts": {
+          "type": "string"
+        },
+        "Cost": {
+          "enum": [
+            "3 gp game piece focus",
+            "black onyx, see Creature Creation Rituals",
+            "fine ash, magically imbued pigments, and a gem in a marquise cut worth 100,000 gp in total",
+            "gemstones worth a total value of 75 gp × the target’s level",
+            "gemstones worth a total value of the target’s level (minimum 1) × 200 gp",
+            "herbs, 1/5 the value on Creature Creation Rituals",
+            "high-quality ingredients and brewing equipment worth 25 gp",
+            "powdered mithral and rare grave dirt worth 10,000 gp",
+            "rare candles and incense worth a total value of 50 gp",
+            "rare incense worth a total value of 60 gp",
+            "splendid art supplies worth at least 100 gp × the target's level, at least one pint of blood from the target",
+            "warding circle ingredients worth a total value of 2 gp × the spell rank × the target’s level"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Defense": {
+          "enum": [
+            "AC",
+            "AC and basic Fortitude",
+            "Fortitude",
+            "Fortitude (see text)",
+            "Reflex",
+            "Will",
+            "basic Fortitude",
+            "basic Reflex",
+            "basic Reflex (see text)",
+            "basic Will",
+            "basic will"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Deities": {
+          "type": "string"
+        },
+        "Deity": {
+          "type": "string"
+        },
+        "Domain": {
+          "enum": [
+            "abomination",
+            "introspection",
+            "swarm",
+            "time"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Duration": {
+          "type": "string"
+        },
+        "Lesson": {
+          "type": "string"
+        },
+        "Lessons": {
+          "enum": [
+            "lesson of favors, lesson of favors"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Mysteries": {
+          "enum": [
+            "bones, life",
+            "flames, ash",
+            "time, time"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Mystery": {
+          "enum": [
+            "ancestors",
+            "ash",
+            "battle",
+            "blight",
+            "bones",
+            "cosmos",
+            "flames",
+            "life",
+            "lore",
+            "tempest",
+            "time"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Patron Theme": {
+          "enum": [
+            "baba yaga",
+            "choir politic",
+            "cobyslarni",
+            "devourer of decay",
+            "faith's flamekeeper",
+            "mosquito witch",
+            "paradox of opposites",
+            "ripple in the deep",
+            "silence in snow",
+            "spinner of threads",
+            "starless shadow",
+            "the inscribed one",
+            "the resentment",
+            "whisper of wings",
+            "wilding steward"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Patron Themes": {
+          "enum": [
+            "faith's flamekeeper, the unseen broker, the unseen broker",
+            "the resentment, devourer of decay"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Primary Check": {
+          "enum": [
+            "Arcana (expert), Occultism (expert), or Religion (expert)",
+            "Arcana (legendary), Nature (legendary), Occultism (legendary), or Religion (legendary)",
+            "Arcana (master) or Occultism (master)",
+            "Crafting, Nature, or Society (expert)",
+            "Nature (expert)",
+            "Nature (master)",
+            "Occultism (expert) or Religion (expert)",
+            "Occultism or Religion (legendary)",
+            "Occultism or Religion (master)",
+            "Religion (expert)",
+            "Religion (expert; you must be a demon)",
+            "Religion (expert; you must be a devil)",
+            "Religion (expert; you must be an angel)"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Range": {
+          "type": "string"
+        },
+        "Requirements": {
+          "enum": [
+            "The target is taking persistent bleed damage or your last action dealt slashing damage to the target.",
+            "You can bleed",
+            "You have a deity.",
+            "You have a planar key for the destination plane, used as a locus",
+            "You have at least one free hand.",
+            "You have the humanoid trait.",
+            "You're wielding a melee weapon in two hands.",
+            "You're wielding a ranged weapon or a thrown weapon.",
+            "You're wielding a staff.",
+            "You're wielding qi-infused fabric",
+            "You’re wielding a one-handed weapon in the sword group.",
+            "You’re wielding an improvised weapon."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Saving Throw": {
+          "enum": [
+            "AC",
+            "Fortitude",
+            "Reflex",
+            "Will",
+            "basic Fortitude",
+            "basic Fortitude, see text",
+            "basic Reflex",
+            "basic Will",
+            "see below"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Secondary Casters": {
+          "enum": [
+            "1",
+            "2",
+            "3"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Secondary Checks": {
+          "enum": [
+            "Alcohol Lore (or related lore), Crafting, Society",
+            "Arcana, Crafting, Society, and the other skill not used in the primary check",
+            "Crafting, Diplomacy",
+            "Crafting, Occultism or Religion (whichever isn't used for the primary check)",
+            "Diplomacy or Intimidation; Arcana or Occultism (whichever isn’t used for the primary check)",
+            "Farming Lore or Survival",
+            "Lore (any), Society, Survival",
+            "Medicine, Society",
+            "Nature",
+            "Occultism or Religion (whichever isn’t used for the primary check)",
+            "Religion",
+            "Survival"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Spell List": {
+          "enum": [
+            "elemental"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Target(s)": {
+          "enum": [
+            "1 animal of up to the level on the table",
+            "1 creature",
+            "1 dead creature",
+            "1 dead creature of up to 10th level",
+            "1 extraplanar creature",
+            "1 final blade",
+            "1 living creature"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Targets": {
+          "type": "string"
+        },
+        "Traditions": {
+          "type": "string"
+        },
+        "Trigger": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "requirements": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/SpellRequirements.draft.json"
+    },
+    "ritual_primary_check": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/SpellRitualPrimaryCheck.draft.json"
+    },
+    "ritual_secondary_casters": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/SpellHeightenedIncrement.draft.json"
+    },
+    "ritual_secondary_checks": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/SpellRitualSecondaryChecks.draft.json"
+    },
+    "saving_throw": {
+      "properties": {
+        "basic": {
+          "type": "boolean"
+        },
+        "kind": {
+          "enum": [
+            "AC",
+            "Fortitude",
+            "Fortitude, see text",
+            "Reflex",
+            "Will",
+            "see below"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "raw": {
+          "enum": [
+            "AC",
+            "Fortitude",
+            "Reflex",
+            "Will",
+            "basic Fortitude",
+            "basic Fortitude, see text",
+            "basic Reflex",
+            "basic Will",
+            "see below"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        }
+      },
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "source": {
+      "properties": {
+        "book": {
+          "type": "string"
+        },
+        "page": {
+          "maximum": 410,
+          "minimum": 15,
+          "type": "integer"
+        },
+        "source_id": {
+          "maximum": 294,
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    },
+    "sources": {
+      "items": {
+        "$ref": "https://2e.aonprd.com/schemas/inferred/objects/SpellSource.draft.json"
+      },
+      "type": "array"
+    },
+    "spell_id": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/SpellSpellId.draft.json"
+    },
+    "spell_list": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/SpellSpellList.draft.json"
+    },
+    "spoiler_source": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "targets": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "traditions": {
+      "items": {
+        "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/SpellTradition.draft.json"
+      },
+      "type": "array"
+    },
+    "trait_ids": {
+      "properties": {
+        "Abjuration": {
+          "maximum": 2,
+          "minimum": 2,
+          "type": "integer"
+        },
+        "Acid": {
+          "maximum": 3,
+          "minimum": 3,
+          "type": "integer"
+        },
+        "Air": {
+          "maximum": 527,
+          "minimum": 5,
+          "type": "integer"
+        },
+        "Animist": {
+          "maximum": 836,
+          "minimum": 836,
+          "type": "integer"
+        },
+        "Attack": {
+          "maximum": 540,
+          "minimum": 15,
+          "type": "integer"
+        },
+        "Auditory": {
+          "maximum": 541,
+          "minimum": 16,
+          "type": "integer"
+        },
+        "Aura": {
+          "maximum": 542,
+          "minimum": 206,
+          "type": "integer"
+        },
+        "Bard": {
+          "maximum": 546,
+          "minimum": 19,
+          "type": "integer"
+        },
+        "Cantrip": {
+          "maximum": 550,
+          "minimum": 22,
+          "type": "integer"
+        },
+        "Champion": {
+          "maximum": 24,
+          "minimum": 24,
+          "type": "integer"
+        },
+        "Chaotic": {
+          "maximum": 25,
+          "minimum": 25,
+          "type": "integer"
+        },
+        "Cleric": {
+          "maximum": 26,
+          "minimum": 26,
+          "type": "integer"
+        },
+        "Cold": {
+          "maximum": 555,
+          "minimum": 27,
+          "type": "integer"
+        },
+        "Composition": {
+          "maximum": 31,
+          "minimum": 31,
+          "type": "integer"
+        },
+        "Concentrate": {
+          "maximum": 561,
+          "minimum": 32,
+          "type": "integer"
+        },
+        "Conjuration": {
+          "maximum": 33,
+          "minimum": 33,
+          "type": "integer"
+        },
+        "Contingency": {
+          "maximum": 385,
+          "minimum": 385,
+          "type": "integer"
+        },
+        "Curse": {
+          "maximum": 566,
+          "minimum": 38,
+          "type": "integer"
+        },
+        "Cursebound": {
+          "maximum": 320,
+          "minimum": 320,
+          "type": "integer"
+        },
+        "Darkness": {
+          "maximum": 39,
+          "minimum": 39,
+          "type": "integer"
+        },
+        "Death": {
+          "maximum": 571,
+          "minimum": 40,
+          "type": "integer"
+        },
+        "Detection": {
+          "maximum": 43,
+          "minimum": 43,
+          "type": "integer"
+        },
+        "Disease": {
+          "maximum": 578,
+          "minimum": 46,
+          "type": "integer"
+        },
+        "Divination": {
+          "maximum": 47,
+          "minimum": 47,
+          "type": "integer"
+        },
+        "Druid": {
+          "maximum": 583,
+          "minimum": 52,
+          "type": "integer"
+        },
+        "Earth": {
+          "maximum": 585,
+          "minimum": 55,
+          "type": "integer"
+        },
+        "Electricity": {
+          "maximum": 56,
+          "minimum": 56,
+          "type": "integer"
+        },
+        "Emotion": {
+          "maximum": 590,
+          "minimum": 60,
+          "type": "integer"
+        },
+        "Enchantment": {
+          "maximum": 61,
+          "minimum": 61,
+          "type": "integer"
+        },
+        "Evil": {
+          "maximum": 64,
+          "minimum": 64,
+          "type": "integer"
+        },
+        "Evocation": {
+          "maximum": 65,
+          "minimum": 65,
+          "type": "integer"
+        },
+        "Extradimensional": {
+          "maximum": 67,
+          "minimum": 67,
+          "type": "integer"
+        },
+        "Fear": {
+          "maximum": 598,
+          "minimum": 68,
+          "type": "integer"
+        },
+        "Fire": {
+          "maximum": 604,
+          "minimum": 72,
+          "type": "integer"
+        },
+        "Focus": {
+          "maximum": 511,
+          "minimum": 511,
+          "type": "integer"
+        },
+        "Force": {
+          "maximum": 610,
+          "minimum": 75,
+          "type": "integer"
+        },
+        "Fortune": {
+          "maximum": 612,
+          "minimum": 76,
+          "type": "integer"
+        },
+        "Fungus": {
+          "maximum": 614,
+          "minimum": 77,
+          "type": "integer"
+        },
+        "Good": {
+          "maximum": 83,
+          "minimum": 83,
+          "type": "integer"
+        },
+        "Healing": {
+          "maximum": 623,
+          "minimum": 89,
+          "type": "integer"
+        },
+        "Hex": {
+          "maximum": 624,
+          "minimum": 324,
+          "type": "integer"
+        },
+        "Holy": {
+          "maximum": 517,
+          "minimum": 517,
+          "type": "integer"
+        },
+        "Illusion": {
+          "maximum": 629,
+          "minimum": 92,
+          "type": "integer"
+        },
+        "Incapacitation": {
+          "maximum": 631,
+          "minimum": 93,
+          "type": "integer"
+        },
+        "Lawful": {
+          "maximum": 99,
+          "minimum": 99,
+          "type": "integer"
+        },
+        "Light": {
+          "maximum": 640,
+          "minimum": 100,
+          "type": "integer"
+        },
+        "Linguistic": {
+          "maximum": 642,
+          "minimum": 101,
+          "type": "integer"
+        },
+        "Magus": {
+          "maximum": 389,
+          "minimum": 389,
+          "type": "integer"
+        },
+        "Manipulate": {
+          "maximum": 645,
+          "minimum": 104,
+          "type": "integer"
+        },
+        "Mental": {
+          "maximum": 647,
+          "minimum": 106,
+          "type": "integer"
+        },
+        "Metal": {
+          "maximum": 505,
+          "minimum": 505,
+          "type": "integer"
+        },
+        "Metamagic": {
+          "maximum": 107,
+          "minimum": 107,
+          "type": "integer"
+        },
+        "Misfortune": {
+          "maximum": 654,
+          "minimum": 110,
+          "type": "integer"
+        },
+        "Monk": {
+          "maximum": 656,
+          "minimum": 112,
+          "type": "integer"
+        },
+        "Morph": {
+          "maximum": 657,
+          "minimum": 113,
+          "type": "integer"
+        },
+        "Move": {
+          "maximum": 658,
+          "minimum": 114,
+          "type": "integer"
+        },
+        "Necromancy": {
+          "maximum": 117,
+          "minimum": 117,
+          "type": "integer"
+        },
+        "Negative": {
+          "maximum": 118,
+          "minimum": 118,
+          "type": "integer"
+        },
+        "Nonlethal": {
+          "maximum": 188,
+          "minimum": 188,
+          "type": "integer"
+        },
+        "Olfactory": {
+          "maximum": 664,
+          "minimum": 246,
+          "type": "integer"
+        },
+        "Oracle": {
+          "maximum": 319,
+          "minimum": 319,
+          "type": "integer"
+        },
+        "Plant": {
+          "maximum": 668,
+          "minimum": 125,
+          "type": "integer"
+        },
+        "Poison": {
+          "maximum": 669,
+          "minimum": 126,
+          "type": "integer"
+        },
+        "Polymorph": {
+          "maximum": 670,
+          "minimum": 127,
+          "type": "integer"
+        },
+        "Possession": {
+          "maximum": 129,
+          "minimum": 129,
+          "type": "integer"
+        },
+        "Prediction": {
+          "maximum": 132,
+          "minimum": 132,
+          "type": "integer"
+        },
+        "Rare": {
+          "maximum": 683,
+          "minimum": 137,
+          "type": "integer"
+        },
+        "Revelation": {
+          "maximum": 138,
+          "minimum": 138,
+          "type": "integer"
+        },
+        "Sanctified": {
+          "maximum": 519,
+          "minimum": 519,
+          "type": "integer"
+        },
+        "Scrying": {
+          "maximum": 141,
+          "minimum": 141,
+          "type": "integer"
+        },
+        "Shadow": {
+          "maximum": 143,
+          "minimum": 143,
+          "type": "integer"
+        },
+        "Sleep": {
+          "maximum": 145,
+          "minimum": 145,
+          "type": "integer"
+        },
+        "Sonic": {
+          "maximum": 697,
+          "minimum": 147,
+          "type": "integer"
+        },
+        "Sorcerer": {
+          "maximum": 148,
+          "minimum": 148,
+          "type": "integer"
+        },
+        "Spellshape": {
+          "maximum": 513,
+          "minimum": 513,
+          "type": "integer"
+        },
+        "Spirit": {
+          "maximum": 737,
+          "minimum": 149,
+          "type": "integer"
+        },
+        "Structure": {
+          "maximum": 704,
+          "minimum": 704,
+          "type": "integer"
+        },
+        "Subtle": {
+          "maximum": 522,
+          "minimum": 522,
+          "type": "integer"
+        },
+        "Summon": {
+          "maximum": 520,
+          "minimum": 520,
+          "type": "integer"
+        },
+        "Teleportation": {
+          "maximum": 710,
+          "minimum": 156,
+          "type": "integer"
+        },
+        "Transmutation": {
+          "maximum": 157,
+          "minimum": 157,
+          "type": "integer"
+        },
+        "Uncommon": {
+          "maximum": 721,
+          "minimum": 159,
+          "type": "integer"
+        },
+        "Unholy": {
+          "maximum": 521,
+          "minimum": 521,
+          "type": "integer"
+        },
+        "Visual": {
+          "maximum": 727,
+          "minimum": 163,
+          "type": "integer"
+        },
+        "Vitality": {
+          "maximum": 509,
+          "minimum": 509,
+          "type": "integer"
+        },
+        "Void": {
+          "maximum": 510,
+          "minimum": 510,
+          "type": "integer"
+        },
+        "Water": {
+          "maximum": 732,
+          "minimum": 165,
+          "type": "integer"
+        },
+        "Witch": {
+          "maximum": 734,
+          "minimum": 323,
+          "type": "integer"
+        },
+        "Wizard": {
+          "maximum": 735,
+          "minimum": 166,
+          "type": "integer"
+        },
+        "Wood": {
+          "maximum": 508,
+          "minimum": 508,
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    },
+    "traits": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "trigger": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "url": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/IriString.draft.json"
+    }
+  },
+  "required": [
+    "_type",
+    "access",
+    "action_cost",
+    "affliction",
+    "alt_edition_url",
+    "area",
+    "bloodlines",
+    "cast",
+    "catalysts",
+    "cost",
+    "cult",
+    "defense",
+    "deities",
+    "description_html",
+    "description_text",
+    "domain",
+    "duration",
+    "heightened",
+    "kind",
+    "legacy",
+    "lesson",
+    "links",
+    "meta_description",
+    "meta_keywords",
+    "mysteries",
+    "name",
+    "outcomes",
+    "patron_themes",
+    "pfs",
+    "range",
+    "rank",
+    "rarity",
+    "raw_fields",
+    "requirements",
+    "ritual_primary_check",
+    "ritual_secondary_casters",
+    "ritual_secondary_checks",
+    "saving_throw",
+    "source",
+    "sources",
+    "spell_id",
+    "spell_list",
+    "spoiler_source",
+    "targets",
+    "traditions",
+    "trait_ids",
+    "traits",
+    "trigger",
+    "url"
+  ],
+  "title": "Spell",
+  "type": "object",
+  "x-squashage-class": "https://2e.aonprd.com/Spell"
+}

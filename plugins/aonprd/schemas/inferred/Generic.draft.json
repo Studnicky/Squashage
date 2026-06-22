@@ -1,0 +1,2792 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/Generic.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": true,
+  "properties": {
+    "_type": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/GenericType.draft.json"
+    },
+    "alt_edition_url": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "x-squashage-open-vocab": true
+    },
+    "body_html": {
+      "type": "string",
+      "x-squashage-open-vocab": true
+    },
+    "body_text": {
+      "type": "string",
+      "x-squashage-open-vocab": true
+    },
+    "entity_id": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/GenericEntityId.draft.json"
+    },
+    "legacy": {
+      "type": "boolean"
+    },
+    "level": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/GenericLevel.draft.json"
+    },
+    "level_kind": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "links": {
+      "items": {
+        "$ref": "https://2e.aonprd.com/schemas/inferred/objects/GenericLink.draft.json"
+      },
+      "type": "array"
+    },
+    "meta_description": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "x-squashage-open-vocab": true
+    },
+    "meta_keywords": {
+      "type": "string",
+      "x-squashage-open-vocab": true
+    },
+    "name": {
+      "type": "string",
+      "x-squashage-open-vocab": true
+    },
+    "pfs": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/EquipmentPfs.draft.json"
+    },
+    "rarity": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/EquipmentRarity.draft.json"
+    },
+    "raw_fields": {
+      "properties": {
+        "9": {
+          "enum": [
+            "151———————— 252———————— 3521——————— 4522——————— 55—22—————— 65—22—————— 75——22————— 85——22————— 95———22———— 105———22———— 115————22——— 125————22——— 135—————22—— 145—————22—— 155——————22— 165——————22— 175———————22 185———————22 195———————22 205———————22 Additional Feats"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Ablative Barrier": {
+          "enum": [
+            "(abjuration) Energy forms a protective barrier that ablates slowly as creatures in the area take damage. All creatures in a 40-foot burst gain resistance to all damage equal to double the surge's spell level for up to 1 minute. Whenever a creature applies this resistance, the resistance for all affected creatures reduces by 1. The effect ends for all creatures when it reduces to 0. 17"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Access": {
+          "type": "string"
+        },
+        "Activate": {
+          "enum": [
+            "[free-action] envision"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Additional Feats": {
+          "enum": [
+            "Your GM might determine that you can take a pact feat from the pactbinder archetype as an additional feat, as long as the pact is made to the entity within you. For instance, if you're hosting a %%>fey, you could make a pact involving fey. These pact feats are at the same level as for a pactbinder."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Additional Traits": {
+          "enum": [
+            "Act or perform comedy Auditory, linguistic, and visual Dance Move and visual Play an instrument Auditory and manipulate Orate or sing Auditory and linguistic Performance Trained Actions"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Adjustments": {
+          "enum": [
+            "Instead of your patron’s lesson, you gain the manifest will hex cantrip and your familiar learns one common 1st-rank spell of your choice from your spell list.Additional Feats"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Adowyn": {
+          "enum": [
+            "(untamed female human hunter) and"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Advanced Maneuver": {
+          "type": "string"
+        },
+        "Air": {
+          "enum": [
+            "initial: updraft; advanced: powerful inhalation"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Alejandro the Green": {
+          "enum": [
+            "(excitable male human druid) poured out raw magic into his forest refuge in the River Kingdoms, over time causing the trees to walk and attracting hordes of curious fey from the First World. With the help of these newly made arboreals and fey visitors, he’s been able to drive out numerous hostile invaders. However, his wild magic has recently attracted the attention of malevolent proteans from the Maelstrom, and he’ll need more allies than he currently has to keep his home safe from their unpredictable predations."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Alignment": {
+          "enum": [
+            "must be chaotic evil",
+            "must be good, usually neutral good",
+            "must be true neutral"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Almenia Oarstone": {
+          "enum": [
+            "(female dwarf shipwright) is the current leader of the union, having been a member for more than 60 years. It is said that you can count on one hand the number of ships that have docked in Absalom on which she has never worked. The Shipwright's Union manages shipbuilding and repairs in both the Devil's Own and the Sea King Shipyard, and sometimes dispatches members to handle jobs that need doing at the Docks."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Ammunition": {
+          "type": "string"
+        },
+        "Anathema": {
+          "enum": [
+            "abandon those in need, enslave or oppress others, harm the innocent through direct or inadvertent action",
+            "fail to explore, report and cooperate; betray your fellow agents",
+            "undermine the Measure and the Chain"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Antimagic Eruption": {
+          "enum": [
+            "(abjuration) The surge attempts to counteract a random spell active on you and on each creature within a 10-foot burst. 11"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Arba Dwindletree": {
+          "enum": [
+            "(destructive female gnome druid) staves off her Bleaching by wreaking havoc on crops and pitting fledgling settlements in the River Kingdoms against one another. Her delight in this chaos is tempered only when meddlesome fey creatures try to join in on the “fun.” Posing as an Order of the Nail Hellknight,"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Archetype": {
+          "type": "string"
+        },
+        "Archetypes": {
+          "enum": [
+            "Vigilante, Gray Gardener"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Arnisant": {
+          "enum": [
+            "(mysterious male human knight), who hunts undead alongside a band of stalwart knights."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Aspect": {
+          "type": "string"
+        },
+        "Aspects": {
+          "enum": [
+            "beast and celestial",
+            "death and shadow",
+            "emotion (dedication) and life",
+            "emotion (pride) and luck",
+            "life and mind",
+            "life and time",
+            "mind and time"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Avenger Adjustments": {
+          "enum": [
+            "You must choose a deity to be a follower of."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Blood Rage (Instinct Ability)": {
+          "enum": [
+            ": When raging, your physical attacks deal extra persistent bleed damage equal to half your additional damage from Rage. When you Cast a Spell that requires a spell attack roll while raging, apply the additional damage from Rage to that spell, even on a failure."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Bloodrager Adjustments": {
+          "enum": [
+            "You are trained in Athletics, Medicine, and a number of additional skills equal to 2 plus your Intelligence modifier, instead of your normal starting skill proficiencies."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Careful Casting": {
+          "enum": [
+            "[free-action]"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Cascade Bearers": {
+          "enum": [
+            "esteem"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Category": {
+          "enum": [
+            "Dimensions",
+            "Inner Sphere Planes",
+            "Outer Sphere Planes",
+            "Transitive Planes"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Cave Bear": {
+          "enum": [
+            ": Use a bear's statistics for a cave bear animal companion."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Cavern": {
+          "enum": [
+            ": broken stalagmite, large mushroom, old bones"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Cha": {
+          "enum": [
+            "+0",
+            "+1",
+            "+2",
+            "+3"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Chogyel": {
+          "enum": [
+            "(diligent nonbinary human nephilim priest) has begun to notice strange signs of supernatural activity in Tamdrin Vale. Their faith will soon be tested, putting them on the path toward becoming an ascended celestial."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Class": {
+          "type": "string"
+        },
+        "Collection": {
+          "enum": [
+            "132—————————2 242—————————2 3422————————4 4522————————4 55222———————6 65222———————6 752222——————8 852222——————8 9522222—————10 10522222—————10 115222222————12 125222222————12 1352222222———14 1452222222———14 15522222222——16 16522222222——16 175222222222—18 185222222222—18 195222222222*18 205222222222*18 * Your class most likely has a class feature that gives you a single 10th level spell slot that works a bit differently from other slots. If so, flexible spellcaster doesn't change the way that spell works.Heightening Spells Once you gain 2nd-level spells, you can heighten any spell in your spell collection to any level you can cast, similar to a spontaneous spellcaster's signature spells. The only restriction is that you must select at least one 1st-level spell for your collection each time you prepare, ensuring that you can use all your spell slots each day. Adjudicating Class Feats And Features Some of your class feats or features might rely on the fact that you prepare spells in spell slots. While some class feats might no longer work or be necessary with the flexible spellcaster archetype, in many cases you can make a simple replacement and continue using the class feat. The following class feats simply require replacing “a spell you have prepared” or “a prepared spell” for “a spell in your collection” or “a spell slot.” For example, in Counterspell, you'd replace “a spell you have prepared” in the trigger for “a spell in your collection” and “expend a prepared spell” for “expend a spell slot.” Similarly, in arcane bond, you'd replace “cast one spell you prepared today and already cast” with “cast one spell in your collection you've already cast today.”"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Con": {
+          "enum": [
+            "+0,",
+            "+1",
+            "+1,",
+            "+2",
+            "+2,",
+            "+3,",
+            "+4,"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Corresponding Skill": {
+          "enum": [
+            "ArcaneArcana DivineReligion OccultOccultism PrimalNature"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Cost": {
+          "enum": [
+            "1 versatile vial"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Courtroom or Study": {
+          "enum": [
+            ": gavel, goblet, quill, lectern"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Critical Failure": {
+          "type": "string"
+        },
+        "Critical Success": {
+          "type": "string"
+        },
+        "Daeodon": {
+          "enum": [
+            ": Use a boar's statistics for a daeodon, or giant boar, companion."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Damage": {
+          "enum": [
+            "1d10 piercing",
+            "1d10 slashing",
+            "1d4 piercing (functions as dagger)",
+            "1d6 bludgeoning",
+            "1d6 fire",
+            "1d6 piercing",
+            "1d6 piercing plus poison",
+            "1d6 slashing",
+            "1d8 bludgeoning",
+            "1d8 negative (doesn't apply the ghost's Strength modifier)",
+            "1d8 piercing",
+            "1d8 slashing"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Darl Jubannich": {
+          "enum": [
+            "(inspirational male human poet) and"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Deeds": {
+          "enum": [
+            "Initial Energy Shot; Advanced Recall Ammunition; Greater Dispelling Bullet",
+            "Initial Energy Shot; Advanced Recall Ammunition; Greater Dispelling Bullet Slinger's Reload Thoughtful Reload [one-action] Gunslinger",
+            "Initial Into the Fray; Advanced Finish the Job; Greater Drifter's Wake",
+            "Initial Living Fortification; Advanced Spinning Crush; Greater Siegebreaker",
+            "Initial One Shot, One Kill; Advanced Vital Shot; Greater Ghost Shot",
+            "Initial Spring the Trap; Advanced Wind them Up; Greater Break Them Down",
+            "Initial Ten Paces; Advanced Pistoler's Retort; Greater Grim Swagger"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Deng Fo-Murk": {
+          "enum": [
+            "(cruel male human necromancer) uses his alchemical skills to reanimate the corpses of nobles and diplomats to sew political conflict between Hwanggot and its neighbors. He is poised to light the fuse on a powder keg of bloody consequences, through which he will gallop through on his terror bird mount."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Description": {
+          "enum": [
+            "A combination of heavy snowfall and wind reduces visibility and temperature significantly.",
+            "A fire spreads through the region, be it one accidentally started by a poorly maintained campfire, deliberate arson, a lightning strike, or from a supernatural source like a creature's fiery breath or a fire spell being cast by a bandit in the region. Wildfires cannot occur during heavy downpours or blizzards, and if such an event starts in the area, it brings an existing wildfire to an end.",
+            "Dark clouds announce their arrival with distant peals of thunder and flashes of lightning.",
+            "Heavy rainfall upriver or deeper in the mountains causes a sudden rush of water to come cascading downstream or along an otherwise dry riverbed.",
+            "High winds wreak havoc and disrupt travel, and they may even cause damage as trees or other objects are blown over.",
+            "Pellets of frozen ice rain down on the region.",
+            "Strangely colored or ominously shaped clouds often presage the arrival of a distinctive funnel cloud's arrival in the region.",
+            "The clouds above darken, and a significant amount of precipitation unloads over the region.",
+            "The temperature drops noticeably, becoming unusually cold for this time of year.",
+            "Thick fog rolls in to obscure the landscape.",
+            "What starts out as a heavy downpour or a windstorm takes a turn for the outlandish, as something strange begins raining down from the heavens above: bolts of fire, acid rain, or even something like a rain of frogs or shards of stained glass.",
+            "With little warning, the ground itself suddenly gives way, be it a caused by a small avalanche, rockslide, mudslide, or the sudden opening of a sinkhole."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Dex": {
+          "enum": [
+            "+0",
+            "+0,",
+            "+1",
+            "+1,",
+            "+2",
+            "+2,",
+            "+3",
+            "+3,"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Dire Wolf": {
+          "enum": [
+            ": Use a wolf's statistics for a dire wolf companion."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Divine Font Adjustment": {
+          "enum": [
+            "Instead of preparing heal or harm spells with your divine font, you instead gain the battle font, which allows you to prepare battle aura spells. You gain 4 additional spell slots each day at your highest rank of cleric spell slots. You can prepare only bane or bless in these slots. Any feats and effects that refer to a battle aura refers to these spells, regardless of whether they were cast with your standard spell slots or your divine font spell slots. At 5th level, the number of additional slots increases to 5, and at 15th level, the total number of additional slots increases to 6. Your battle auras use your class DC instead of your spell DC."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Divinities": {
+          "type": "string"
+        },
+        "Docks": {
+          "enum": [
+            ": barrel, crate, hook"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Doctrine Adjustment": {
+          "enum": [
+            "Instead of choosing a doctrine, you follow the battle creed. At 1st level, you gain the benefits of the initial creed. You gain additional benefits from your creed at the listed levels."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Dr. Ashley Arrowbaud": {
+          "enum": [
+            "(distractable female human inventor) labored for years within her laboratory until she one day emerged with a large, arthropod-shaped metal creature marked"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Druid Elementalist Adjustments": {
+          "enum": [
+            ": If you're a druid of the storm order and air is in your elemental philosophy, you can choose to replace your starting order spell, tempest surge, with updraft."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Earth": {
+          "enum": [
+            "initial: crushing ground; advanced: stone lance"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Edicts": {
+          "enum": [
+            "and anathema are intended as tools for roleplay. You, the GM, and other players should work together to determine how they'll influence your game.",
+            "apply the lessons of Hell to bring order to the mortal world, uphold the law",
+            "explore important sites, report and record your discoveries, and cooperate with fellow Pathfinders"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Effect": {
+          "type": "string"
+        },
+        "Elemental Cycle": {
+          "enum": [
+            ": Earth, fire, metal, water, wood"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Elemental Sorcerer Adjustments": {
+          "enum": [
+            ": If you're a sorcerer with the elemental bloodline, you can replace your initial bloodline spell with an initial elemental focus spell, and your advanced bloodline spell with an advanced elemental focus spell. The initial and advanced elemental focus spells you select must have the same trait as your elemental bloodline."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Elementalist Adjustments": {
+          "enum": [
+            ": Replace your spell list with the elemental spell list. Your actual magical tradition is unchanged, but you choose your spells from the elemental list instead. You must choose an elemental philosophy (detailed below), which determines which spells and other elemental magic you can use."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Email": {
+          "enum": [
+            "alex@archivesofnethys.com",
+            "andreas@archivesofnethys.com",
+            "ash@archivesofnethys.com",
+            "chris@archivesofnethys.com",
+            "devin@archivesofnethys.com",
+            "fern@archivesofnethys.com",
+            "jackson@archivesofnethys.com",
+            "jonny@archivesofnethys.com",
+            "kao@archivesofnethys.com",
+            "klaus@archivesofnethys.com",
+            "mark@archivesofnethys.com",
+            "milan@archivesofnethys.com",
+            "star@archivesofnethys.com"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Emerald Boughs": {
+          "enum": [
+            "emphasize"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Emotional Turmoil": {
+          "enum": [
+            "(emotion, enchantment, mental) A swirl of conflicting emotions overwhelm you from the surging magic. For 1 minute, attempt a DC 11 flat check at the start of each of your turns. On a success, you gain a +2 status bonus to all attack rolls, saving throws, and skill checks; on a failure, you take a –2 status penalty to them instead. 19"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Encounters": {
+          "enum": [
+            "View Encounters"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Energy Unleashed": {
+          "enum": [
+            "(evocation) Raw energy deals 2d6 damage per spell level of the surge (basic Reflex save) in a 10-foot burst. 2"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Ernhilda Truestone": {
+          "enum": [
+            "(patient female dwarf sorcerer) used her wildspell powers to create an oasis of stable magic in the Mana Wastes, allowing her to give succor to harried travelers. Her home in the wastes grew to a bustling trading post, protected by her powers, though it rapidly faded after her passing. Some believe that Ernhilda’s spirit now resides in a cave somewhere under the settlement and that she could be brought back to life with the proper ritual. Finding the proper site for such magic has been hindered by the subterranean tunnels, which seem to shift randomly and without warning."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Exceptional Advancement": {
+          "enum": [
+            "When the berserker becomes an exceptional follower: Increase their Strength modifier to +5, their Dexterity modifier to +1, their Wisdom modifier to +2, and their Charisma modifier to +4.Increase their item bonus to AC to +5.Increase their proficiency rank in Fortitude saves and Will saves to master, and their proficiency rank in Reflex saves to expert. Give them a +1 item bonus to all saving throws.Increase their proficiency rank in Athletics to master.Increase their item bonus to attack rolls with their falchion Strikes to +2. Increase their falchion Strike damage dice from 2d10 to 3d10 and increase the additional damage that their falchion Strikes deal from 3 to 6.Increase the status bonus to damage rolls the berserker gains from their follower action to +4.The berserker gains a reaction when Directed. If this reaction isn’t spent before the beginning of your next turn, it is lost. The berserker also gains the Share the Pain reaction.",
+            "When the medic becomes an exceptional follower: Increase their Strength modifier to +2, their Constitution modifier to +3, their Intelligence modifier to +2, and their Wisdom modifier to +5.Increase their item bonus to AC to +3.Increase their proficiency rank in Fortitude and Will saves to master, and their proficiency rank in Reflex saves to expert. Give them a +1 item bonus to all saving throws.Increase their item bonus to Medicine checks to +2. They become an expert in Acrobatics.Increase their item bonus to attack rolls with their scalpel Strikes to +2. Increase their scalpel Strike damage dice from 2d4 to 3d4 and increase the additional damage that their scalpel Strikes deal from 2 to 4. Increase the persistent bleed their scalpel Strikes deal to 2 (or 2d6 on a critical hit).Once per hour, the medic can use Battle Medicine on a creature that is temporarily immune.The medic can use Quick Treatment.",
+            "When the scout becomes an exceptional follower: Increase their Strength modifier to +3, their Dexterity modifier to +5, their Constitution modifier to +3, and their Wisdom modifier to +4.Increase their item bonus to AC to +3.Increase their proficiency rank in Reflex saves, Will saves, and Perception to master, and their proficiency rank in Fortitude saves to expert. Give them a +1 item bonus to all saving throws.Increase their proficiency rank in Stealth to master, and increase their item bonus to Stealth checks to +2.Increase their item bonus to attack rolls with their shortsword Strikes to +2. Increase their shortsword Strike damage dice from 2d6 to 3d6 and increase the additional damage that their shortsword Strikes deal from 2 to 4.When the scout uses the Scout exploration activity, they also Avoid Notice and Search.",
+            "When the sharpshooter becomes an exceptional follower: Increase their Dexterity modifier to +5, their Constitution modifier to +3, their Wisdom modifier to +4, and their Charisma modifier to +3.Increase their item bonus to AC to +3.Increase their proficiency rank in Reflex saves and Will saves to master and their proficiency rank in Fortitude saves to expert. Give them a +1 item bonus to all saving throws.Increase their proficiency rank in Acrobatics to master.Increase their item bonus to attack rolls with their shortbow Strikes to +2. Increase their shortbow Strike damage dice from 2d6 to 3d6 and increase the additional damage that their shortbow Strikes deal from 2 to 4.The sharpshooter learns Following Shot.",
+            "When the shieldbearer becomes an exceptional follower: Increase their Strength modifier to +5, their Dexterity modifier to +2, their Intelligence modifier to +2, and their Wisdom modifier to +3.Increase their item bonus to AC to +7.Increase their proficiency rank in Fortitude saves and Will saves to master, and their proficiency rank in Reflex saves to expert. Give them a +1 item bonus to all saving throws.Increase their proficiency rank in Athletics to master. They become an expert in Acrobatics.Increase their item bonus to attack rolls with their listed weapon Strikes to +2. Increase their weapon Strike damage from two dice to three dice (for instance, 2d8 to 3d8) and increase the additional damage that their weapon Strikes deal from 2 to 4.Increase their shield’s statistics to Hardness 10, HP 100, BT 50.The shieldbearer gains an additional reaction when Directed, which the shieldbearer can use only to Shield Block to protect themself."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Experienced Advancement": {
+          "enum": [
+            "When the berserker becomes an experienced follower: Increase their Strength modifier to +4 and their Constitution modifier to +3.Increase their proficiency rank with Fortitude and Will saves to expert.Increase their falchion Strike damage dice from 1d10 to 2d10.Increase the status bonus to damage rolls the berserker gains from their follower ability to +2.",
+            "When the medic becomes an experienced follower: Increase their Dexterity modifier to +3 and their Wisdom modifier to +4.Increase their proficiency rank in Fortitude saves and Will saves to expert.Increase their proficiency rank in Medicine to expert.Increase their scalpel Strike damage dice from 1d4 to 2d4. Their scalpel Strikes deal 1 persistent bleed damage (or 1d6 persistent bleed damage on a critical hit).Once per day, the medic can use Battle Medicine on a creature that is temporarily immune.",
+            "When the scout becomes an experienced follower: Increase their Dexterity modifier to +4 and their Wisdom modifier to +3.Increase their proficiency rank with Reflex saves, Will saves, and Perception to expert.Increase their shortsword Strike damage dice from 1d6 to 2d6.Add Search to the list of exploration activities the scout can perform without spending your exploration activity.",
+            "When the sharpshooter becomes an experienced follower: Increase their Dexterity modifier to +4 and their Wisdom modifier to +3.Increase their proficiency rank in Fortitude saves and Reflex saves to expert.Increase their shortbow Strike damage dice from 1d6 to 2d6.When a creature takes damage from a sharpshooter’s ranged Strike, it takes a –5-foot circumstance penalty to its Speeds for 1 round, or a –10-foot circumstance penalty if the attack was a critical hit.",
+            "When the shieldbearer becomes an experienced follower: Increase their Strength modifier to +4 and their Constitution modifier to +3.Increase their proficiency rank in Fortitude and Will saves to expert.Increase their weapons’ Strike damage from one die to two dice (for instance 1d8 to 2d8).Increase their shield’s statistics to Hardness 6, HP 40, and BT 20.The shieldbearer can defend you. When the shieldbearer has their shield raised, they can use their Shield Block reaction when an attack is made against you as long as they are adjacent to you. If they do, the shield prevents you from taking damage up to the shield’s Hardness, but you and the shield each take any remaining damage, following the normal rules for Shield Block."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Exploit Injury": {
+          "enum": [
+            "[one-action]"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Failure": {
+          "type": "string"
+        },
+        "Favorite Meal": {
+          "type": "string"
+        },
+        "Fire": {
+          "enum": [
+            "initial: wildfire; advanced: combustion"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Flexible Spellcaster Adjustments": {
+          "enum": [
+            ": You learn spells as normal for your class (a wizard uses a spellbook, a witch teaches spells to their familiar, and so on), but change your spellcasting from your class as follows. You can cast fewer spells each day. Your number of spell slots per day don't advance from 2 to 3 spells at even levels (see Table 5—1).Reduce the number of cantrips you gain from your class by 2. This archetype doesn't change the way you prepare cantrips.During your daily preparations, you prepare a spell collection rather than preparing spells into each spell slot individually. The number of spells in your spell collection each day equals the total number of spell slots you get each day from your class spells. Select these spells from the same source as normal, such as from a spellbook for a wizard.You can cast any of the spells in your collection by using a spell slot of an appropriate level. For instance, if you were level 1 and had feather fall and magic missile in your spell collection, you could cast feather fall twice that day, magic missile twice, or each spell once.Extra spell slots you gain that have additional restrictions, like the wizard's specialist school spells or the cleric's divine font spells, don't change due to this archetype, nor do such spells count toward the number of spells you place in your spell collection. See the Restricted Spell Slots sidebar.Table 5-1: Flexible Spellcaster Spells per Day"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Follower Ability": {
+          "enum": [
+            "A medic has the Battle Medicine feat. Their kit includes a healer’s toolkit.",
+            "A scout deals 1d4 extra precision damage to off-guard targets.",
+            "A shieldbearer carries a shield (Hardness 5, HP 20, BT 10). They can Raise the Shield to gain a +2 circumstance bonus to AC. The shieldbearer also gains a reaction when Directed. If this reaction isn’t spent before the beginning of your next turn, it is lost. Finally, they gain the Shield Block feat.",
+            "The sharpshooter learns Take Aim.",
+            "When a berserker takes damage, they gain a +1 status bonus to their next damage roll before the end of your next turn."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Following Shot": {
+          "enum": [
+            "[free-action]"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Forest": {
+          "enum": [
+            ": branch, needles, or thorns"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Frequency": {
+          "enum": [
+            "once per 10 minutes",
+            "once per day",
+            "once per hour",
+            "once per meal",
+            "once per round",
+            "once per turn"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "GM Advice": {
+          "enum": [
+            ": For a GM setting damage, typically a one-handed improvised weapon's damage is 1d4, 1d6, or 1d8; one that needs two hands is 1d8, 1d10, or occasionally 1d12, and an extremely ineffective one might deal 1 damage. Improvised weapons typically have zero, one, or two traits, and often have the nonlethal trait. Agile improvised weapons usually have a smaller die size. It's extremely rare for an improvised weapon to deal more than one die of damage, but powerful magical objects might. Improvised weapons should be fun and don't last long, so feel free to experiment!"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Gal": {
+          "enum": [
+            "(clever female centaur ranger) moves hoof in hoof with her boar companion"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Ghunda Gutrim": {
+          "enum": [
+            "(boisterous male ganzi musician) patrols the border of the Field of Maidens to rescue and lift the spirits of those who accidentally wandered into the haunted area."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Halimess": {
+          "enum": [
+            "(ferocious female dromaar freedom fighter), whose cloak is made of white tiger pelt, whose helm is plated with the scales of dragons, and whose blades are crafted from the teeth of deep-sea leviathans. She travels the land not slaying monsters, but helping commoners, standing up to tyrants, and working the fields when others cannot. She is rarely forced to unsheathe her blade, but when she does, her legend grows. Many intelligent monsters even fear her approach."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Hew": {
+          "enum": [
+            "(fearsome male gorilla companion) close. The two have found some success in Senghor, and are saving up to buy their first trading ship."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Hit Points": {
+          "enum": [
+            "10",
+            "10 (void healing)",
+            "4",
+            "4 (void healing)",
+            "6",
+            "8"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Home Plane": {
+          "enum": [
+            "Astral Plane",
+            "Ethereal Plane",
+            "Ethereal Plane or Negative Energy Plane",
+            "First World",
+            "Material Plane",
+            "Nirvana (if NG), Elysium (if CG), or Heaven (if LG)",
+            "The Abyss",
+            "The Boneyard",
+            "elemental plane matching their Elemental Core)",
+            "the universe"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Hosetter": {
+          "enum": [
+            "(deceased male aiuvarin philosopher) led the people to revolt and fight against House Thrune, eventually forming the Revolutionary Council to rule the newly independent nation of Galt. Little did they know their lofty ideals would be turned against them when the council executed Hosetter with one of their final blade guillotines, trapping the philosopher’s soul. Fearing for his own life, Jubannich fled the country."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Ignite Magic": {
+          "enum": [
+            "[reaction] (evocation, fire, primal)"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Improvised Weapon Ideas": {
+          "enum": [
+            ": Use these for inspiration."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Ingredients": {
+          "enum": [
+            "1 basic",
+            "2 basic",
+            "2 basic, 1 special",
+            "2 basic, 2 special",
+            "3 basic, 1 special",
+            "3 basic, 2 special",
+            "4 basic",
+            "4 basic, 1 special",
+            "4 basic, 2 special",
+            "4 basic, 3 special",
+            "6 basic, 2 special",
+            "6 basic, 3 special",
+            "7 basic, 2 special",
+            "8 basic, 3 special",
+            "8 basic, 4 special"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Inner Sea Elementalism": {
+          "enum": [
+            ": Air, earth, fire, water Your choice of elemental philosophy affects your spell list, with the spell list for elemental cycle elementalists found here and the spell list for the inner sea elementalist found here. In addition to some universal spells that both philosophies have access to, your personal list also contains any spell that shares one or more traits with those in your elemental philosophy, and doesn't have any traits that aren't in your elemental philosophy. For example, an elemental cycle elementalist could choose a spell with both the earth and fire traits, but not one with the air and fire traits, while an inner sea elementalist could choose either of those, but not a spell with metal and fire traits."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Int": {
+          "enum": [
+            "+0",
+            "+1",
+            "-3,",
+            "-4,",
+            "-5,"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Jinx": {
+          "enum": [
+            "(steadfast female boar companion), plunging tusk and arrow into the hearts of any would-be intruders. They are friendly with the local druids who reside on the Isle of Arenway, but aren’t beholden to their politics."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Key Ability": {
+          "enum": [
+            "Your key ability score is Charisma.",
+            "Your key ability score is Intelligence."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Kingdom Skill": {
+          "enum": [
+            "Defense",
+            "Exploration",
+            "Folklore",
+            "Industry",
+            "Intrigue",
+            "Politics",
+            "Trade"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Kit Armor": {
+          "enum": [
+            "item bonus +1, Dex cap +4",
+            "item bonus +3, Dex cap +2",
+            "item bonus +5, Dex cap +1"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Latest Errata": {
+          "enum": [
+            "1.1 - 12/16/2024",
+            "2.0 - 12/16/2024",
+            "2.0 - 2/27/2021",
+            "2.0 - 4/13/2022",
+            "2.0 - 5/17/2024",
+            "2.0 - 6/4/2025",
+            "2.0 - 7/9/2021",
+            "2.1 - 12/16/2024",
+            "4.0 - 1/3/2023",
+            "Spring 2026 - 2/9/2026",
+            "Spring 2026, 1st Printing - 2/6/2026"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Leader": {
+          "enum": [
+            "Counselor",
+            "Emissary",
+            "Magister",
+            "Ruler",
+            "Treasurer",
+            "Viceroy",
+            "Warden"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Leryn": {
+          "enum": [
+            "(protective male wolf companion) travel protecting sacred natural lands and hunting those unfortunate enough to draw their ire. Their most recent exploits involved stopping an illegal strip-mining operation in the foothills of the Mindspin Mountains."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Life Sap": {
+          "enum": [
+            "(necromancy) The surge drains your life force and strength. You become drained 1 and doomed 1, and you are enfeebled 2 for 1 minute. 16"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Location": {
+          "type": "string"
+        },
+        "Luminous Pests": {
+          "enum": [
+            "(illusion, visual) Numerous tiny flying creatures formed of bright colorful light, such as bats or hummingbirds, emerge from you, flying in a 30-foot cone. You and all creatures in the cone must succeed at a Will save or be dazzled for 1 minute, or blinded for 1 round and then dazzled for 1 minute on a critical failure. 18"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Magical Nemesis": {
+          "enum": [
+            "(conjuration, teleportation) A random creature connected to your magic (or inimical to it) appears within 60 feet. The creature should be of a level approximately equal to the level of an animal summoned by summon animal of the spell level, although it can be of any type. The GM determines the specific creature. The creature is unfriendly to you and friendly to your apparent enemies. After 1 minute, the creature can choose either to return where it came from or to remain. It is not summoned or a minion. 5"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Mammoth": {
+          "enum": [
+            ": Use a elephants's statistics for the statistics for an elephant or woolly mammoth animal companion."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Market": {
+          "enum": [
+            ": box, fruit, scale, sign"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Mass Siphon": {
+          "enum": [
+            "(transmutation) Creatures and objects within a 30-foot emanation become nearly weightless until the end of your next turn. Nearly weightless creatures can Climb at their land Speed and can Leap as far upward as they could normally Leap horizontally. 4"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Medic’s Treatment": {
+          "enum": [
+            "[one-action]"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Melee": {
+          "type": "string"
+        },
+        "Mental Broadcast": {
+          "enum": [
+            "(detection, divination, mental) For 1 minute, everyone within 30 feet of you can hear your surface thoughts. 12"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Metal": {
+          "enum": [
+            "initial: serrate; advanced: repel metal"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Mkosa": {
+          "enum": [
+            "(curious nonbinary halfling student) who has begun to exhibit signs of being a nascent wildspell. They don’t wish to hinder Mkosa’s education but are afraid of accidental explosions of magic harming others. The teachers haven’t informed Mkosa about their worries, and the time to make a decision is rapidly approaching."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Moloch": {
+          "enum": [
+            "(tyrannical male devil general), General of Hell, rules Malebolge and directs Hell’s armies from Melqart Keep at the heart of Citadel Ba’al. The Lord of the Sixth personifies wrathful destruction held in check by absolute discipline, and those who honor him often find their enemies crushed by the might of his armies."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Monstrous Transformation": {
+          "enum": [
+            "(mental, morph, transmutation) Your head and arms transform into an exaggerated imitation of a creature connected to your magic for 1 minute. The GM determines the creature. You gain a status bonus to weapon and unarmed damage rolls equal to the spell level. At the start of each of your turns while you are transformed, you must succeed at a Will saving throw or be confused until the start of your next turn. On a critical success, you can choose to end the effect entirely, also losing the status bonus. 6"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Motion Sense": {
+          "enum": [
+            "Your oozeform chair can sense nearby creatures through vibration in the air. This is an imprecise sense with a range of 30 feet."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Munitions Master Adjustments": {
+          "enum": [
+            "Instead of choosing an innovation from the options listed in the inventor class, you have the light mortar innovation, as well as the following changes to the class features listed on the following pages. You gain these abilities at the same levels as normal for the class unless otherwise specified. You must select Munitions Master Dedication as your 2nd-level class feat. Your innovation is a mounted siege weapon called a light mortar that weighs 2 Bulk. Whether it propels its payload via an elaborate mechanism or explosive reagents, it's capable of dealing immense damage. Your light mortar requires an Interact action to deploy it before you can Aim, Load, or Launch it, and it includes its own wheeled platform that it is mounted on as part of the deployment. It can be packed back up for easy transport as a 2-action activity with the manipulate trait and either worn as a backpack or carried in one hand while packed. Because of the light mortar's smaller size, the Move Siege Engine activity takes only 1 action when it is deployed."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Namzaruum": {
+          "enum": [
+            "(prophesied male human hero-god) tell of the day he’ll awaken from his long rest in the Hall of Slumbering Kings to lead a new Azlanti empire."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Native Inhabitants": {
+          "type": "string"
+        },
+        "Nibbub": {
+          "enum": [
+            "(plucky male chuspiqui scout) travel from remote community to remote community, protecting travelers from bandits and monsters while collecting an ever-growing congregation of grateful worshippers."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Note": {
+          "enum": [
+            ": Warden spells granted by any of these feats are beastmaster focus spells for you."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Oppressive Voice": {
+          "enum": [
+            "(divination, mental, nonlethal) The voice of your muse, your deity, an ancestor, or another appropriate entity suddenly overwhelms your mind. You must attempt a Will saving throw. You take 1d4 mental damage per spell level with a basic Will save. On a failure, you're also stunned 1 (stunned 2 on a critical failure). 9"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Owyn Darkoath": {
+          "enum": [
+            "(manipulative male humanwarrior) pushes border tensions between Andoran and Cheliax, riding a pitch black destrier into battle. His goal is to force default on the Thrunes’ contract with Hell, bringing even greater war when Asmodeus’ forces come to collect what they’re owed."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Palatine Detective Adjustments": {
+          "enum": [
+            "Instead of choosing a methodology from others available to the investigator class, you have the esoterica methodology.Additional Feats"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Positive Energy Expulsion": {
+          "enum": [
+            "(healing, necromancy, positive) Positive energy explodes outward, healing living creatures for 1d8 Hit Points per spell level of the surge in a 20-foot burst. Undead creatures instead take the same amount of positive damage, with a basic Will save. 3"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Preparation": {
+          "type": "string"
+        },
+        "Prerequisite": {
+          "enum": [
+            "The relic is 3rd level or higher.",
+            "The relic is 5th level or higher.",
+            "The relic is a weapon.",
+            "The relic is a worn item.",
+            "creative spark gift",
+            "death gaze gift",
+            "fervor gift",
+            "form of fury gift",
+            "living death gift"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Prerequisites": {
+          "type": "string"
+        },
+        "Price": {
+          "type": "string"
+        },
+        "Product Line": {
+          "enum": [
+            "Adventure Paths",
+            "Adventures",
+            "Blog Posts",
+            "Comics",
+            "Lost Omens",
+            "Rulebooks",
+            "Society"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Product Page": {
+          "enum": [
+            "Paizo Store"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Psyche Action": {
+          "enum": [
+            "Calculate ThreatsCalculate Threats [one-action] Mental Psyche Psychic",
+            "Fade into DaydreamsFade into Daydreams [one-action] Illusion Psyche Psychic",
+            "Recall the TeachingsRecall the Teachings [one-action] Occult Psyche Psychic",
+            "Restore the MindRestore the Mind [one-action] Emotion Healing Mental Psyche Psychic"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Queen Galfrey": {
+          "enum": [
+            "(heroic female human herald), ruler of Mendev, and her closest allies rose up to stop him, bringing an end to the Fifth Mendevian Crusade. Queen Galfrey became an ascended celestial upon the closure of the Worldwound, rising to the celestial ranks as Iomedae’s herald."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Quick Treatment": {
+          "enum": [
+            "[one-action]"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Raetorgash": {
+          "enum": [
+            "(cruel female velstrac demagogue), the Skull-Hoarder, resides in a bone tower at the heart of the charnel house Targothieh with the Netherworld. She often judges potential subjects by the shape and composition of their skulls, usually by first having them removed from the containing skin and muscle."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Raging Resistance": {
+          "enum": [
+            "You resist slashing damage and persistent bleed damage, as well as damage dealt by the creature whose blood you last drank using Harvest Blood (see Bloodrager Dedication), regardless of the damage type.Additional Feats"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Rain-Scribes": {
+          "enum": [
+            "value"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Range": {
+          "enum": [
+            "[one-action] shortbow (deadly d10, propulsive, range increment 60 feet, reload 0),"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Razmir": {
+          "enum": [
+            "(arrogant male human wouldbe- god) pursues divinity and immortality by whatever means he can acquire it, in locales across the Inner Sea both obvious and obscure."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Recipe Price": {
+          "type": "string"
+        },
+        "Reckless Attack": {
+          "enum": [
+            "[free-action]"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Release Date": {
+          "type": "string"
+        },
+        "Relkin": {
+          "enum": [
+            "(mirthful male human ranger) guards his abode from undead, Molthuni troops, and Nirmathan militias alike, assisted by a knavish group of bandits with hearts of gold."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Requirements": {
+          "type": "string"
+        },
+        "Revulsion": {
+          "enum": [
+            ": You can't voluntarily come within 10 feet of brandished garlic or a religious symbol of a non-evil deity. A creature must Interact to brandish garlic or a religious symbol for 1 round (similar to Raising a Shield). If you involuntarily come within 10 feet of an object of your revulsion, you gain the fleeing condition, running from the subject of your revulsion until you end an action beyond 10 feet of it. After 1 round of being exposed to the subject of your revulsion, you can attempt a DC 25 Will save as a single action, which has the concentrate trait. On a success, you overcome your revulsions for 1d6 rounds, or 1 hour on a critical success."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Roc": {
+          "enum": [
+            ": Use bird statistics for a young roc."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Runelord Adjustments": {
+          "enum": [
+            "You become trained in martial polearms and spears. When your proficiency for simple weapons increases, your proficiencies in these weapons increases as well. You learn the Thassilonian language. Instead of an arcane thesis, you gain a personal rune. Your personal rune also affects your arcane bond. You must select the School of Thassilonian Rune Magic as your arcane school, and you must choose one sin to specialize in. When you cast any curriculum spell or school spell from the School of Thassilonian Rune Magic, you do so simply by tracing runes of power in the air. This removes the need to speak incantations aloud. When you Refocus, you do so by contemplating or indulging in your sin."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "SC- 04910": {
+          "enum": [
+            "(sturdy genderless construct companion) who almost has a will of its own. The two have recently begun to discover the sinister actions of a secret society that includes members of the administration of Dr. Arrowbaud’s alma mater, Blythir College."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Saving Throw": {
+          "enum": [
+            "DC 15 Fortitude",
+            "DC 20 Fortitude",
+            "DC 23 Will",
+            "DC 26 Fortitude",
+            "DC 27 Will",
+            "DC 28 Will",
+            "DC 31 Will"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Secrets of Magic Elementalist": {
+          "enum": [
+            ": This section updates and expands the elementalist class archetype originally presented on page 206 of Secrets of Magic. If you're using the version of the archetype from Secrets of Magic and are happy with it, you don't need to make any changes—that original version functions the same as using the new text and choosing Inner Sea elementalism for your elemental philosophy!"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Senses": {
+          "type": "string"
+        },
+        "Share the Pain": {
+          "enum": [
+            "[reaction]"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Sihar": {
+          "enum": [
+            "(revolutionary female human fighter), wage a cloak-anddagger war of attrition against the forces of the tyrannical God-King Walkena. Sihar has also revived the worship of the Old Sun Gods, a trio of deities once forgotten."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Size": {
+          "enum": [
+            "Huge",
+            "Large",
+            "Medium",
+            "Medium or Large",
+            "Small",
+            "Small or Medium"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Skill": {
+          "enum": [
+            "Acrobatics",
+            "Athletics",
+            "Diplomacy",
+            "Intimidation",
+            "Performance",
+            "Stealth",
+            "Survival",
+            "Thievery",
+            "Thievery (Palm an Object or Steal only)",
+            "none (mindless)"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Skills": {
+          "enum": [
+            "Acrobatics, Hunting Lore, Stealth",
+            "Acrobatics, Stealth, Survival, one Lore about a specific settlement or a specific terrain",
+            "Athletics, Intimidation, Warfare Lore",
+            "Athletics, Survival, Warfare Lore",
+            "Herbalism Lore, Medicine, Nature, Survival"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Slinger's Reload": {
+          "enum": [
+            "Clear a Path",
+            "Covered Reload",
+            "Raconteur's Reload",
+            "Reloading Strike",
+            "Thoughtful Reload",
+            "Touch and Go"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Smilodon": {
+          "enum": [
+            ": Use cat statistics for a smilodon animal companion."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Source Group": {
+          "type": "string"
+        },
+        "Special": {
+          "type": "string"
+        },
+        "Specialization Ability": {
+          "enum": [
+            "When using blood rage, increase the additional damage from Rage from 2 to 4. If you have greater weapon specialization, instead increase the damage from 4 to 8."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Speed": {
+          "type": "string"
+        },
+        "Spell Surge": {
+          "enum": [
+            "You immediately cast any spell in your repertoire of the surge's spell level or lower (or from your prepared spells or innate spells if you don't have a repertoire but have been forced to generate a wellspring surge). You must choose a spell that takes 3 or fewer actions to cast."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Spellcasting Adjustment": {
+          "enum": [
+            "Your spellcasting capabilities are more restricted. At 1st level, you can prepare one 1st-rank spell and five cantrips. As you increase in level, your number of spell slots and the highest rank of spells you can cast from spell slots increases, shown in Battle Harbinger Spells per Day. Because of your focus on your physical training at the expense of magical aptitude, you have no more than two spell slots of your highest rank and, if you can cast 2nd-rank spells or higher, two spell slots of 1 rank lower than your highest spell rank. For anything that requires the ability to cast spells of a certain rank that's lower than the highest slots you have, you still qualify even if you no longer have spell slots at those ranks."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Spellshot Adjustments": {
+          "enum": [
+            ": Instead of choosing a way from the options listed in the gunslinger class, you have the way of the spellshot. It has the following way skill, slinger's reload, and deeds. You gain these abilities at the same levels as normal for the class. You use Intelligence for your class DC."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Steel at Dawn": {
+          "enum": [
+            "(compassionate female human gunslinger) and her sidekick hierophant"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Str": {
+          "enum": [
+            "+0",
+            "+1",
+            "+1,",
+            "+2,",
+            "+3",
+            "+3,",
+            "-5,"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Strike up the Band": {
+          "enum": [
+            "(auditory, illusion) For 1 minute, you are followed by orchestral theme music tied to the emotional content of the actions you're performing. This grants you a +2 status bonus to Diplomacy, Intimidation, and Performance checks, a –2 status penalty to Deception checks, and makes certain uses of Stealth virtually impossible. It might have other effects as the GM sees fit. 15"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Success": {
+          "type": "string"
+        },
+        "Sudden Downpour": {
+          "enum": [
+            "(evocation, water) Water cascades from above, putting out non-magical fires in a 10-foot burst and attempting to counteract magical fires. 20"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Sudden Gale": {
+          "enum": [
+            "(air, evocation) Weather in a 40-foot emanation is disturbed. Strong winds blow in a random direction for 1 minute. Each creature that starts its turn in the area must succeed at a Fortitude save or fall prone (and be pushed 10 feet on a critical failure), and you must succeed at this save immediately after the surge. Any movement against the wind is difficult terrain, or greater difficult terrain while flying. 7"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Sunlight": {
+          "enum": [
+            ": If exposed to direct sunlight, you immediately become slowed 1. The slowed value increases by 1 each time you end your turn in sunlight. If you lose all your actions in this way, you are destroyed. Due to your supernatural aversion to light, you don't cast shadows or show a reflection in mirrors."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Support Benefit": {
+          "type": "string"
+        },
+        "Survival": {
+          "enum": [
+            "DC 16",
+            "DC 16 (trained)",
+            "DC 18 (trained)",
+            "DC 19 (expert)",
+            "DC 22 (expert)",
+            "DC 22 (trained)",
+            "DC 25 (expert)",
+            "DC 27 (expert)"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Take Aim": {
+          "enum": [
+            "[two-actions] The sharpshooter takes aim at their foe and makes a ranged Strike, gaining a +2 circumstance bonus to the attack roll."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Tavern": {
+          "enum": [
+            ": bottle, mug, serving tray, stool"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Tempest-Sun Mages": {
+          "enum": [
+            "inspire"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Tessa Fairwind": {
+          "enum": [
+            "(fearsome female aiuvarin pirate) and her crew rule over a kingdom of salt and blood."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Thais": {
+          "enum": [
+            ", Cayden Cailean’s herald, embodies freedom and courage. She has gone as far as to fight the ruler of nine Hells, Asmodeus, to liberate one thousand innocent souls who were tricked into the clutches of hell by a vaguely worded diabolical contract. In the process, she paid a personal sacrifice: the loss of one of her feathery wings."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "The Old Man": {
+          "enum": [
+            "(wise male human herald), whose real name has been forgotten, replaced by an epithet. Did he ever have a real name? As a herald of the god Irori, The Old Man has helped many monks achieve their full potential and been the inspiration for several fighting styles. But don’t let his wizened appearance fool you. His fists are as hard as stone, his movements as swift as the wind. Do not cross The Old Man if you wish for all your bones to remain unbroken and your skin unbruised."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Tinge of Terror": {
+          "enum": [
+            "(emotion, enchantment, fear, mental) All creatures within 20 feet are affected by powerful fright. They attempt a Will save, becoming frightened 1 on a failure or frightened 2 on a critical failure. 14"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Title": {
+          "enum": [
+            "Data Entry Lead",
+            "Data Entry Specialist (Pathfinder)",
+            "Data Entry Specialist (Starfinder)",
+            "Developer",
+            "Editor",
+            "Front-End Developer",
+            "Lead Developer",
+            "Search Developer",
+            "UI Developer"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Torman Iates": {
+          "enum": [
+            "(risk-taking male human nomarch), renowned gladiator of Absalom. After emerging triumphant from countless battles within the Irorium arena, the grizzled human has parlayed his fame into successful careers as a tavern owner and local politician. He sits as a nomarch on the Low Council of Absalom, where he helps pass legislation to aid exfighters like himself. Because of this, Torman is respected and well-liked by those who fight for coin."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Tradition": {
+          "enum": [
+            "Arcane",
+            "Divine",
+            "Occult",
+            "Primal"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Traits (Variable)": {
+          "enum": [
+            "one more (see Breath Weapon below)",
+            "one more (see Elemental Core, below)"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Treerazer": {
+          "enum": [
+            "(corrupting male demon deforester), seeks dominion over the Tanglebriar. Once a powerful aspiring demon lord, the fiend was banished to the Universe long ago and seeks revenge against the elven deities who imprisoned him within the surrounding forest and all they hold dear."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Tremor": {
+          "enum": [
+            "(earth, evocation) The earth trembles in a 40-foot emanation. Each creature on a surface must immediately succeed at a Fortitude save or fall prone. The surface then becomes difficult terrain for 1 minute. 8"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Triceratops": {
+          "enum": [
+            ": Use triceratops statistics for a triceratops or other armored dinosaur, such as a stegosaurus or ankylosaurus."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Trigger": {
+          "enum": [
+            "A creature adjacent to the vulture is reduced to 0 Hit Points",
+            "An enemy damages your ally, and both are in your champion’s aura",
+            "An enemy damages, grabs, or restrains your ally, and both are in your champion’s aura",
+            "An enemy in your champion’s aura damages you",
+            "An enemy’s Strike would hit you and you weren’t already concealed, hidden, or undetected by that enemy.",
+            "The sharpshooter critically hits with a ranged Strike",
+            "The target of your Exploit Vulnerability makes a Strike or Casts a Spell that would affect you or one of your allies.",
+            "The target of your Exploit Vulnerability uses a concentrate, manipulate, or move action, or leaves a square during a move action it's using.",
+            "The target of your Exploit Vulnerability would damage you or an ally within 15 feet of you.",
+            "The umbrella mushroom is falling.",
+            "You Direct the berserker",
+            "a creature rolls a critical failure against a single-target spell you cast on it",
+            "a reaction disrupts your spell"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Trinket Squall": {
+          "enum": [
+            "(illusion) Visual illusions of objects related to your magic fall like rain throughout a 40-foot burst for 1 minute, giving concealment in the area. Creatures can attempt to disbelieve this illusion. 10"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Tyrannosaurus": {
+          "enum": [
+            ": Use tyrannosaurus statistics for for a tyrannosaurus, allosaurus, or similar dinosaur."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Unsteady Mount": {
+          "enum": [
+            "The wyvern has the mount ability but is only strong enough to fly in short bursts while carrying a rider; if it doesn’t end its turn on solid ground, it descends 30 feet without taking falling damage. At 14th level, a wyvern replaces this with the mount ability, removing this restriction."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Urghan": {
+          "enum": [
+            "(tormented male cyclops primalist 17) is said to be trapped in a constant repetition of the decisions he made just before the Starstone fell, living in one reality for the most part but frequently responding to the stimuli of variant timelines, his ultimate goal being the protection of an empire from global devastation. Before then, several runelords created demiplanes or used advanced magic to lock themselves out of their own natural chronology, either to gain more time to prepare or one day return to a world that has already survived calamity."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Usage": {
+          "type": "string"
+        },
+        "Uzunjati": {
+          "enum": [
+            "understand that"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Verdant Clutch": {
+          "enum": [
+            "(conjuration, plant) Plants and vines grow from all surfaces within 20 feet, causing all creatures in the area to be immobilized unless they succeed at a Reflex save. The Escape DC is equal to the spell DC. 13"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Veteran Advancement": {
+          "enum": [
+            "When the berserker becomes a veteran follower: Increase their Constitution modifier to +4, their Wisdom modifier to +1, and their Charisma modifier to +3.Increase their item bonus to AC to +4.Increase their proficiency rank in Perception to expert.Increase their proficiency rank in Athletics, Intimidation, and Warfare Lore to expert.Increase their proficiency rank in their falchion Strikes to expert, and give them a +1 item bonus to attack rolls with their falchion Strikes. Their Strikes deal 3 additional damage and become magical for the purposes of ignoring resistances.Increase the status bonus to damage rolls the berserker gains from their follower ability to +3.The berserker gains Reckless Attack.",
+            "When the medic becomes a veteran follower: Increase their Strength modifier to +1, their Dexterity modifier to +4, and their Constitution modifier to +2.Increase their item bonus to AC to +2.Increase their proficiency rank in Perception to expert.Increase their proficiency rank in Medicine to master, and their proficiency rank in Herbalism Lore, Nature, and Survival to expert. Give them a +1 item bonus to Medicine checks.Increase their proficiency rank in their scalpel Strikes to expert, and give them a +1 item bonus to attack rolls with their scalpel Strikes. Their scalpel Strikes deal 2 additional damage and become magical for the purposes of ignoring resistances.The medic can use Medic’s Treatment.",
+            "When the scout becomes a veteran follower: Increase their Constitution modifier to +2, their Intelligence modifier to +1, and their Charisma modifier to +2.Increase their item bonus to AC to +2.Increase their proficiency rank in Perception to expert.Increase their proficiency rank in Acrobatics, Hunting Lore, and Stealth to expert. They also become an expert in Intimidation.Increase their proficiency rank in their shortbow Strikes to expert, and give them a +1 item bonus to attack rolls with their shortbow Strikes. Their Strikes deal 2 additional damage and become magical for the purposes of ignoring resistances.When the sharpshooter Takes Aim, they also ignore the target’s concealment.",
+            "When the scout becomes a veteran follower: Increase their Strength modifier to +2, their Constitution modifier to +2, and their Intelligence modifier to +1.Increase their item bonus to AC to +2.Increase their proficiency rank in Acrobatics, Stealth, Survival, and their specific Lore to expert. Give them a +1 item bonus to Stealth checks.Increase their proficiency rank in their shortsword Strikes to expert, and give them a +1 item bonus to attack rolls with their shortsword Strikes. Their Strikes deal 2 additional damage and become magical for the purposes of ignoring resistances.Increase the extra precision damage the scout does to off-guard targets to 1d6.The scout learns Exploit Injury.",
+            "When the shieldbearer becomes a veteran follower: Increase their Constitution modifier to +4, their Intelligence modifier to +1, and their Wisdom modifier to +2.Increase their item bonus to AC to +6. Their armor gains the bulwark trait.Increase their proficiency rank in Perception to expert.Increase their proficiency rank in Athletics, Survival, and Warfare Lore to expert. They become an expert in Crafting and add a repair toolkit to their kit.Increase their proficiency rank in weapon Strikes to expert, and give them a +1 item bonus to attack rolls with their weapon Strikes. Their weapon Strikes deal 2 additional damage and become magical for the purposes of ignoring resistances.Increase their shield’s statistics to Hardness 8, HP 64, BT 32.The shieldbearer can now defend anyone. The shieldbearer can use Shield Block to protect any adjacent ally, not just you."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Vidni": {
+          "enum": [
+            "(charismatic nonbinary kobold merchant) travels in hopes of selling their varied wares, keeping their most trusted friend and bodyguard"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Vindication": {
+          "enum": [
+            "You combine skill and magic to swiftly defeat your prey. The status bonus to divine spell attack rolls against your hunted prey increases to +2, and the status penalty to their saving throws against divine spells you cast is –2.Additional Feats"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Vindicator Adjustments": {
+          "enum": [
+            "You must choose a deity to be a follower of, and you gain your deity's sanctification. You are trained in Religion instead of Nature."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "War Mage Adjustments": {
+          "enum": [
+            "You become trained in light and medium armor. At 11th level, you gain expert proficiency with light and medium armor, as well as unarmored defense."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "War Magic": {
+          "enum": [
+            "As a free action that can be taken once per round at the start of your turn, you can exchange any spell you currently have memorized for sure strike, heightened to the same level as the replaced spell. As normal, you can cast most spells while wielding a weapon in your hands. You can Refocus by studying plans of war, maps of troop movement, and reports from the field for an active conflict in lieu of studying your spellbook."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Warrior of Legend Adjustments": {
+          "enum": [
+            "You aren’t trained in heavy armor. The armor expertise and armor mastery class features only improve your proficiency rank for light armor, medium armor, and unarmored defense."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Warshard Weapon": {
+          "enum": [
+            "This is a specific weapon you have chosen to infuse your destiny into during your daily preparations. Most warshard warrior feats work best when coupled with a warshard weapon. You can only have one warshard weapon at a time. A warshard weapon gains the mythic trait."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Water": {
+          "enum": [
+            "initial: rising surf; advanced: pulverizing cascade"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Way Skill": {
+          "enum": [
+            "AcrobaticsSlinger's ReloadReloading Strike [one-action] Gunslinger",
+            "Arcana",
+            "ArcanaSlinger's ReloadThoughtful Reload [one-action] Gunslinger",
+            "AthleticsSlinger's ReloadClear a Path [one-action] Gunslinger",
+            "StealthSlinger's ReloadCovered Reload [one-action] Gunslinger",
+            "ThieverySlinger's ReloadTouch and Go [one-action] Gunslinger",
+            "choose Deception or IntimidationSlinger's ReloadRaconteur's Reload [one-action] Gunslinger"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Website": {
+          "enum": [
+            "GitHub Profile",
+            "The Hidden Truth"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Wellspring Mage Adjustments": {
+          "enum": [
+            ": You learn spells as normal for your class, but change your spontaneous spellcasting in the following ways."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Wis": {
+          "enum": [
+            "+0",
+            "+0,",
+            "+1",
+            "+1,",
+            "+2",
+            "+2,",
+            "+3"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Wizard Elementalist Adjustments": {
+          "enum": [
+            ": If you're a wizard, you can either choose to be a universalist or to follow an arcane school dedicated to one element from your elemental philosophy. If you choose an elemental school, your curriculum spells can be any spells that you have access to and that have your chosen element's trait. Your school spells are the elemental focus spells of your chosen element, with the 1st-rank spell as your initial school spell and the 3rd-rank spell as the advanced school spell."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Wood": {
+          "enum": [
+            "initial: arms of nature; advanced: wood walk"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Woolly Rhinoceros": {
+          "enum": [
+            ": Use rhinoceros statistics for a rhinoceros or woolly rhinoceros animal companion."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Yrrelin": {
+          "enum": [
+            "(malicious male serpentfolk lich 21) now resides within his scythe Villainy. He now seeks to behead Golarion’s greatest heroes, one after another, in a zealous push to “bring all life closer to the headless god, Ydersius.” Those who hold the blade are overcome by the wickedness of its former master and aren’t in control of their own actions."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "adaptability": {
+          "enum": [
+            "in thoughts and deeds, as well as a willingness to admit errors and learn from past mistakes."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "camaraderie": {
+          "enum": [
+            ", the sense of community and connection to fellow Magaambyans; they also interact with those outside the Magaambya and spread the academy's message."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "imagination": {
+          "enum": [
+            ", from the dreams of the most visionary magical theorists to the innovations of creative problem-solvers of all stripes."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "knowledge": {
+          "enum": [
+            "lives in stories passed down through the generations and also is earned every day through personal experience."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "valor": {
+          "enum": [
+            ", not only the physical courage to stand up for friends and the school, but also the intellectual courage to consider opposing viewpoints and widen one's understanding rather than staying entrenched in a single paradigm."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        }
+      },
+      "type": "object"
+    },
+    "sections": {
+      "items": {
+        "$ref": "https://2e.aonprd.com/schemas/inferred/objects/GenericSection.draft.json"
+      },
+      "type": "array"
+    },
+    "source": {
+      "properties": {
+        "book": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "page": {
+          "maximum": 576,
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "source_id": {
+          "maximum": 319,
+          "minimum": 1,
+          "type": [
+            "integer",
+            "null"
+          ]
+        }
+      },
+      "type": "object"
+    },
+    "sources": {
+      "items": {
+        "$ref": "https://2e.aonprd.com/schemas/inferred/objects/GenericSource.draft.json"
+      },
+      "type": "array"
+    },
+    "trait_ids": {
+      "properties": {
+        "Abjuration": {
+          "maximum": 2,
+          "minimum": 2,
+          "type": "integer"
+        },
+        "Acid": {
+          "maximum": 524,
+          "minimum": 3,
+          "type": "integer"
+        },
+        "Additive": {
+          "maximum": 795,
+          "minimum": 795,
+          "type": "integer"
+        },
+        "Air": {
+          "maximum": 527,
+          "minimum": 5,
+          "type": "integer"
+        },
+        "Alchemical": {
+          "maximum": 528,
+          "minimum": 6,
+          "type": "integer"
+        },
+        "Alchemist": {
+          "maximum": 812,
+          "minimum": 7,
+          "type": "integer"
+        },
+        "Amphibious": {
+          "maximum": 529,
+          "minimum": 207,
+          "type": "integer"
+        },
+        "Angel": {
+          "maximum": 8,
+          "minimum": 8,
+          "type": "integer"
+        },
+        "Animal": {
+          "maximum": 531,
+          "minimum": 531,
+          "type": "integer"
+        },
+        "Animist": {
+          "maximum": 836,
+          "minimum": 836,
+          "type": "integer"
+        },
+        "Aquatic": {
+          "maximum": 533,
+          "minimum": 533,
+          "type": "integer"
+        },
+        "Arcane": {
+          "maximum": 534,
+          "minimum": 11,
+          "type": "integer"
+        },
+        "Archetype": {
+          "maximum": 535,
+          "minimum": 12,
+          "type": "integer"
+        },
+        "Artifact": {
+          "maximum": 253,
+          "minimum": 253,
+          "type": "integer"
+        },
+        "Astral": {
+          "maximum": 14,
+          "minimum": 14,
+          "type": "integer"
+        },
+        "Attack": {
+          "maximum": 540,
+          "minimum": 15,
+          "type": "integer"
+        },
+        "Auditory": {
+          "maximum": 541,
+          "minimum": 16,
+          "type": "integer"
+        },
+        "Aura": {
+          "maximum": 542,
+          "minimum": 206,
+          "type": "integer"
+        },
+        "Barbarian": {
+          "maximum": 813,
+          "minimum": 18,
+          "type": "integer"
+        },
+        "Bard": {
+          "maximum": 546,
+          "minimum": 19,
+          "type": "integer"
+        },
+        "Beast": {
+          "maximum": 547,
+          "minimum": 20,
+          "type": "integer"
+        },
+        "Beneficial": {
+          "maximum": 449,
+          "minimum": 449,
+          "type": "integer"
+        },
+        "Brandish": {
+          "maximum": 857,
+          "minimum": 857,
+          "type": "integer"
+        },
+        "Building": {
+          "maximum": 442,
+          "minimum": 442,
+          "type": "integer"
+        },
+        "Camping": {
+          "maximum": 465,
+          "minimum": 465,
+          "type": "integer"
+        },
+        "Cavalry": {
+          "maximum": 458,
+          "minimum": 458,
+          "type": "integer"
+        },
+        "Celestial": {
+          "maximum": 551,
+          "minimum": 23,
+          "type": "integer"
+        },
+        "Champion": {
+          "maximum": 811,
+          "minimum": 24,
+          "type": "integer"
+        },
+        "Chaotic": {
+          "maximum": 25,
+          "minimum": 25,
+          "type": "integer"
+        },
+        "Civic": {
+          "maximum": 436,
+          "minimum": 436,
+          "type": "integer"
+        },
+        "Class": {
+          "maximum": 397,
+          "minimum": 397,
+          "type": "integer"
+        },
+        "Cleric": {
+          "maximum": 554,
+          "minimum": 26,
+          "type": "integer"
+        },
+        "Clockwork": {
+          "maximum": 331,
+          "minimum": 331,
+          "type": "integer"
+        },
+        "Cold": {
+          "maximum": 27,
+          "minimum": 27,
+          "type": "integer"
+        },
+        "Commander": {
+          "maximum": 855,
+          "minimum": 855,
+          "type": "integer"
+        },
+        "Commerce": {
+          "maximum": 437,
+          "minimum": 437,
+          "type": "integer"
+        },
+        "Complex": {
+          "maximum": 30,
+          "minimum": 30,
+          "type": "integer"
+        },
+        "Concentrate": {
+          "maximum": 561,
+          "minimum": 32,
+          "type": "integer"
+        },
+        "Conjuration": {
+          "maximum": 33,
+          "minimum": 33,
+          "type": "integer"
+        },
+        "Consecration": {
+          "maximum": 562,
+          "minimum": 562,
+          "type": "integer"
+        },
+        "Construct": {
+          "maximum": 563,
+          "minimum": 35,
+          "type": "integer"
+        },
+        "Contingency": {
+          "maximum": 385,
+          "minimum": 385,
+          "type": "integer"
+        },
+        "Continuous": {
+          "maximum": 451,
+          "minimum": 451,
+          "type": "integer"
+        },
+        "Curse": {
+          "maximum": 566,
+          "minimum": 38,
+          "type": "integer"
+        },
+        "Cursed": {
+          "maximum": 567,
+          "minimum": 274,
+          "type": "integer"
+        },
+        "Dangerous": {
+          "maximum": 450,
+          "minimum": 450,
+          "type": "integer"
+        },
+        "Death": {
+          "maximum": 571,
+          "minimum": 40,
+          "type": "integer"
+        },
+        "Dedication": {
+          "maximum": 572,
+          "minimum": 41,
+          "type": "integer"
+        },
+        "Demon": {
+          "maximum": 42,
+          "minimum": 42,
+          "type": "integer"
+        },
+        "Destiny": {
+          "maximum": 838,
+          "minimum": 838,
+          "type": "integer"
+        },
+        "Detection": {
+          "maximum": 43,
+          "minimum": 43,
+          "type": "integer"
+        },
+        "Deviant": {
+          "maximum": 426,
+          "minimum": 426,
+          "type": "integer"
+        },
+        "Disease": {
+          "maximum": 578,
+          "minimum": 46,
+          "type": "integer"
+        },
+        "Divination": {
+          "maximum": 47,
+          "minimum": 47,
+          "type": "integer"
+        },
+        "Divine": {
+          "maximum": 579,
+          "minimum": 48,
+          "type": "integer"
+        },
+        "Downtime": {
+          "maximum": 580,
+          "minimum": 49,
+          "type": "integer"
+        },
+        "Dragon": {
+          "maximum": 581,
+          "minimum": 50,
+          "type": "integer"
+        },
+        "Druid": {
+          "maximum": 583,
+          "minimum": 52,
+          "type": "integer"
+        },
+        "Dwarf": {
+          "maximum": 54,
+          "minimum": 54,
+          "type": "integer"
+        },
+        "Earth": {
+          "maximum": 585,
+          "minimum": 55,
+          "type": "integer"
+        },
+        "Edifice": {
+          "maximum": 445,
+          "minimum": 445,
+          "type": "integer"
+        },
+        "Eidolon": {
+          "maximum": 386,
+          "minimum": 386,
+          "type": "integer"
+        },
+        "Electricity": {
+          "maximum": 586,
+          "minimum": 56,
+          "type": "integer"
+        },
+        "Elemental": {
+          "maximum": 587,
+          "minimum": 57,
+          "type": "integer"
+        },
+        "Emotion": {
+          "maximum": 590,
+          "minimum": 60,
+          "type": "integer"
+        },
+        "Enchantment": {
+          "maximum": 61,
+          "minimum": 61,
+          "type": "integer"
+        },
+        "Erratic": {
+          "maximum": 592,
+          "minimum": 592,
+          "type": "integer"
+        },
+        "Ethereal": {
+          "maximum": 63,
+          "minimum": 63,
+          "type": "integer"
+        },
+        "Evil": {
+          "maximum": 64,
+          "minimum": 64,
+          "type": "integer"
+        },
+        "Evocation": {
+          "maximum": 65,
+          "minimum": 65,
+          "type": "integer"
+        },
+        "Exemplar": {
+          "maximum": 839,
+          "minimum": 839,
+          "type": "integer"
+        },
+        "Exploration": {
+          "maximum": 595,
+          "minimum": 66,
+          "type": "integer"
+        },
+        "Extradimensional": {
+          "maximum": 596,
+          "minimum": 67,
+          "type": "integer"
+        },
+        "Famous": {
+          "maximum": 447,
+          "minimum": 447,
+          "type": "integer"
+        },
+        "Fear": {
+          "maximum": 598,
+          "minimum": 68,
+          "type": "integer"
+        },
+        "Fey": {
+          "maximum": 599,
+          "minimum": 69,
+          "type": "integer"
+        },
+        "Fiend": {
+          "maximum": 600,
+          "minimum": 70,
+          "type": "integer"
+        },
+        "Fighter": {
+          "maximum": 601,
+          "minimum": 71,
+          "type": "integer"
+        },
+        "Finite": {
+          "maximum": 276,
+          "minimum": 276,
+          "type": "integer"
+        },
+        "Fire": {
+          "maximum": 604,
+          "minimum": 72,
+          "type": "integer"
+        },
+        "Flourish": {
+          "maximum": 606,
+          "minimum": 73,
+          "type": "integer"
+        },
+        "Flowing": {
+          "maximum": 607,
+          "minimum": 607,
+          "type": "integer"
+        },
+        "Force": {
+          "maximum": 610,
+          "minimum": 75,
+          "type": "integer"
+        },
+        "Fortune": {
+          "maximum": 612,
+          "minimum": 76,
+          "type": "integer"
+        },
+        "Fungus": {
+          "maximum": 614,
+          "minimum": 77,
+          "type": "integer"
+        },
+        "Gargantuan": {
+          "maximum": 445,
+          "minimum": 445,
+          "type": "integer"
+        },
+        "General": {
+          "maximum": 615,
+          "minimum": 78,
+          "type": "integer"
+        },
+        "Guardian": {
+          "maximum": 859,
+          "minimum": 859,
+          "type": "integer"
+        },
+        "Gunslinger": {
+          "maximum": 406,
+          "minimum": 406,
+          "type": "integer"
+        },
+        "Healing": {
+          "maximum": 623,
+          "minimum": 89,
+          "type": "integer"
+        },
+        "Hex-KM": {
+          "maximum": 452,
+          "minimum": 452,
+          "type": "integer"
+        },
+        "Holy": {
+          "maximum": 517,
+          "minimum": 517,
+          "type": "integer"
+        },
+        "Huge": {
+          "maximum": 445,
+          "minimum": 445,
+          "type": "integer"
+        },
+        "Ikon": {
+          "maximum": 840,
+          "minimum": 840,
+          "type": "integer"
+        },
+        "Illusion": {
+          "maximum": 629,
+          "minimum": 92,
+          "type": "integer"
+        },
+        "Incapacitation": {
+          "maximum": 631,
+          "minimum": 93,
+          "type": "integer"
+        },
+        "Incorporeal": {
+          "maximum": 632,
+          "minimum": 222,
+          "type": "integer"
+        },
+        "Infamous": {
+          "maximum": 448,
+          "minimum": 448,
+          "type": "integer"
+        },
+        "Infantry": {
+          "maximum": 455,
+          "minimum": 455,
+          "type": "integer"
+        },
+        "Infrastructure": {
+          "maximum": 444,
+          "minimum": 444,
+          "type": "integer"
+        },
+        "Intelligent": {
+          "maximum": 280,
+          "minimum": 280,
+          "type": "integer"
+        },
+        "Inventor": {
+          "maximum": 408,
+          "minimum": 408,
+          "type": "integer"
+        },
+        "Investigator": {
+          "maximum": 818,
+          "minimum": 318,
+          "type": "integer"
+        },
+        "Large": {
+          "maximum": 445,
+          "minimum": 445,
+          "type": "integer"
+        },
+        "Leadership": {
+          "maximum": 439,
+          "minimum": 439,
+          "type": "integer"
+        },
+        "Light": {
+          "maximum": 640,
+          "minimum": 100,
+          "type": "integer"
+        },
+        "Linguistic": {
+          "maximum": 642,
+          "minimum": 101,
+          "type": "integer"
+        },
+        "Magical": {
+          "maximum": 644,
+          "minimum": 103,
+          "type": "integer"
+        },
+        "Magus": {
+          "maximum": 389,
+          "minimum": 389,
+          "type": "integer"
+        },
+        "Manipulate": {
+          "maximum": 645,
+          "minimum": 104,
+          "type": "integer"
+        },
+        "Medium": {
+          "maximum": 445,
+          "minimum": 445,
+          "type": "integer"
+        },
+        "Mental": {
+          "maximum": 647,
+          "minimum": 106,
+          "type": "integer"
+        },
+        "Metal": {
+          "maximum": 505,
+          "minimum": 505,
+          "type": "integer"
+        },
+        "Metamagic": {
+          "maximum": 107,
+          "minimum": 107,
+          "type": "integer"
+        },
+        "Metamorphic": {
+          "maximum": 649,
+          "minimum": 649,
+          "type": "integer"
+        },
+        "Mindless": {
+          "maximum": 652,
+          "minimum": 652,
+          "type": "integer"
+        },
+        "Minion": {
+          "maximum": 653,
+          "minimum": 109,
+          "type": "integer"
+        },
+        "Misfortune": {
+          "maximum": 654,
+          "minimum": 110,
+          "type": "integer"
+        },
+        "Monitor": {
+          "maximum": 111,
+          "minimum": 111,
+          "type": "integer"
+        },
+        "Monk": {
+          "maximum": 656,
+          "minimum": 112,
+          "type": "integer"
+        },
+        "Morph": {
+          "maximum": 657,
+          "minimum": 113,
+          "type": "integer"
+        },
+        "Mounted": {
+          "maximum": 411,
+          "minimum": 411,
+          "type": "integer"
+        },
+        "Move": {
+          "maximum": 658,
+          "minimum": 114,
+          "type": "integer"
+        },
+        "Multiclass": {
+          "maximum": 659,
+          "minimum": 115,
+          "type": "integer"
+        },
+        "Mythic": {
+          "maximum": 835,
+          "minimum": 835,
+          "type": "integer"
+        },
+        "N": {
+          "maximum": 95,
+          "minimum": 95,
+          "type": "integer"
+        },
+        "Necromancy": {
+          "maximum": 117,
+          "minimum": 117,
+          "type": "integer"
+        },
+        "Negative": {
+          "maximum": 118,
+          "minimum": 118,
+          "type": "integer"
+        },
+        "Nonlethal": {
+          "maximum": 661,
+          "minimum": 661,
+          "type": "integer"
+        },
+        "Occult": {
+          "maximum": 662,
+          "minimum": 120,
+          "type": "integer"
+        },
+        "Olfactory": {
+          "maximum": 246,
+          "minimum": 246,
+          "type": "integer"
+        },
+        "Ooze": {
+          "maximum": 665,
+          "minimum": 665,
+          "type": "integer"
+        },
+        "Open": {
+          "maximum": 123,
+          "minimum": 123,
+          "type": "integer"
+        },
+        "Oracle": {
+          "maximum": 817,
+          "minimum": 319,
+          "type": "integer"
+        },
+        "Phantom": {
+          "maximum": 361,
+          "minimum": 361,
+          "type": "integer"
+        },
+        "Plant": {
+          "maximum": 668,
+          "minimum": 125,
+          "type": "integer"
+        },
+        "Poison": {
+          "maximum": 669,
+          "minimum": 126,
+          "type": "integer"
+        },
+        "Polymorph": {
+          "maximum": 670,
+          "minimum": 127,
+          "type": "integer"
+        },
+        "Portable": {
+          "maximum": 412,
+          "minimum": 412,
+          "type": "integer"
+        },
+        "Positive": {
+          "maximum": 128,
+          "minimum": 128,
+          "type": "integer"
+        },
+        "Possession": {
+          "maximum": 129,
+          "minimum": 129,
+          "type": "integer"
+        },
+        "Prediction": {
+          "maximum": 674,
+          "minimum": 132,
+          "type": "integer"
+        },
+        "Press": {
+          "maximum": 675,
+          "minimum": 133,
+          "type": "integer"
+        },
+        "Primal": {
+          "maximum": 676,
+          "minimum": 134,
+          "type": "integer"
+        },
+        "Psyche": {
+          "maximum": 901,
+          "minimum": 901,
+          "type": "integer"
+        },
+        "Psychic": {
+          "maximum": 894,
+          "minimum": 894,
+          "type": "integer"
+        },
+        "Psychopomp": {
+          "maximum": 232,
+          "minimum": 232,
+          "type": "integer"
+        },
+        "Rage": {
+          "maximum": 680,
+          "minimum": 680,
+          "type": "integer"
+        },
+        "Ranger": {
+          "maximum": 682,
+          "minimum": 136,
+          "type": "integer"
+        },
+        "Rare": {
+          "maximum": 683,
+          "minimum": 137,
+          "type": "integer"
+        },
+        "Reckless": {
+          "maximum": 285,
+          "minimum": 285,
+          "type": "integer"
+        },
+        "Region": {
+          "maximum": 440,
+          "minimum": 440,
+          "type": "integer"
+        },
+        "Relic": {
+          "maximum": 494,
+          "minimum": 494,
+          "type": "integer"
+        },
+        "Residential": {
+          "maximum": 446,
+          "minimum": 446,
+          "type": "integer"
+        },
+        "Rogue": {
+          "maximum": 687,
+          "minimum": 139,
+          "type": "integer"
+        },
+        "Sanctified": {
+          "maximum": 519,
+          "minimum": 519,
+          "type": "integer"
+        },
+        "Secret": {
+          "maximum": 142,
+          "minimum": 142,
+          "type": "integer"
+        },
+        "Settlement": {
+          "maximum": 453,
+          "minimum": 453,
+          "type": "integer"
+        },
+        "Shadow": {
+          "maximum": 693,
+          "minimum": 143,
+          "type": "integer"
+        },
+        "Siege": {
+          "maximum": 457,
+          "minimum": 457,
+          "type": "integer"
+        },
+        "Skill": {
+          "maximum": 695,
+          "minimum": 144,
+          "type": "integer"
+        },
+        "Skirmisher": {
+          "maximum": 456,
+          "minimum": 456,
+          "type": "integer"
+        },
+        "Sleep": {
+          "maximum": 696,
+          "minimum": 696,
+          "type": "integer"
+        },
+        "Small": {
+          "maximum": 445,
+          "minimum": 445,
+          "type": "integer"
+        },
+        "Sonic": {
+          "maximum": 697,
+          "minimum": 147,
+          "type": "integer"
+        },
+        "Sorcerer": {
+          "maximum": 824,
+          "minimum": 148,
+          "type": "integer"
+        },
+        "Spellshape": {
+          "maximum": 513,
+          "minimum": 513,
+          "type": "integer"
+        },
+        "Spellshot": {
+          "maximum": 414,
+          "minimum": 414,
+          "type": "integer"
+        },
+        "Spirit": {
+          "maximum": 737,
+          "minimum": 149,
+          "type": "integer"
+        },
+        "Stance": {
+          "maximum": 701,
+          "minimum": 152,
+          "type": "integer"
+        },
+        "Static": {
+          "maximum": 702,
+          "minimum": 702,
+          "type": "integer"
+        },
+        "Subjective Gravity": {
+          "maximum": 705,
+          "minimum": 705,
+          "type": "integer"
+        },
+        "Subtle": {
+          "maximum": 522,
+          "minimum": 522,
+          "type": "integer"
+        },
+        "Summoner": {
+          "maximum": 392,
+          "minimum": 392,
+          "type": "integer"
+        },
+        "Summoning": {
+          "maximum": 154,
+          "minimum": 154,
+          "type": "integer"
+        },
+        "Swarm": {
+          "maximum": 707,
+          "minimum": 707,
+          "type": "integer"
+        },
+        "Swashbuckler": {
+          "maximum": 825,
+          "minimum": 825,
+          "type": "integer"
+        },
+        "Tactic": {
+          "maximum": 858,
+          "minimum": 858,
+          "type": "integer"
+        },
+        "Talisman": {
+          "maximum": 709,
+          "minimum": 709,
+          "type": "integer"
+        },
+        "Teleportation": {
+          "maximum": 710,
+          "minimum": 156,
+          "type": "integer"
+        },
+        "Thaumaturge": {
+          "maximum": 895,
+          "minimum": 432,
+          "type": "integer"
+        },
+        "Timeless": {
+          "maximum": 713,
+          "minimum": 713,
+          "type": "integer"
+        },
+        "Transcendence": {
+          "maximum": 842,
+          "minimum": 842,
+          "type": "integer"
+        },
+        "Transmutation": {
+          "maximum": 157,
+          "minimum": 157,
+          "type": "integer"
+        },
+        "Unbounded": {
+          "maximum": 720,
+          "minimum": 720,
+          "type": "integer"
+        },
+        "Uncommon": {
+          "maximum": 721,
+          "minimum": 159,
+          "type": "integer"
+        },
+        "Undead": {
+          "maximum": 722,
+          "minimum": 160,
+          "type": "integer"
+        },
+        "Unholy": {
+          "maximum": 521,
+          "minimum": 521,
+          "type": "integer"
+        },
+        "Unique": {
+          "maximum": 161,
+          "minimum": 161,
+          "type": "integer"
+        },
+        "Unstable": {
+          "maximum": 416,
+          "minimum": 416,
+          "type": "integer"
+        },
+        "Upkeep": {
+          "maximum": 441,
+          "minimum": 441,
+          "type": "integer"
+        },
+        "Vigilante": {
+          "maximum": 803,
+          "minimum": 326,
+          "type": "integer"
+        },
+        "Virulent": {
+          "maximum": 726,
+          "minimum": 162,
+          "type": "integer"
+        },
+        "Visual": {
+          "maximum": 727,
+          "minimum": 163,
+          "type": "integer"
+        },
+        "Vitality": {
+          "maximum": 509,
+          "minimum": 509,
+          "type": "integer"
+        },
+        "Void": {
+          "maximum": 510,
+          "minimum": 510,
+          "type": "integer"
+        },
+        "Water": {
+          "maximum": 732,
+          "minimum": 165,
+          "type": "integer"
+        },
+        "Weather": {
+          "maximum": 464,
+          "minimum": 464,
+          "type": "integer"
+        },
+        "Witch": {
+          "maximum": 734,
+          "minimum": 323,
+          "type": "integer"
+        },
+        "Wizard": {
+          "maximum": 735,
+          "minimum": 166,
+          "type": "integer"
+        },
+        "Wood": {
+          "maximum": 508,
+          "minimum": 508,
+          "type": "integer"
+        },
+        "Yard": {
+          "maximum": 443,
+          "minimum": 443,
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    },
+    "traits": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "url": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/IriString.draft.json"
+    }
+  },
+  "required": [
+    "_type",
+    "alt_edition_url",
+    "body_html",
+    "body_text",
+    "entity_id",
+    "legacy",
+    "level",
+    "level_kind",
+    "links",
+    "meta_description",
+    "meta_keywords",
+    "name",
+    "pfs",
+    "rarity",
+    "raw_fields",
+    "sections",
+    "source",
+    "sources",
+    "trait_ids",
+    "traits",
+    "url"
+  ],
+  "title": "Generic",
+  "type": "object",
+  "x-squashage-class": "https://2e.aonprd.com/Generic"
+}

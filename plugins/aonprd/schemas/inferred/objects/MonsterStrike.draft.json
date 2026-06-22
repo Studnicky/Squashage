@@ -1,0 +1,49 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/objects/MonsterStrike.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+    "action": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/EquipmentActivationActionCost.draft.json"
+    },
+    "attack_bonus": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/MonsterStrikeAttackBonus.draft.json"
+    },
+    "damage": {
+      "items": {
+        "$ref": "https://2e.aonprd.com/schemas/inferred/objects/MonsterStrikeDamage.draft.json"
+      },
+      "type": "array"
+    },
+    "effects": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "x-squashage-open-vocab": true
+    },
+    "kind": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/MonsterStrikeKind.draft.json"
+    },
+    "map_bonuses": {
+      "items": {
+        "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/MonsterStrikeMapBonuse.draft.json"
+      },
+      "type": [
+        "array",
+        "null"
+      ]
+    },
+    "traits": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "weapon": {
+      "type": "string",
+      "x-squashage-open-vocab": true
+    }
+  },
+  "title": "MonsterStrike",
+  "type": "object"
+}

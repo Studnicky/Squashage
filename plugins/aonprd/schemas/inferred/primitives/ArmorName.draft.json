@@ -1,0 +1,23 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/primitives/ArmorName.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "enum": [
+    "Breastplate",
+    "Buckler",
+    "Chain Mail",
+    "Chain Shirt",
+    "Explorer's Clothing",
+    "Full Plate",
+    "Half Plate",
+    "Hide Armor",
+    "Leather Armor",
+    "Padded Armor",
+    "Scale Mail",
+    "Steel Shield",
+    "Studded Leather Armor",
+    "Wooden Shield"
+  ],
+  "title": "ArmorName",
+  "type": "string",
+  "x-squashage-closed-enum": true
+}

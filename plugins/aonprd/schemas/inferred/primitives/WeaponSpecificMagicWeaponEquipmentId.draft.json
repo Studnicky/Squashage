@@ -1,0 +1,8 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/primitives/WeaponSpecificMagicWeaponEquipmentId.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "maximum": 4354,
+  "minimum": 384,
+  "title": "WeaponSpecificMagicWeaponEquipmentId",
+  "type": "integer"
+}

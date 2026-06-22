@@ -1,0 +1,25 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/primitives/SpellRitualSecondaryChecks.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "enum": [
+    "Alcohol Lore (or related lore), Crafting, Society",
+    "Arcana, Crafting, Society, and the other skill not used in the primary check",
+    "Crafting, Diplomacy",
+    "Crafting, Occultism or Religion (whichever isn't used for the primary check)",
+    "Diplomacy or Intimidation; Arcana or Occultism (whichever isn’t used for the primary check)",
+    "Farming Lore or Survival",
+    "Lore (any), Society, Survival",
+    "Medicine, Society",
+    "Nature",
+    "Occultism or Religion (whichever isn’t used for the primary check)",
+    "Religion",
+    "Survival",
+    null
+  ],
+  "title": "SpellRitualSecondaryChecks",
+  "type": [
+    "string",
+    "null"
+  ],
+  "x-squashage-closed-enum": true
+}

@@ -1,0 +1,134 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/Condition.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": true,
+  "properties": {
+    "_type": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/ConditionType.draft.json"
+    },
+    "alt_edition_url": {
+      "type": "null"
+    },
+    "body_html": {
+      "type": "string"
+    },
+    "body_text": {
+      "type": "string"
+    },
+    "entity_id": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/ConditionEntityId.draft.json"
+    },
+    "legacy": {
+      "type": "boolean"
+    },
+    "links": {
+      "items": {
+        "$ref": "https://2e.aonprd.com/schemas/inferred/objects/ConditionLink.draft.json"
+      },
+      "type": "array"
+    },
+    "meta_description": {
+      "type": "string"
+    },
+    "meta_keywords": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "pfs": {
+      "type": "null"
+    },
+    "rarity": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/ArmorRarity.draft.json"
+    },
+    "raw_fields": {
+      "type": "object"
+    },
+    "related_conditions": {
+      "items": {
+        "$ref": "https://2e.aonprd.com/schemas/inferred/objects/ConditionRelatedCondition.draft.json"
+      },
+      "type": "array"
+    },
+    "sections": {
+      "items": {
+        "$ref": "https://2e.aonprd.com/schemas/inferred/objects/ConditionSection.draft.json"
+      },
+      "type": "array"
+    },
+    "source": {
+      "properties": {
+        "book": {
+          "enum": [
+            "Kingmaker Adventure Path",
+            "Player Core"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "page": {
+          "maximum": 583,
+          "minimum": 442,
+          "type": "integer"
+        },
+        "source_id": {
+          "maximum": 216,
+          "minimum": 150,
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    },
+    "sources": {
+      "items": {
+        "$ref": "https://2e.aonprd.com/schemas/inferred/objects/ConditionSource.draft.json"
+      },
+      "type": "array"
+    },
+    "stages": {
+      "items": {
+        "type": "null"
+      },
+      "type": "array"
+    },
+    "trait_ids": {
+      "type": "object"
+    },
+    "traits": {
+      "items": {
+        "type": "null"
+      },
+      "type": "array"
+    },
+    "url": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/IriString_2.draft.json"
+    }
+  },
+  "required": [
+    "_type",
+    "alt_edition_url",
+    "body_html",
+    "body_text",
+    "entity_id",
+    "legacy",
+    "links",
+    "meta_description",
+    "meta_keywords",
+    "name",
+    "pfs",
+    "rarity",
+    "raw_fields",
+    "related_conditions",
+    "sections",
+    "source",
+    "sources",
+    "stages",
+    "trait_ids",
+    "traits",
+    "url"
+  ],
+  "title": "Condition",
+  "type": "object",
+  "x-squashage-class": "https://2e.aonprd.com/Condition"
+}

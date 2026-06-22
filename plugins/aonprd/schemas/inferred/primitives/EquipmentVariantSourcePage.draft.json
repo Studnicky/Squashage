@@ -1,0 +1,8 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/primitives/EquipmentVariantSourcePage.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "maximum": 549,
+  "minimum": 38,
+  "title": "EquipmentVariantSourcePage",
+  "type": "integer"
+}

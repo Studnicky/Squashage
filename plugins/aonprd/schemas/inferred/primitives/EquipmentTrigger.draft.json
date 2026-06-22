@@ -1,0 +1,18 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/primitives/EquipmentTrigger.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "enum": [
+    "An enemy fails its save against a mental spell you cast using one of your spell slots;",
+    "You critically succeed at a Strike against an unholy creature with the weapon;",
+    "You critically succeed at an attack roll against a holy creature with the weapon;",
+    "You roll a natural 20 on a Strike with the weapon against a creature that has a head, critically succeed, and deal slashing damage;",
+    "you would be destroyed and are able to rejuvenate;",
+    null
+  ],
+  "title": "EquipmentTrigger",
+  "type": [
+    "string",
+    "null"
+  ],
+  "x-squashage-closed-enum": true
+}

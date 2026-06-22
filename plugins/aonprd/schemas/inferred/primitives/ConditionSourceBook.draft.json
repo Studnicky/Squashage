@@ -1,0 +1,11 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/primitives/ConditionSourceBook.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "enum": [
+    "Kingmaker Adventure Path",
+    "Player Core"
+  ],
+  "title": "ConditionSourceBook",
+  "type": "string",
+  "x-squashage-closed-enum": true
+}

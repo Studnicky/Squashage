@@ -1,0 +1,29 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/primitives/MonsterDefensiveAbilitieFrequency.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "enum": [
+    "Once per day",
+    "Once per day.",
+    "One per day",
+    "once every 1,000 days",
+    "once per 10 minutes",
+    "once per day",
+    "once per day, and recharges when the great cyclops uses Ferocity",
+    "once per day.",
+    "once per hour",
+    "once per minute",
+    "once per round",
+    "once per turn",
+    "once per use of Crimson Shroud",
+    "once per week",
+    "three times a day)",
+    "three times per day",
+    null
+  ],
+  "title": "MonsterDefensiveAbilitieFrequency",
+  "type": [
+    "string",
+    "null"
+  ],
+  "x-squashage-closed-enum": true
+}

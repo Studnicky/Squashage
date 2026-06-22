@@ -1,0 +1,503 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/Action.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": true,
+  "properties": {
+    "_type": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/ActionType.draft.json"
+    },
+    "action_cost": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/ActionActionCost.draft.json"
+    },
+    "action_id": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/ActionActionId.draft.json"
+    },
+    "alt_edition_url": {
+      "type": "null"
+    },
+    "cost": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/ActionCost.draft.json"
+    },
+    "effect_html": {
+      "type": "string",
+      "x-squashage-open-vocab": true
+    },
+    "effect_text": {
+      "type": "string",
+      "x-squashage-open-vocab": true
+    },
+    "frequency": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/ActionFrequency.draft.json"
+    },
+    "legacy": {
+      "type": "boolean"
+    },
+    "links": {
+      "items": {
+        "$ref": "https://2e.aonprd.com/schemas/inferred/objects/ActionLink.draft.json"
+      },
+      "type": "array"
+    },
+    "meta_description": {
+      "type": "string",
+      "x-squashage-open-vocab": true
+    },
+    "meta_keywords": {
+      "type": "string",
+      "x-squashage-open-vocab": true
+    },
+    "name": {
+      "type": "string",
+      "x-squashage-open-vocab": true
+    },
+    "outcomes": {
+      "properties": {
+        "critical_failure": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "critical_success": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "failure": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "success": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "type": "object"
+    },
+    "rarity": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/ActionRarity.draft.json"
+    },
+    "raw_fields": {
+      "properties": {
+        "Cost": {
+          "enum": [
+            "1 Resolve Point",
+            "1 versatile vial",
+            "A bribe worth at least one-tenth of the Currency per Additional PC listed on Table 10–9: Party Treasure by Level. Doubling this amount grants a +2 circumstance bonus to the check."
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Frequency": {
+          "enum": [
+            "once per 10 minutes",
+            "once per day",
+            "once per hour",
+            "once per round",
+            "until recharged (see below)"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "Requirements": {
+          "type": "string"
+        },
+        "Skill": {
+          "type": "string"
+        },
+        "Trigger": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "requirements": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "skill": {
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "proficiency": {
+          "enum": [
+            "Trained",
+            "Untrained"
+          ],
+          "type": "string",
+          "x-squashage-closed-enum": true
+        },
+        "skill_id": {
+          "maximum": 50,
+          "minimum": 18,
+          "type": "integer"
+        }
+      },
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "source": {
+      "properties": {
+        "book": {
+          "type": "string"
+        },
+        "page": {
+          "maximum": 582,
+          "minimum": 9,
+          "type": "integer"
+        },
+        "source_id": {
+          "maximum": 307,
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    },
+    "sources": {
+      "items": {
+        "$ref": "https://2e.aonprd.com/schemas/inferred/objects/ActionSource.draft.json"
+      },
+      "type": "array"
+    },
+    "trait_ids": {
+      "properties": {
+        "Alchemist": {
+          "maximum": 812,
+          "minimum": 7,
+          "type": "integer"
+        },
+        "Arcane": {
+          "maximum": 11,
+          "minimum": 11,
+          "type": "integer"
+        },
+        "Attack": {
+          "maximum": 15,
+          "minimum": 15,
+          "type": "integer"
+        },
+        "Auditory": {
+          "maximum": 541,
+          "minimum": 16,
+          "type": "integer"
+        },
+        "Barbarian": {
+          "maximum": 813,
+          "minimum": 813,
+          "type": "integer"
+        },
+        "Camping": {
+          "maximum": 465,
+          "minimum": 465,
+          "type": "integer"
+        },
+        "Cavalry": {
+          "maximum": 458,
+          "minimum": 458,
+          "type": "integer"
+        },
+        "Champion": {
+          "maximum": 811,
+          "minimum": 24,
+          "type": "integer"
+        },
+        "Civic": {
+          "maximum": 436,
+          "minimum": 436,
+          "type": "integer"
+        },
+        "Commerce": {
+          "maximum": 437,
+          "minimum": 437,
+          "type": "integer"
+        },
+        "Concentrate": {
+          "maximum": 561,
+          "minimum": 32,
+          "type": "integer"
+        },
+        "Curse": {
+          "maximum": 38,
+          "minimum": 38,
+          "type": "integer"
+        },
+        "Disease": {
+          "maximum": 46,
+          "minimum": 46,
+          "type": "integer"
+        },
+        "Divine": {
+          "maximum": 579,
+          "minimum": 48,
+          "type": "integer"
+        },
+        "Downtime": {
+          "maximum": 580,
+          "minimum": 49,
+          "type": "integer"
+        },
+        "Emotion": {
+          "maximum": 590,
+          "minimum": 60,
+          "type": "integer"
+        },
+        "Enchantment": {
+          "maximum": 61,
+          "minimum": 61,
+          "type": "integer"
+        },
+        "Evil": {
+          "maximum": 64,
+          "minimum": 64,
+          "type": "integer"
+        },
+        "Evocation": {
+          "maximum": 65,
+          "minimum": 65,
+          "type": "integer"
+        },
+        "Exploration": {
+          "maximum": 595,
+          "minimum": 66,
+          "type": "integer"
+        },
+        "Fear": {
+          "maximum": 68,
+          "minimum": 68,
+          "type": "integer"
+        },
+        "Flourish": {
+          "maximum": 606,
+          "minimum": 73,
+          "type": "integer"
+        },
+        "Fortune": {
+          "maximum": 76,
+          "minimum": 76,
+          "type": "integer"
+        },
+        "Gunslinger": {
+          "maximum": 406,
+          "minimum": 406,
+          "type": "integer"
+        },
+        "Healing": {
+          "maximum": 623,
+          "minimum": 89,
+          "type": "integer"
+        },
+        "Illusion": {
+          "maximum": 629,
+          "minimum": 629,
+          "type": "integer"
+        },
+        "Infantry": {
+          "maximum": 455,
+          "minimum": 455,
+          "type": "integer"
+        },
+        "Inventor": {
+          "maximum": 408,
+          "minimum": 408,
+          "type": "integer"
+        },
+        "Investigator": {
+          "maximum": 818,
+          "minimum": 318,
+          "type": "integer"
+        },
+        "Leadership": {
+          "maximum": 439,
+          "minimum": 439,
+          "type": "integer"
+        },
+        "Linguistic": {
+          "maximum": 642,
+          "minimum": 101,
+          "type": "integer"
+        },
+        "Magical": {
+          "maximum": 103,
+          "minimum": 103,
+          "type": "integer"
+        },
+        "Magus": {
+          "maximum": 389,
+          "minimum": 389,
+          "type": "integer"
+        },
+        "Maneuver": {
+          "maximum": 459,
+          "minimum": 459,
+          "type": "integer"
+        },
+        "Manipulate": {
+          "maximum": 645,
+          "minimum": 104,
+          "type": "integer"
+        },
+        "Mental": {
+          "maximum": 647,
+          "minimum": 106,
+          "type": "integer"
+        },
+        "Morale": {
+          "maximum": 460,
+          "minimum": 460,
+          "type": "integer"
+        },
+        "Move": {
+          "maximum": 658,
+          "minimum": 114,
+          "type": "integer"
+        },
+        "Occult": {
+          "maximum": 662,
+          "minimum": 120,
+          "type": "integer"
+        },
+        "Olfactory": {
+          "maximum": 246,
+          "minimum": 246,
+          "type": "integer"
+        },
+        "Poison": {
+          "maximum": 669,
+          "minimum": 669,
+          "type": "integer"
+        },
+        "Psyche": {
+          "maximum": 901,
+          "minimum": 901,
+          "type": "integer"
+        },
+        "Psychic": {
+          "maximum": 894,
+          "minimum": 894,
+          "type": "integer"
+        },
+        "Ranger": {
+          "maximum": 136,
+          "minimum": 136,
+          "type": "integer"
+        },
+        "Rare": {
+          "maximum": 137,
+          "minimum": 137,
+          "type": "integer"
+        },
+        "Region": {
+          "maximum": 440,
+          "minimum": 440,
+          "type": "integer"
+        },
+        "Secret": {
+          "maximum": 142,
+          "minimum": 142,
+          "type": "integer"
+        },
+        "Siege": {
+          "maximum": 457,
+          "minimum": 457,
+          "type": "integer"
+        },
+        "Skirmisher": {
+          "maximum": 456,
+          "minimum": 456,
+          "type": "integer"
+        },
+        "Spellshot": {
+          "maximum": 414,
+          "minimum": 414,
+          "type": "integer"
+        },
+        "Stance": {
+          "maximum": 152,
+          "minimum": 152,
+          "type": "integer"
+        },
+        "Teleportation": {
+          "maximum": 156,
+          "minimum": 156,
+          "type": "integer"
+        },
+        "Uncommon": {
+          "maximum": 159,
+          "minimum": 159,
+          "type": "integer"
+        },
+        "Upkeep": {
+          "maximum": 441,
+          "minimum": 441,
+          "type": "integer"
+        },
+        "Visual": {
+          "maximum": 727,
+          "minimum": 163,
+          "type": "integer"
+        },
+        "Wizard": {
+          "maximum": 166,
+          "minimum": 166,
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    },
+    "traits": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "trigger": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "url": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/IriString.draft.json"
+    }
+  },
+  "required": [
+    "_type",
+    "action_cost",
+    "action_id",
+    "alt_edition_url",
+    "cost",
+    "effect_html",
+    "effect_text",
+    "frequency",
+    "legacy",
+    "links",
+    "meta_description",
+    "meta_keywords",
+    "name",
+    "outcomes",
+    "rarity",
+    "raw_fields",
+    "requirements",
+    "skill",
+    "source",
+    "sources",
+    "trait_ids",
+    "traits",
+    "trigger",
+    "url"
+  ],
+  "title": "Action",
+  "type": "object",
+  "x-squashage-class": "https://2e.aonprd.com/Action"
+}
