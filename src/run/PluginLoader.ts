@@ -12,8 +12,11 @@ import { join, resolve }                          from 'node:path';
 import { DAGDocument }                            from '@studnicky/dagonizer';
 import type { DAGType }                           from '@studnicky/dagonizer';
 import type { NodeStateInterface }                from '@studnicky/dagonizer';
+import { Logger }                                 from '../modules/logger/logger.js';
 
 import type { SquashageDagonizer }                from '../dispatcher/SquashageDagonizer.js';
+
+const log = Logger.forComponent('PluginLoader');
 
 /** Callable shape the plugin `index.js` must export as `register`. */
 interface PluginRegisterExportInterface {
@@ -57,6 +60,7 @@ export class PluginLoader {
     pluginNamespace: string,
   ): Promise<ReadonlyArray<DAGType> | null> {
     const pluginDir = join(pluginsDir, pluginNamespace);
+    log.info('registerPluginsFromEntry', 'loading plugin', { pluginsDir, pluginNamespace, pluginDir, exists: existsSync(pluginDir) });
     if (!existsSync(pluginDir)) return null;
 
     // Dynamically import the plugin's entry point. Under ESM with tsx/ts-node,
@@ -64,9 +68,12 @@ export class PluginLoader {
     const entryTs  = resolve(pluginDir, 'index.ts');
     const entryJs  = resolve(pluginDir, 'index.js');
     const entry    = existsSync(entryTs) ? entryTs : entryJs;
+    log.info('registerPluginsFromEntry', 'importing plugin entry', { entry });
 
     const mod = await import(entry) as PluginRegisterExportInterface;
+    log.info('registerPluginsFromEntry', 'calling register()', { hasRegister: typeof mod.register === 'function' });
     await mod.register(dispatcher);
+    log.info('registerPluginsFromEntry', 'register() complete', { squashNode: dispatcher.getNode('squash') !== undefined });
 
     // Collect all *.dag.jsonld files from the plugin directory.
     const dagFiles = readdirSync(pluginDir)
