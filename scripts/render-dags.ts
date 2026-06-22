@@ -16,9 +16,11 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { MermaidRenderer } from '@studnicky/dagonizer/viz';
+import { readFileSync } from 'node:fs';
 
-import { recordDag } from '../src/dag/recordDag.js';
+import { MermaidRenderer } from '@studnicky/dagonizer/viz';
+import { DAGDocument } from '@studnicky/dagonizer';
+
 import { SquashageRun } from '../src/SquashageRun.js';
 import type { TargetConfigInterface } from '../src/config/SquashageConfig.js';
 import type { OutputConfigInterface } from '../src/config/OutputConfig.js';
@@ -43,7 +45,10 @@ const wrapper = (title: string, source: string): string => [
 async function main(): Promise<void> {
   await mkdir(OUT, { recursive: true });
 
-  // Per-record DAG is static — render it directly.
+  // Per-record DAG is the authored JSON-LD document — load and render it.
+  const recordDag = DAGDocument.load(
+    readFileSync(resolve(ROOT, 'src', 'dag', 'squashage-record.dag.jsonld'), 'utf-8'),
+  );
   const recordSource = MermaidRenderer.render(recordDag);
   await writeFile(resolve(OUT, 'squashage-record.md'),
     wrapper('Per-record DAG (squashage:record)', recordSource), 'utf-8');
