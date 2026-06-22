@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Interactive cosmos.gl graph browser.** The example projection ships as compact binary frames (one per concept named-graph; ~14 MB for the full 256,362-node / 842,275-edge AONPRD graph) and streams into a WebGL `@cosmos.gl/graph` viewer via a transferable-`ArrayBuffer` Web Worker (GitHub Pages compatible — no SharedArrayBuffer/COOP-COEP). Nodes are colored and sized per concept (keyed off the named graph), animate in with a warm-restart settle, and expose hover/click details. Replaces the prior sigma.js renderer (`SigmaGraphRenderer`, `sigma` dep removed). `QuadGraph` now resolves `classIri` to the most-specific `rdf:type` rather than the first-seen supertype.
 - **Transient json-tology #126 workaround.** ABox projection inline-resolves cross-schema `$ref` property bodies so referenced object properties are not dropped during `toQuads`; TBox/SHACL emission stays on the strict-graph schemas. Removed when json-tology #126 ships upstream.
 
 ## [0.7.1] - 2026-05-18

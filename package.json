@@ -51,7 +51,7 @@
     "postinstall": "bash scripts/install-hooks.sh && node scripts/create-type-stubs.js",
     "prepare": "bash scripts/install-hooks.sh",
     "viz:fingerprints": "tsx scripts/build-fingerprints.ts",
-    "viz:refresh-vendor": "node scripts/refresh-viz-vendor.js",
+    "viz:refresh-vendor": "node scripts/bundle-cosmos.mjs",
     "docs:render-dags": "node --import tsx scripts/render-dags.ts",
     "docs:render-favicons": "node scripts/render-favicons.mjs",
     "docs:dev": "npm run docs:render-dags && npm run docs:render-favicons && vitepress dev docs",
@@ -77,6 +77,7 @@
     "wink-nlp": "^2.4.0"
   },
   "devDependencies": {
+    "@cosmos.gl/graph": "^2.6.4",
     "@eslint/js": "^10.0.1",
     "@types/jsonld": "^1.5.15",
     "@types/n3": "^1.26.1",
@@ -93,7 +94,6 @@
     "graphology-layout-noverlap": "^0.4.2",
     "graphology-types": "^0.24.8",
     "mermaid": "^11.15.0",
-    "sigma": "^3.0.3",
     "tsx": "^4.0.0",
     "typescript": "^6.0.3",
     "typescript-eslint": "8.59.2",

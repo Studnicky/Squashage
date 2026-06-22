@@ -1,0 +1,129 @@
+{
+  "format": "squashage-binary-frames-v1",
+  "version": 1,
+  "spaceSize": 5400,
+  "totalNodes": 256362,
+  "totalEdges": 842275,
+  "frames": [
+    {
+      "file": "frames/frame-000.bin",
+      "label": "aonprdg:Background",
+      "color": "#90caf9",
+      "nodeCount": 70,
+      "edgeCount": 106,
+      "nodeBase": 0
+    },
+    {
+      "file": "frames/frame-001.bin",
+      "label": "aonprdg:Armor",
+      "color": "#ffb74d",
+      "nodeCount": 180,
+      "edgeCount": 414,
+      "nodeBase": 70
+    },
+    {
+      "file": "frames/frame-002.bin",
+      "label": "aonprdg:Condition",
+      "color": "#ffd54f",
+      "nodeCount": 406,
+      "edgeCount": 940,
+      "nodeBase": 250
+    },
+    {
+      "file": "frames/frame-003.bin",
+      "label": "aonprdg:Equipment",
+      "color": "#ff8a65",
+      "nodeCount": 1294,
+      "edgeCount": 2641,
+      "nodeBase": 656
+    },
+    {
+      "file": "frames/frame-004.bin",
+      "label": "aonprdg:Class",
+      "color": "#aed581",
+      "nodeCount": 2050,
+      "edgeCount": 4613,
+      "nodeBase": 1950
+    },
+    {
+      "file": "frames/frame-005.bin",
+      "label": "aonprdg:Action",
+      "color": "#c09fef",
+      "nodeCount": 2604,
+      "edgeCount": 5636,
+      "nodeBase": 4000
+    },
+    {
+      "file": "frames/frame-006.bin",
+      "label": "aonprdg:Ancestry",
+      "color": "#f06292",
+      "nodeCount": 2833,
+      "edgeCount": 6088,
+      "nodeBase": 6604
+    },
+    {
+      "file": "frames/frame-007.bin",
+      "label": "aonprdg:Trait",
+      "color": "#a1887f",
+      "nodeCount": 3254,
+      "edgeCount": 5172,
+      "nodeBase": 9437
+    },
+    {
+      "file": "frames/frame-008.bin",
+      "label": "aonprdg:Weapon",
+      "color": "#dce775",
+      "nodeCount": 3477,
+      "edgeCount": 11855,
+      "nodeBase": 12691
+    },
+    {
+      "file": "frames/frame-009.bin",
+      "label": "aonprdg:Hazard",
+      "color": "#ffb13c",
+      "nodeCount": 4979,
+      "edgeCount": 11158,
+      "nodeBase": 16168
+    },
+    {
+      "file": "frames/frame-010.bin",
+      "label": "aonprdg:Spell",
+      "color": "#ba68c8",
+      "nodeCount": 6235,
+      "edgeCount": 28459,
+      "nodeBase": 21147
+    },
+    {
+      "file": "frames/frame-011.bin",
+      "label": "aonprdg:Feat",
+      "color": "#81c784",
+      "nodeCount": 7466,
+      "edgeCount": 20644,
+      "nodeBase": 27382
+    },
+    {
+      "file": "frames/frame-012.bin",
+      "label": "aonprdg:MonsterFamily",
+      "color": "#7986cb",
+      "nodeCount": 10406,
+      "edgeCount": 25345,
+      "nodeBase": 34848
+    },
+    {
+      "file": "frames/frame-013.bin",
+      "label": "aonprdg:Monster",
+      "color": "#e94560",
+      "nodeCount": 96040,
+      "edgeCount": 406625,
+      "nodeBase": 45254
+    },
+    {
+      "file": "frames/frame-014.bin",
+      "label": "aonprdg:Generic",
+      "color": "#4dd0e1",
+      "nodeCount": 115068,
+      "edgeCount": 312579,
+      "nodeBase": 141294
+    }
+  ]
+}

@@ -41,11 +41,20 @@ interface WorkingNodeInterface {
   classIri:   string | undefined;
   classLabel: string | undefined;
   graphIri:   string | undefined;
+  /** All `rdf:type` object IRIs seen for this subject (insertion order). */
+  typeIris:   Set<string>;
   /** literal property: predicate IRI → array of literal values */
   literalProps: Map<string, string[]>;
   /** Best-label candidate: `{ priority, value }`. Lower priority wins. */
   labelCandidate: { priority: number; value: string } | null;
 }
+
+/**
+ * Core supertype local names that are never the most-specific concept. When a
+ * subject declares several `rdf:type`s, these generic ancestors are deprioritised
+ * so `classIri` resolves to the concept-bearing type.
+ */
+const CORE_SUPERTYPE_LOCALS = new Set(['thing', 'namedthing', 'contententry']);
 
 /**
  * Format hint for the source data. Defaults to nquads.
@@ -163,6 +172,7 @@ export class QuadGraph {
         classIri:       undefined,
         classLabel:     undefined,
         graphIri,
+        typeIris:       new Set(),
         literalProps:   new Map(),
         labelCandidate: null,
       };
@@ -171,8 +181,11 @@ export class QuadGraph {
       subjNode.graphIri = graphIri;
     }
 
-    // rdf:type — first hit wins for classIri.
+    // rdf:type — collect ALL types; the most-specific is chosen at materialize
+    // time (see #resolveClassIri). The first hit also seeds `classIri` so nodes
+    // with a single type behave exactly as before.
     if (predIri === RDF_TYPE && quad.object.termType === 'NamedNode') {
+      subjNode.typeIris.add(quad.object.value);
       if (subjNode.classIri === undefined) {
         subjNode.classIri = quad.object.value;
       }
@@ -228,6 +241,7 @@ export class QuadGraph {
           classIri:       undefined,
           classLabel:     undefined,
           graphIri:       e.graphIri,
+          typeIris:       new Set(),
           literalProps:   new Map(),
           labelCandidate: null,
         });
@@ -241,8 +255,11 @@ export class QuadGraph {
         ? wn.labelCandidate.value
         : QuadGraph.#implicitIriLabel(wn.id, prefixes);
 
-      const classLabel = wn.classIri !== undefined
-        ? QuadGraph.#compactIri(wn.classIri, prefixes)
+      // Resolve the most-specific type as classIri (over the first-seen one,
+      // which is frequently a generic supertype like Thing / NamedThing).
+      const resolvedClassIri = QuadGraph.#resolveClassIri(wn);
+      const classLabel = resolvedClassIri !== undefined
+        ? QuadGraph.#compactIri(resolvedClassIri, prefixes)
         : undefined;
 
       // Compact literal property keys to compacted IRI labels, sort by key.
@@ -260,7 +277,7 @@ export class QuadGraph {
       nodes.push({
         id:         wn.id,
         label,
-        classIri:   wn.classIri,
+        classIri:   resolvedClassIri,
         classLabel,
         graphIri:   wn.graphIri,
         properties,
@@ -287,6 +304,34 @@ export class QuadGraph {
       .map((iri) => ({ id: iri, label: QuadGraph.#compactIri(iri, prefixes) }));
 
     return { nodes, edges: finalEdges, graphs, prefixes };
+  }
+
+  /**
+   * Choose the most-specific `rdf:type` for a node. A subject often declares
+   * several types — its concept plus generic supertypes (Thing / NamedThing /
+   * ContentEntry). Selection order, all deterministic:
+   *   1. The type whose local name matches the node's named-graph concept.
+   *   2. Any type that is not a core supertype (first in insertion order).
+   *   3. The first-seen type (the original behaviour).
+   */
+  static #resolveClassIri(wn: WorkingNodeInterface): string | undefined {
+    if (wn.typeIris.size === 0) return wn.classIri;
+
+    const types = [...wn.typeIris];
+
+    // 1. Prefer the type matching the named-graph concept local name.
+    if (wn.graphIri !== undefined) {
+      const concept = QuadGraph.#localName(wn.graphIri).toLowerCase();
+      const match = types.find((t) => QuadGraph.#localName(t).toLowerCase() === concept);
+      if (match !== undefined) return match;
+    }
+
+    // 2. Prefer any non-core-supertype.
+    const specific = types.find((t) => !CORE_SUPERTYPE_LOCALS.has(QuadGraph.#localName(t).toLowerCase()));
+    if (specific !== undefined) return specific;
+
+    // 3. Fall back to the first-seen type.
+    return types[0];
   }
 
   static #compactIri(iri: string, prefixes: Record<string, string>): string {

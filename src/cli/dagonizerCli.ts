@@ -22,9 +22,9 @@ import type { SquashageRunState } from '../state/SquashageRunState.js';
 import type { SquashageInduceRunState } from '../state/SquashageInduceRunState.js';
 import type { SquashageRefineRunState } from '../state/SquashageRefineRunState.js';
 import { ChunkBuilder } from '../viz/ChunkBuilder.js';
+import { CosmosGraphRenderer } from '../viz/CosmosGraphRenderer.js';
 import { JsonLdGraph } from '../viz/JsonLdGraph.js';
 import { QuadGraph } from '../viz/QuadGraph.js';
-import { SigmaGraphRenderer } from '../viz/SigmaGraphRenderer.js';
 import { extname } from 'node:path';
 
 interface BuildOptionsInterface {
@@ -259,7 +259,7 @@ export class DagonizerCli {
 
     program
       .command('viz')
-      .description('Render a squashage JSON-LD as a chunked interactive graph (sigma + WebGL)')
+      .description('Render a squashage JSON-LD as a chunked interactive graph (cosmos.gl WebGL)')
       .requiredOption('--in <path>', 'Path to a squashage-produced JSON-LD file')
       .option('--out <dir>', 'Output directory (default: <basename>/ next to --in)')
       .option('--title <string>', 'HTML page title (default: Squashage — <basename>)')
@@ -307,10 +307,11 @@ export class DagonizerCli {
           : (payload.nodes.length > 5000 ? 800 : 400);
 
         try {
-          const manifest = await ChunkBuilder.build(payload, { outDir, iterations });
-          const html     = SigmaGraphRenderer.render({ title, indexUrl: './index.json' });
+          const manifest = await ChunkBuilder.buildBinary(payload, { outDir, iterations });
+          const html     = CosmosGraphRenderer.render({ title, indexUrl: './manifest.json' });
           await writeFile(join(outDir, `${inBase}.html`), html, 'utf-8');
-          process.stdout.write(`viz: wrote ${String(manifest.length)} chunks + index.json + HTML wrapper to ${outDir}\n`);
+          process.stdout.write(`viz: wrote ${String(manifest.frames.length)} binary frames + manifest.json + HTML wrapper to ${outDir}\n`);
+          process.stdout.write(`viz: ${String(manifest.totalNodes)} nodes, ${String(manifest.totalEdges)} edges\n`);
           process.stdout.write(`viz: open ${join(outDir, inBase)}.html\n`);
         } catch (err) {
           process.stderr.write(`viz: cannot write to ${outDir}: ${err instanceof Error ? err.message : String(err)}\n`);
