@@ -12,7 +12,7 @@ Shapes are loaded once at construction time (Turtle file or `services.ontology.s
 
 ## Config slot
 
-Under `targets[].classification.shaclShape`:
+Under `classification.shaclShape`:
 
 ```json
 {

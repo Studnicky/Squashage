@@ -1,19 +1,19 @@
 ---
 layout: doc
 title: Plugins
-description: Squashage exposes one plugin slot — the per-target squash node. Plugins ship a NodeInterface and inject it via SquashageRun's squashNode option.
+description: Squashage exposes one plugin slot — the per-run squash node. Plugins ship a NodeInterface and inject it via SquashageRun's squashNode option.
 ---
 
 # Plugins
 
-Squashage has one extension slot: the per-target **squash node**. Everything else (classifiers, conflict resolution, finalize, catalog emit, provenance) is fixed by the DAG topology.
+Squashage has one extension slot: the per-run **squash node**. Everything else (classifiers, conflict resolution, finalize, catalog emit, provenance) is fixed by the DAG topology.
 
-A squash plugin reads a classified record (`state.classification` and `state.input`) and emits typed RDF quads. The framework provides a `defaultSquashNode` that emits a single `rdf:type` triple keyed by the classification's class IRI. Real targets ship their own.
+A squash plugin reads a classified record (`state.classification` and `state.input`) and emits typed RDF quads. The framework provides a `defaultSquashNode` that emits a single `rdf:type` triple keyed by the classification's class IRI. Real runs ship their own.
 
 ## The contract
 
 ```ts
-import type { NodeInterface } from '@noocodex/dagonizer';
+import type { NodeInterface } from '@studnicky/dagonizer';
 import type { SquashageServices } from '@studnicky/squashage/services/SquashageServices';
 import type { SquashageRecordState } from '@studnicky/squashage/state/SquashageRecordState';
 
@@ -69,12 +69,11 @@ import { SquashageConfig } from '@studnicky/squashage/config/SquashageConfig';
 import { aonprdSquashNode } from './plugins/aonprd/squash.js';
 
 const config = SquashageConfig.loadFromFile('./squashage.config.json');
-const target = config.targets['aonprd'];
 
-const run = await SquashageRun.forTarget({
+const run = await SquashageRun.forRun({
   target:       'aonprd',
-  targetConfig: target,
-  output:       target.output,
+  targetConfig: config,
+  output:       config.output,
   outDir:       './graphs',
   schemasBase:  '.',
   squashNode:   aonprdSquashNode,   // <-- inject here
@@ -83,7 +82,7 @@ const run = await SquashageRun.forTarget({
 const result = await run.execute();
 ```
 
-When `squashNode` is omitted, the run uses `defaultSquashNode`, which emits one `<record> rdf:type <classIri>` quad and nothing else.
+When `squashNode` is omitted, the run uses `defaultSquashNode`, which emits one `<record> rdf:type <classIri>` quad and nothing else. Real runs ship a domain squash node that projects the full record.
 
 ## What services you have
 
@@ -93,10 +92,10 @@ When `squashNode` is omitted, the run uses `defaultSquashNode`, which emits one 
 |---|---|
 | `services.factory` | minting `NamedNode` / `Literal` / `Quad` / `BlankNode` |
 | `services.dataset` | adding quads to the run-wide dataset (`services.dataset.add(quad)`) |
-| `services.builder` | convenience wrapper for building quads against the target's base IRI |
+| `services.builder` | convenience wrapper for building quads against the run's base IRI |
 | `services.prefixes` | resolved (instance, graph, vocabulary) base IRIs |
 | `services.iri` | `NamespaceBuilder` over the vocabulary base — `services.iri('Feat')` returns a `NamedNode` |
-| `services.graphs` | named-graph `NamedNode` map (per-target lanes) |
+| `services.graphs` | named-graph `NamedNode` map (per-run lanes) |
 | `services.ontology` | optional `JsonTologyOntology` instance — null when not configured |
 | `services.ajv` | run-wide AJV instance for per-record schema work |
 | `services.logger` | `services.logger.forComponent('aonprd-squash')` for component-scoped logging |

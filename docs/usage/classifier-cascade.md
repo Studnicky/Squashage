@@ -12,9 +12,9 @@ The cascade is deterministic: same config + same record produce identical propos
 
 ## Opt-in
 
-Each classifier has a config slot under `targets[].classification.<key>`. When the slot is present, the corresponding classifier is instantiated and registered on the dispatcher. When the slot is absent, a no-op classifier is registered under the same name so the static DAG topology still resolves.
+Each classifier has a config slot under `classification.<key>`. When the slot is present, the corresponding classifier is instantiated and registered on the dispatcher. When the slot is absent, a no-op classifier is registered under the same name so the static DAG topology still resolves.
 
-The nine parallel classifiers + two sequential classifiers + the conflict resolver are wired in `SquashageRun.forTarget(...)` from the matching config slots.
+The nine parallel classifiers + two sequential classifiers + the conflict resolver are wired in `SquashageRun.forRun(...)` from the matching config slots.
 
 ## Primary path — the discriminator
 
@@ -45,10 +45,10 @@ Config slot: `classification.discriminator`
 |---|---|---|---|
 | `from` | string | required | JSON Pointer (RFC 6901) into the record. |
 | `fallback` | string | — | Pointer used when `from` is absent or non-string. |
-| `priority` | number | 50 | Proposal priority; set higher than legacy classifiers to ensure it wins on conflict. |
+| `priority` | number | 50 | Proposal priority; set higher than the other classifiers to ensure it wins on conflict. |
 | `sanitize` | string | `"verbatim"` | `"verbatim"` uses the value as-is; `"pascalCase"` and `"kebabToPascal"` split on `[-_\s]+` and capitalize each segment. |
 
-When the pointer resolves to a non-empty string, a proposal is emitted with `confidence: 1.0`. When the pointer is absent or non-string, the node outputs `no-match` and legacy classifiers may still produce a proposal.
+When the pointer resolves to a non-empty string, a proposal is emitted with `confidence: 1.0`. When the pointer is absent or non-string, the node outputs `no-match` and the other classifiers may still produce a proposal.
 
 **Source:** `src/nodes/record/classifiers/DiscriminatorClassifierNode.ts`
 
@@ -158,7 +158,7 @@ These read every other classifier's proposal, so they cannot run in parallel wit
    - `pickPriority`: lexicographically first className wins; `candidates` lists all tied classes.
 4. Confidence comes from the winning proposal.
 
-Configure via `targets[].classification.conflict`:
+Configure via `classification.conflict`:
 
 ```json
 {

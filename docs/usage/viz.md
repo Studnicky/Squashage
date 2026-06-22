@@ -1,30 +1,33 @@
 ---
 layout: doc
 title: Viz
-description: Squashage viz command — generate a self-contained cytoscape HTML document from any JSON-LD graph output. No network required; open in any browser with node_modules absent.
+description: Squashage viz command — generate a self-contained cosmos.gl streaming graph browser from an N-Quads file. No network required; opens offline in any browser.
 ---
 
 # Viz
 
 ```bash
 squashage viz \
-  --in ./graphs/mybuild.jsonld \
-  --out mybuild.html \
-  --title "My Graph"
+  --in ./graphs/aonprd.nq \
+  --out aonprd.html \
+  --title "AONPRD Graph"
 ```
 
-Takes a JSON-LD file, produces a self-contained HTML document with sigma+graphology inlined. Open it in a browser. No network, no server, no `node_modules`.
+Takes an N-Quads (`.nq`) file and produces a self-contained HTML document — a cosmos.gl streaming graph browser with the `@cosmos.gl/graph` WebGL renderer inlined. Open it in a browser. No network, no server, no `node_modules`.
 
 ## What you get
 
-A two-pane layout:
-- **Graph canvas**: sigma renders nodes and edges. Pan, zoom, click.
-- **Detail sidebar**: click a node to see its IRI, class, and all outgoing predicates.
-- **Node list**: alphabetical index of all nodes, grouped by class. Click to focus.
+The `CosmosGraphRenderer` emits a single HTML document that streams the graph into a continuous WebGL simulation:
+
+- **Graph canvas**: cosmos.gl renders nodes and edges with a continuous force simulation. Pan, zoom, click.
+- **D-pad**: on-screen directional control to nudge the viewport.
+- **Node inspector**: click a node to see its IRI, class, and all outgoing predicates.
+- **Highlight**: focus a node and its neighbours; the rest dims.
+- **Physics panel**: live controls for the simulation (repulsion, link distance, gravity, friction).
 
 ## How it works
 
-The viz build happens in two stages: (1) `ChunkBuilder` reads the JSON-LD, deserializes it into a graphology `Graph`, runs force-directed layout to compute node positions, and chunks the result by size. (2) `SigmaGraphRenderer` emits a single ~170KB HTML file with the sigma+graphology bundles vendored inline as a JavaScript UMD bundle. At runtime, the HTML fetches `index.json` (chunk metadata), then each chunk file in ascending-size order, deserializing each into the graphology Graph. Sigma incrementally re-renders as chunks load. Positions are pre-computed at build time; the browser does no layout work.
+The renderer parses the N-Quads input into a node/edge set, then emits one HTML file with the `@cosmos.gl/graph` bundle vendored inline as JavaScript. At runtime the document feeds the graph into the cosmos.gl WebGL renderer and runs a continuous simulation — positions settle live in the browser rather than being pre-baked. The simulation keeps running so you can drag nodes and watch the layout relax around them.
 
 ## Color scheme
 
@@ -32,17 +35,15 @@ Node color is derived from the class IRI via a hash-to-hue function. Same class 
 
 Edge color comes from the named graph IRI via the same mechanism. If you have three named graphs, you get three distinct edge colors.
 
-No legend is generated automatically. The node list groups by class label, which serves the same purpose.
-
 **Hash algorithm**: IRI → SHA256 hash → first 24 bits → hue (0–360°). Collision handling: if two IRIs hash to the same hue, they render the same color. This is rare and acceptable; the alternative (per-IRI user configuration) adds complexity with minimal benefit.
 
 ## Click interaction
 
-Click a node on the canvas: the detail sidebar shows the node's `@id`, its class IRI (under `@type`), and all outgoing predicate-value pairs. Values that are named nodes are displayed as IRIs. Values that are literals are displayed with their datatype when present.
+Click a node on the canvas: the node inspector shows the node's `@id`, its class IRI (under `@type`), and all outgoing predicate-value pairs. Values that are named nodes are displayed as IRIs. Values that are literals are displayed with their datatype when present.
 
-The same node in the node list is highlighted when you click it on the canvas.
+Highlight follows selection: the clicked node and its direct neighbours stay lit while the rest of the graph dims, so a single entity's edges are legible inside a dense field.
 
-**Keyboard shortcuts**: Arrow keys pan. Scroll wheel zooms. Escape clears selection. Right-click on a node: expand neighbors (fetches related nodes from the graph). These are standard sigma controls; they work offline and require no configuration.
+**Controls**: the d-pad pans. Scroll wheel zooms. Click a node to select and highlight. The physics panel adjusts the live simulation. These work offline and require no configuration.
 
 ## iframe embedding
 
@@ -50,7 +51,7 @@ The output file is self-contained; no external dependencies. Embed it in another
 
 ```html
 <iframe
-  src="./mybuild.html"
+  src="./aonprd.html"
   width="100%"
   height="600px"
   style="border:none"
@@ -69,17 +70,9 @@ The file is an HTML document, not a VitePress component. It works anywhere a bro
 
 ## Vendor bundle
 
-The sigma+graphology bundle is vendored into the package at `src/viz/vendor/sigmaBundle.ts`. It's inlined into every generated HTML file at build time. This is intentional; the point is offline operation.
+The `@cosmos.gl/graph` bundle is vendored into the package and inlined into every generated HTML file at build time. This is intentional; the point is offline operation.
 
-To refresh the vendor bundle when a new sigma version ships:
-
-```bash
-npm run viz:refresh-vendor
-```
-
-This runs `scripts/refresh-viz-vendor.js`, which downloads the current sigma UMD bundle and overwrites `src/viz/vendor/sigmaBundle.ts`. After refreshing, rebuild the package (`npm run build`) to pick up the new bundle in subsequent `viz` runs.
-
-**Scalability**: The chunked design keeps memory footprint bounded. A 1M-node graph chunks into ~50 files of ~20KB each. The browser loads chunks incrementally without buffering the full graph. Sigma's WebGL renderer re-paints as chunks arrive. Typical performance: 10K nodes render in <1s, 100K nodes in ~5s, 1M nodes in ~30s (on modern hardware; YMMV). The initial HTML is always ~170KB regardless of graph size.
+**Scalability**: cosmos.gl runs the force simulation on the GPU, so node and edge counts scale into the hundreds of thousands while the simulation stays interactive. The graph data is embedded in the HTML document; the browser feeds it directly into the WebGL renderer with no network round-trips.
 
 ## Demo
 
@@ -88,4 +81,4 @@ The Pathfinder/AONPRD graph lives at [examples/aonprd](../examples/aonprd); buil
 ## Related
 
 - [Getting started](../getting-started); running viz:demo for the first time
-- [Output](./output); JSON-LD output that feeds into viz
+- [Output](./output); the N-Quads output that feeds into viz

@@ -19,11 +19,10 @@ npm run build
 
 ## Run a build
 
-The CLI binary is `squashage-dag`:
+The CLI binary is `squashage-dag`. A config file is one run:
 
 ```bash
 npx squashage-dag build \
-  --target aonprd \
   --config squashage.config.json
 ```
 
@@ -31,11 +30,10 @@ Or invoke it directly during development:
 
 ```bash
 node --import tsx src/cli/dagonizerCli.ts build \
-  --target aonprd \
   --config squashage.config.json
 ```
 
-Three files land in `./graphs/<target>/`:
+Three artifacts land on disk, anchored at `output.path`:
 
 | File | What's in it |
 |---|---|
@@ -45,19 +43,32 @@ Three files land in `./graphs/<target>/`:
 
 ## Build a config
 
+A config file is one run. The root object holds `input`, `output`, and the run knobs directly:
+
+```jsonc
+{
+  "input":  { "basePath": "./input", "format": "json" },
+  "output": { "type": "file", "path": "./graphs/out.trig", "format": "trig" },
+  "concurrency": 4,
+  "graphs": { "default": "https://example.org/graph/default" },
+  "ontology": { "baseIri": "https://example.org/" },
+  "classification": { "source": true }
+}
+```
+
 Copy `squashage.config.example.json` as a starting point. The unprefixed file is gitignored.
 
-The shape is described in [Configuration](./usage/configuration).
+The full shape is described in [Configuration](./usage/configuration).
 
-## Render the JSON-LD as a graph
+## Render the graph
 
 ```bash
 npx squashage-dag viz \
-  --in ./graphs/aonprd.jsonld \
+  --in ./graphs/aonprd.nq \
   --out aonprd
 ```
 
-Writes a chunked WebGL graph (sigma + ForceAtlas2) to `./aonprd/` next to the input. Open `aonprd.html` in any browser.
+Reads an `.nq` file and emits a self-contained cosmos.gl WebGL graph browser to `./aonprd/`. Open `aonprd.html` in any browser. The viewer ships with a d-pad, node inspector, highlight, physics panel, and continuous simulation.
 
 ## Where to look next
 

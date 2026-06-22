@@ -112,7 +112,7 @@ export default withMermaid(defineConfig({
   'cleanUrls':   true,
   'lastUpdated': true,
   'srcDir':      '.',
-  'srcExclude':  ['plans/**', 'plans/*.md', 'architecture/dags/**'],
+  'srcExclude':  ['plans/**', 'plans/*.md', 'architecture/dags/**', 'dagonizer-*.md'],
   'mermaid':     {
     // Theme variables — mermaid honours these per-diagram.
     'theme': 'dark',

@@ -12,7 +12,7 @@ One winkNLP model is loaded in the node's constructor; all configured patterns a
 
 ## Config slot
 
-Under `targets[].classification.winknlpEntities`:
+Under `classification.winknlpEntities`:
 
 ```json
 {

@@ -12,7 +12,7 @@ It never adds class proposals; it only removes them. A `__narrowing_applied__` s
 
 ## Config slot
 
-Under `targets[].classification.taxonomicNarrowing`:
+Under `classification.taxonomicNarrowing`:
 
 ```json
 {

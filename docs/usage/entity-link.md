@@ -16,21 +16,21 @@ The entity-link enrichment task closes this gap without requiring per-record rul
 
 ## When it runs
 
-`enrich-entity-link` is a run-scope node placed between `process-all-records` and `rdfjs-finalize`. It runs once per target after every record's deep-DAG has settled, so the entity index it builds reflects the full dataset.
+`enrich-entity-link` is a run-scope node placed between `process-all-records` and `rdfjs-finalize`. It runs once per run after every record clone has settled, so the entity index it builds reflects the full dataset.
 
-The node reads its config from `targetConfig.enrichment.entityLink` and consumes entity IRIs + labels from `services.dataset`. It writes enrichment edge quads back into `services.dataset` for `rdfjs-finalize` to serialize.
+The node reads its config from the config root `enrichment.entityLink` and consumes entity IRIs + labels from `services.dataset`. It writes enrichment edge quads back into `services.dataset` for `rdfjs-finalize` to serialize.
 
 See [DAG](./pipeline) for the full run-scope topology.
 
 ## State machine
 
-The task executes once per run as an **end-of-run enrichment phase**, after all per-record classification and plugin-emit tasks have settled and before `rdfjs:finalize` serialises the dataset.
+The node executes once per run as an **end-of-run enrichment phase**, after all per-record classification and squash nodes have settled and before `rdfjs-finalize` serialises the dataset.
 
 ```
-all per-record tasks complete
+all record clones complete
           |
           v
-  [ dataset population ]   <- squash plugin emitted quads for every record
+  [ dataset population ]   <- squash node emitted quads for every record
           |
           v
   [ index build (once) ]   <- scan dataset for typed instances in linkAgainst set
@@ -41,40 +41,29 @@ all per-record tasks complete
           |
           v  for each sliding-window token span (1-5 tokens):
   [ span lookup ]          <- caseFolded span in index?
-          |                   yes -> emit <subject> <edgeIri> <target> quad
+          |                   yes -> emit <subject> <edgeIri> <linkTarget> quad
           |                   no  -> skip
           v
-  [ rdfjs:finalize ]       <- serialize dataset with enrichment edges included
+  [ rdfjs-finalize ]       <- serialize dataset with enrichment edges included
 ```
 
 **Why deterministic:** winkNLP's tokenizer is pattern-based (no model sampling). The index is built once from the dataset state at enrichment time. The sliding-window span generation is a pure function. Same input + same config produces identical edges across runs.
 
 ## Configuration
 
-Add an `enrichment` block inside a target config, sibling to `classification` and `output`:
+Add an `enrichment` block at the config root, sibling to `classification` and `output`:
 
 ```jsonc
 {
-  "targets": {
-    "aonprd": {
-      "pipeline": [
-        "json:read",
-        "classify:source",
-        "classify:structural",
-        "classify:conflict",
-        "aonprd:squash",
-        "enrich:entity-link",
-        "rdfjs:finalize"
-      ],
-      "enrichment": {
-        "entityLink": {
-          "engine":        "winknlp",
-          "fields":        ["description", "summary", "traits_text"],
-          "edgeIri":       "aonprd:mentions",
-          "linkAgainst":   ["aonprd:Feat", "aonprd:Spell", "aonprd:Trait"],
-          "minConfidence": 0.85
-        }
-      }
+  "input":  { "basePath": "./input", "format": "json" },
+  "output": { "type": "file", "path": "./graphs/aonprd.trig", "format": "trig" },
+  "enrichment": {
+    "entityLink": {
+      "engine":        "winknlp",
+      "fields":        ["description", "summary", "traits_text"],
+      "edgeIri":       "aonprd:mentions",
+      "linkAgainst":   ["aonprd:Feat", "aonprd:Spell", "aonprd:Trait"],
+      "minConfidence": 0.85
     }
   }
 }
@@ -149,8 +138,8 @@ Multi-word names like "Combat Reflexes" or "Power Attack" are matched by 2-token
 
 ### Prose field not emitted by plugin
 
-The task reads prose from dataset predicates: `<vocabBase><fieldName>`. If the squash plugin does not emit a `<vocabBase>description` literal for a subject, that subject's description field produces zero spans. Ensure the plugin emits the relevant prose predicates to the shared dataset before `enrich:entity-link` runs.
+The node reads prose from dataset predicates: `<vocabBase><fieldName>`. If the squash plugin does not emit a `<vocabBase>description` literal for a subject, that subject's description field produces zero spans. Ensure the plugin emits the relevant prose predicates to the shared dataset before `enrich-entity-link` runs.
 
 ### Index is frozen at enrichment time
 
-The index is built exactly once per run, from the dataset as it stands when `enrich:entity-link` first executes. Instances added to the dataset after the index build (which cannot happen in normal sequential execution) are not reflected in the edge output. This preserves determinism.
+The index is built exactly once per run, from the dataset as it stands when `enrich-entity-link` first executes. Instances added to the dataset after the index build (which cannot happen in normal sequential execution) are not reflected in the edge output. This preserves determinism.

@@ -1,64 +1,55 @@
 ---
 layout: doc
 title: Configuration
-description: Squashage JSON config schema — top-level shape, target blocks, classifier config slots, output block. Load with squashage-dag build --config squashage.config.json.
+description: Squashage JSON config schema — a config file IS one run. Root object holds input, output, and run knobs directly. Load with squashage-dag build --config squashage.config.json.
 ---
 
 # Configuration
 
-The config is a JSON file. Load it with `squashage-dag build --target <name> --config squashage.config.json`.
+The config is a JSON file. **A config file is one run.** The root object holds `input`, `output`, and the run knobs directly. Load it with `squashage-dag build --config squashage.config.json`.
 
-Schema source of truth: `src/schemas/squashage-config.schema.json` (top-level) and `src/schemas/target.schema.json` (per-target).
+Schema source of truth: `src/schemas/squashage-config.schema.json`.
 
 Copy `squashage.config.example.json` as a starting point.
 
-## Top-level shape
+## Root shape
 
 ```ts
 {
-  input:   { basePath: string; format: 'json' | 'jsonl' };  // required
-  targets: { [name: string]: TargetConfig };                 // required, min 1
+  input:          { basePath: string; format: 'json' | 'jsonl' };  // required
+  output:         OutputConfig;                          // required — see Output config below
+  concurrency:    number;                                // optional, default 1
+  graphs:         { [key: string]: string };             // optional — named-graph IRI overrides
+  ontology:       OntologyConfig;                         // optional — json-tology engine config
+  classification: ClassificationConfig;                  // optional — classifier opt-ins
+  enrichment:     { entityLink?: EntityLinkConfig };     // optional — post-batch enrichment
+  quarantine:     QuarantineConfig;                       // optional — quarantine output overrides
+  subjectIri:     SubjectIriConfig;                       // optional — subject IRI minting policy
 }
 ```
+
+There is **no `pipeline` field**. The DAG topology is authored as `.dag.jsonld` documents and loaded at construction; classifiers join the per-record DAG automatically when their config slot is present. See [DAG](./pipeline) for the full topology.
 
 ### `input`
 
 | Key | Type | Required | What it does |
 |---|---|---|---|
-| `basePath` | string | yes | Base directory for all target input paths. |
+| `basePath` | string | yes | Base directory for the run's input. |
 | `format` | `"json"` \| `"jsonl"` | yes | One JSON object per file (`json`), or one per line (`jsonl`). |
 
-### `targets`
-
-An object whose keys are target names and values are target configs.
-
----
-
-## Target config
-
-```ts
-{
-  input:          string;       // required — input directory or single file
-  output:         OutputConfig; // required — see Output config below
-  concurrency:    number;       // optional, default 1
-  graphs:         { [key: string]: string };          // optional — named-graph IRI overrides
-  ontology:       OntologyConfig;                      // optional — json-tology engine config
-  classification: ClassificationConfig;                // optional — classifier opt-ins
-  enrichment:     { entityLink?: EntityLinkConfig };   // optional — post-batch enrichment
-}
-```
-
-There is **no `pipeline` field**. The DAG topology is fixed; classifiers join the parallel placement automatically when their config slot is present. See [DAG](./pipeline) for the full topology.
+### Root knobs
 
 | Key | Type | Required | Default | Notes |
 |---|---|---|---|---|
-| `input` | string | yes | | Input directory or single file. JSON / JSONL detected by extension. |
+| `input` | object | yes | | Input source — see above. |
 | `output` | OutputConfig | yes | | See [Output config](#output-config). |
-| `concurrency` | integer ≥ 1 | no | `1` | Maximum concurrent record-DAG executions. |
+| `concurrency` | integer ≥ 1 | no | `1` | Maximum concurrent record-DAG clones in the native `scatter`. |
 | `graphs` | object | no | | Named-graph IRI overrides; keys map to `services.graphs`. |
 | `ontology` | object | no | | `{ engine: 'json-tology', baseIRI, schemas: [...] }` enables the optional `services.ontology`. |
 | `classification` | object | no | | Per-classifier config slots — see below. |
 | `enrichment.entityLink` | object | no | | Post-batch entity-link configuration. |
+| `quarantine` | object | no | | Quarantine output directory overrides. |
+| `subjectIri` | object | no | | Subject IRI minting policy. |
 
 ---
 
@@ -101,7 +92,7 @@ Each classifier in the per-record DAG has its own slot under `classification.<ke
 
 ### `discriminator`
 
-The primary classification path for targets where records carry a type field.
+The primary classification path for runs where records carry a type field.
 
 ```ts
 {
@@ -135,48 +126,54 @@ See [Output](./output) for full details. The minimal shape:
 
 ```ts
 {
-  kind:   'file';
+  type:   'file';
   path:   string;
   format: 'turtle' | 'trig' | 'ntriples' | 'nquads' | 'jsonld';
+  mode?:  'dataset' | 'stream';   // default 'dataset'; 'stream' streams quads to disk
 }
 ```
 
-`rdfjs-finalize` writes three files in every run:
+`type` is the discriminant. `rdfjs-finalize` writes these files on every run:
 
 | File | What it carries |
 |---|---|
 | `<output.path>` | The success graph. |
-| `<output.path-stem>.prov.<ext>` | PROV-O activity graph emitted by `ProvObserver`. |
-| `<outDir>/<target>/quarantine/<bucket>/<id>.json` | Failed records, grouped by bucket. |
+| `<output.path-stem>.prov.<ext>` | PROV-O activity graph emitted by the dispatcher's lifecycle hooks. |
+| `<outDir>/<run>/quarantine/<bucket>/<id>.json` | Failed records, grouped by bucket. |
 
 ---
 
 ## Example
 
-```json
+```jsonc
 {
-  "input":   { "basePath": "./output", "format": "json" },
-  "targets": {
-    "aonprd": {
-      "input":   "./output/aonprd",
-      "output":  { "kind": "file", "path": "./graphs/aonprd.trig", "format": "trig" },
-      "concurrency": 4,
-      "graphs":  { "default": "https://example.org/graph/aonprd/default" },
-      "ontology": { "baseIri": "https://aonprd.example.org/" },
-      "classification": {
-        "conflict": { "onConflict": "pickPriority", "evidence": true },
-        "structural": [
-          { "className": "feat", "priority": 20,
-            "predicate": { "path": "/_type", "equals": "feat" },
-            "reasons": ["_type=feat"] }
-        ],
-        "urlPattern": {
-          "patterns": [
-            { "className": "feat", "match": "/Feats\\.aspx", "priority": 35 }
-          ]
-        }
-      }
+  "input":  { "basePath": "./input", "format": "json" },
+  "output": { "type": "file", "path": "./graphs/aonprd.trig", "format": "trig" },
+  "concurrency": 4,
+  "graphs": { "default": "https://example.org/graph/aonprd/default" },
+  "ontology": { "baseIri": "https://2e.aonprd.com/" },
+  "classification": {
+    "conflict":   { "onConflict": "pickPriority", "evidence": true },
+    "source":     true,
+    "structural": [
+      { "className": "feat", "priority": 20,
+        "predicate": { "path": "/_type", "equals": "feat" },
+        "reasons": ["_type=feat"] }
+    ],
+    "urlPattern": {
+      "patterns": [
+        { "className": "feat", "match": "/Feats\\.aspx", "priority": 35 }
+      ]
     }
   }
+}
+```
+
+For bounded-memory streaming, set `output.mode` to `stream` and write a quad format:
+
+```jsonc
+{
+  "input":  { "basePath": "./input", "format": "json" },
+  "output": { "type": "file", "path": "./graphs/aonprd.nq", "format": "nq", "mode": "stream" }
 }
 ```

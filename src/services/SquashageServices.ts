@@ -76,7 +76,7 @@ let coreSchemaCache: ReadonlyArray<JsonTologySchemaInputInterface> | null = null
 export interface SquashageServicesOptionsInterface {
   /** Resolved run config (the validated single-run squashage config). */
   readonly targetConfig: SquashageRunConfigInterface;
-  /** Target identifier (the key in `targets[]`). */
+  /** Run identifier — the name of the run (the source dump being projected). */
   readonly target: string;
   /** Resolved output config; CLI overrides already merged. */
   readonly output: OutputConfigInterface;

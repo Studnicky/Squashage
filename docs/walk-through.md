@@ -31,65 +31,68 @@ Any upstream tool can produce this — a scraper, an API client, a hand-written 
 
 ## The config
 
+A config file is one run. The root object carries `input`, `output`, and the run knobs (`graphs`, `ontology`, `classification`, `enrichment`, `quarantine`, `concurrency`, `subjectIri`) directly.
+
 ```jsonc
 {
-  "input":   { "basePath": "./input", "format": "json" },
-  "targets": {
-    "aonprd": {
-      "input": "./input",
-      "output": { "kind": "file", "path": "./graphs/aonprd.trig", "format": "trig" },
-      "concurrency": 4,
-      "graphs": { "default": "https://example.org/graph/aonprd/default" },
-      "ontology": { "baseIri": "https://2e.aonprd.com/" },
-      "classification": {
-        "conflict":   { "onConflict": "pickPriority", "evidence": true },
-        "source":     true,
-        "urlPattern": {
-          "patterns": [
-            { "className": "feat",  "match": "/Feats\\.aspx",  "priority": 35 },
-            { "className": "spell", "match": "/Spells\\.aspx", "priority": 35 }
-          ]
-        },
-        "structural": [
-          { "className": "feat", "priority": 10,
-            "predicate": { "path": "/_type", "equals": "feat" },
-            "reasons":   ["_type=feat"] }
-        ],
-        "ontologyClassifier": {
-          "classes": {
-            "feat":  "https://example.org/vocab/Feat",
-            "spell": "https://example.org/vocab/Spell"
-          }
-        }
+  "input":  { "basePath": "./input", "format": "json" },
+  "output": { "type": "file", "path": "./graphs/aonprd.trig", "format": "trig" },
+  "concurrency": 4,
+  "graphs": { "default": "https://example.org/graph/aonprd/default" },
+  "ontology": { "baseIri": "https://2e.aonprd.com/" },
+  "classification": {
+    "conflict":   { "onConflict": "pickPriority", "evidence": true },
+    "source":     true,
+    "urlPattern": {
+      "patterns": [
+        { "className": "feat",  "match": "/Feats\\.aspx",  "priority": 35 },
+        { "className": "spell", "match": "/Spells\\.aspx", "priority": 35 }
+      ]
+    },
+    "structural": [
+      { "className": "feat", "priority": 10,
+        "predicate": { "path": "/_type", "equals": "feat" },
+        "reasons":   ["_type=feat"] }
+    ],
+    "ontologyClassifier": {
+      "classes": {
+        "feat":  "https://example.org/vocab/Feat",
+        "spell": "https://example.org/vocab/Spell"
       }
     }
   }
 }
 ```
 
-No `pipeline:` field — the DAG topology is fixed. Classifiers join the per-record DAG just by appearing under `classification`.
+The DAG topology is fixed — the run is authored as `src/dag/*.dag.jsonld` documents loaded via `DAGDocument.load` and bound with `dispatcher.registerBundle`. Classifiers join the per-record DAG just by appearing under `classification`. `SquashageRun.forRun(config)` materialises the run; the CLI invokes it with:
+
+```bash
+squashage-dag build --config ./squashage.config.jsonc
+```
 
 ## During — what the DAG does
 
-1. **`walk-input`** scans `./input` and produces one `RecordLocator` per file. The fan-out placement consumes the array.
+1. **`walk-input`** scans `./input` and produces one `RecordLocator` per file. The native `scatter { dag }` placement fans the array out across per-record DAG instances.
 
-2. **`process-all-records`** dispatches the per-record deep-DAG `squashage:record` once per locator, capped at `concurrency: 4` workers. Each record runs:
+2. **`scatter { dag }`** dispatches the per-record DAG once per locator, capped at `concurrency: 4` workers. Each record runs:
 
-   a. **`json-read`** parses the file. On parse failure, route `quarantined` → `record-quarantine` → end.
+   a. **`record-init`** seeds per-record state from the scattered `RecordLocator`.
 
-   b. **`classify-all`** runs eight classifiers concurrently:
+   b. **`json-read`** parses the file. On parse failure, route `quarantined` → `record-quarantine` → end.
+
+   c. **`classify-all`** runs the classifier cascade concurrently:
       - `classify:source` writes a `__source__` sentinel because `_source` is present.
       - `classify:url-pattern` writes `{ className: 'feat', priority: 35 }` because the URL matches `/Feats\.aspx`.
       - `classify:structural` writes `{ className: 'feat', priority: 10 }` because `_type === 'feat'`.
-      - The other five (`rules`, `schema`, `shacl-shape`, `property-fingerprint`, `winknlp-entities`) have no config so their `NoOpClassifierNode` placeholders return `no-match`.
+      - The remaining classifiers have no config in this run, so their placeholders return `no-match`. See [Classifier cascade](./usage/classifier-cascade) for the full set and what each reads.
 
-   c. **`classify:ontology`** reads `state.proposals` and confirms `feat` is in the known class map; no `__validation__` sentinel needed.
+   d. **`classify:ontology`** reads `state.proposals` and confirms `feat` is in the known class map; no `__validation__` sentinel needed.
 
-   d. **`classify:taxonomic-narrowing`** has no config slot in this run, so it routes `no-op`.
+   e. **`classify:taxonomic-narrowing`** has no config slot in this run, so it routes `no-op`.
 
-   e. **`record-health-gate`** sees two real proposals and zero errors; routes `has-proposals`.
+   f. **`record-health-gate`** sees two real proposals and zero errors; routes `has-proposals`.
 
-   f. **`classify-conflict`** sees both proposals agree on `feat`; writes:
+   g. **`classify-conflict`** sees both proposals agree on `feat`; writes:
       ```ts
       state.classification = {
         type:       'feat',
@@ -99,13 +102,13 @@ No `pipeline:` field — the DAG topology is fixed. Classifiers join the per-rec
       };
       ```
 
-   g. **`squash`** (default node here) emits a single `<record-iri> rdf:type <https://example.org/vocab/Feat>` quad into `state.squashedQuads` and `services.dataset`.
+   h. **`squash`** projects the record to RDF through lenient json-tology ABox projection: the `feat` class maps to `<https://example.org/vocab/Feat>`. The projection drops no record on shape mismatch — an unmapped class is emitted under a Generic fallback class. Here the quad `<record-iri> rdf:type <https://example.org/vocab/Feat>` lands in `state.squashedQuads` and `services.dataset`.
 
-   h. **`output-provenance`** is a no-op (no `output.provenance` config).
+   i. **`output-provenance`** is a no-op (no `output.provenance` config).
 
-3. **`enrich-entity-link`** runs once after the fan-out drains. No `enrichment.entityLink` config → skipped.
+3. **`enrich-entity-link`** runs once after the fan-out gathers. No `enrichment.entityLink` config → skipped.
 
-4. **`rdfjs-finalize`** splits the dataset:
+4. The native fold gather (`squashage:record-fold`) collects each per-record result. With `output.mode: 'stream'` the ABox and PROV quads stream to disk as they arrive; otherwise the finalize step splits the dataset:
    - Quads whose graph is `urn:squashage:prov:*` → `./graphs/aonprd.prov.trig`.
    - Everything else → `./graphs/aonprd.trig`.
 
@@ -124,7 +127,7 @@ The PROV graph (sibling file) carries one `prov:Activity` per node:
 
 ```turtle
 @prefix prov: <http://www.w3.org/ns/prov#> .
-@prefix dag:  <https://noocodex.dev/dagonizer/vocabulary#> .
+@prefix dag:  <https://studnicky.dev/dagonizer/vocabulary#> .
 
 <urn:squashage:prov:2026-05-18T00:00:00.000Z> {
   <urn:squashage:activity:.../run:0>

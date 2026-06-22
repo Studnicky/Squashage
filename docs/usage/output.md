@@ -1,12 +1,12 @@
 ---
 layout: doc
 title: Output
-description: Squashage output configuration — one file per target, format options (Turtle, TriG, N-Triples, N-Quads, JSON-LD), atomic vs stream encoding, RDFC-1.0 canonicalization, and SHACL validation.
+description: Squashage output configuration — one file per run, format options (Turtle, TriG, N-Triples, N-Quads, JSON-LD), dataset vs stream encoding, RDFC-1.0 canonicalization, and SHACL validation.
 ---
 
 # Output
 
-The build produces one file per target. That's the contract. Pick a format, give it a path, run the build. The file appears on disk.
+The build produces one file per run. That's the contract. Pick a format, give it a path, run the build. The file appears on disk.
 
 Source of truth for the full schema: `src/schemas/output.schema.json`.
 
@@ -34,7 +34,7 @@ Format defaults from the file extension. Explicit `format:` overrides.
 
 **`dataset`** (default) buffers the full graph in memory, runs any post-processing (canonicalization, SHACL), then writes the file in one shot. Works for any size dataset your machine can hold in RAM. Enables `canonicalize` and `validate`.
 
-**`stream`** writes quads as they arrive from the `squash:*` task, before `rdfjs:finalize` has the full dataset. Lower memory footprint, but `canonicalize` and `validate` are disabled; you can't canonicalize a partial graph. The AJV schema rejects `stream + canonicalize: true` at config load.
+**`stream`** writes quads to disk as they arrive from the `squash` node, before `rdfjs-finalize` has the full dataset. Bounded memory — the run never buffers the whole graph. `canonicalize` and `validate` are disabled in this mode; you can't canonicalize a partial graph. The AJV schema rejects `stream + canonicalize: true` at config load. Use stream mode for full-corpus runs that would otherwise exhaust heap.
 
 ---
 
@@ -67,8 +67,8 @@ Pre-write SHACL gate. When configured, `src/shacl/ShaclGate.ts` validates the ca
 
 On non-conformance:
 - The output file is **not** written.
-- A text report lands at `graphs/<target>/quarantine/output/validation.report.txt`.
-- A machine-readable report lands at `graphs/<target>/quarantine/output/validation.report.ttl`.
+- A text report lands at `graphs/<run>/quarantine/output/validation.report.txt`.
+- A machine-readable report lands at `graphs/<run>/quarantine/output/validation.report.ttl`.
 
 The build exit code stays `0`; SHACL failure is a quarantine event, not a crash. Your CI can check for the `.report.ttl` file existence to detect shape violations.
 
@@ -92,11 +92,11 @@ Quarantine artifacts still land on disk (quarantine is a graceful path, not a dr
 
 ## output.graph (triple-only format + named graphs)
 
-If your target emits named-graph quads and you're writing to a triple-only format (Turtle, N-Triples), you need to tell the serializer what to do with the graph IRIs. Set `output.graph` to collapse all quads into one named graph:
+If your run emits named-graph quads and you're writing to a triple-only format (Turtle, N-Triples), you need to tell the serializer what to do with the graph IRIs. Set `output.graph` to collapse all quads into one named graph:
 
 ```json
 "output": {
-  "kind": "file",
+  "type": "file",
   "path": "./graphs/aonprd.ttl",
   "graph": "https://squashage.dev/graph/aonprd"
 }
@@ -140,12 +140,12 @@ When output fails, squashage writes artifacts instead of silently exiting:
 
 | Scenario | Artifact |
 |----------|---------|
-| SHACL failure | `graphs/<target>/quarantine/output/validation.report.{txt,ttl}` |
+| SHACL failure | `graphs/<run>/quarantine/output/validation.report.{txt,ttl}` |
 | Atomic write failure | `<output.path>.partial` alongside the destination + `output.report.json` |
 
 Exit codes:
 - `0`: every record projected cleanly or landed in quarantine gracefully.
-- `1`: a task threw, or `rdfjs:finalize` threw.
+- `1`: a node threw, or `rdfjs-finalize` threw.
 - `2`: config/schema/startup error before any record processed.
 
 ---
@@ -153,5 +153,5 @@ Exit codes:
 ## Related
 
 - [Configuration](./configuration); full output config schema
-- [Pipeline](./pipeline); where rdfjs:finalize sits in the queue
+- [Pipeline](./pipeline); where rdfjs-finalize sits in the run DAG
 - [Classifier cascade](./classifier-cascade); how quarantine works at the classification layer

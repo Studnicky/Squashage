@@ -99,7 +99,7 @@ export interface ChunkNodeInterface {
   readonly y:          number;
   /** Hex color (matches the chunk color so chunks read as visually grouped). */
   readonly color:      string;
-  /** Degree-derived render size (sigma's canonical `degree/3` pattern). */
+  /** Degree-derived render size (`degree/3`) used by the cosmos.gl renderer. */
   readonly size:       number;
   readonly properties: Readonly<Record<string, ReadonlyArray<string>>>;
 }

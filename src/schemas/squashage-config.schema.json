@@ -1,11 +1,12 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://squashage.dev/schemas/squashage-config.json",
-  "title": "Squashage Config",
+  "title": "Squashage Run Config",
   "type": "object",
   "additionalProperties": false,
-  "required": ["input", "targets"],
+  "required": ["input", "output"],
   "properties": {
+    "name": { "type": "string", "minLength": 1 },
     "input": {
       "type": "object",
       "additionalProperties": false,
@@ -15,10 +16,22 @@
         "format":   { "type": "string", "enum": ["json", "jsonl"] }
       }
     },
-    "targets": {
+    "output":         { "$ref": "https://squashage.dev/schemas/output.json" },
+    "graphs":         { "type": "object", "additionalProperties": { "type": "string", "format": "uri" } },
+    "ontology":       { "type": "object" },
+    "classification": { "type": "object" },
+    "enrichment":     { "type": "object" },
+    "subjectIri": {
       "type": "object",
-      "additionalProperties": { "$ref": "https://squashage.dev/schemas/target.json" },
-      "minProperties": 1
-    }
+      "additionalProperties": false,
+      "required": ["from", "sanitize"],
+      "properties": {
+        "from":     { "type": "string", "minLength": 1 },
+        "sanitize": { "type": "string", "enum": ["url-tail", "url-host-path", "slug", "verbatim"] },
+        "fallback": { "type": "string", "minLength": 1 }
+      }
+    },
+    "quarantine":  { "type": "object" },
+    "concurrency": { "type": "integer", "minimum": 1, "default": 1 }
   }
 }

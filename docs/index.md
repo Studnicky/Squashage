@@ -20,14 +20,14 @@ You feed it JSON. It hands you back a graph. The graph has edges where you'd exp
 
 - **Same JSON in, same graph out.** No `Math.random`, no `Date.now`, no network after startup. Byte-identical across runs and machines.
 - **One file, no fan-out.** A single build produces one serialized RDF file. Auto-derived instance/graph/vocabulary IRIs from `_source.url`. Auto-built JSON-LD `@context` from the produced quad set.
-- **Open the demo offline.** The `squashage-dag viz` CLI emits a self-contained HTML document with sigma + WebGL inlined. Open it in any browser; no network, no `node_modules` required.
+- **Open the demo offline.** The `squashage-dag viz` CLI emits a self-contained HTML document with a cosmos.gl WebGL graph browser inlined. Open it in any browser; no network, no `node_modules` required.
 
 ## Quick install
 
 ```bash
 git clone https://github.com/Studnicky/Squashage.git
 cd Squashage && npm install && npm run build
-npx squashage-dag build --target aonprd --config squashage.config.json
+npx squashage-dag build --config squashage.config.json
 ```
 
 ## Where to look next

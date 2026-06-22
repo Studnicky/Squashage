@@ -535,8 +535,10 @@ class SquashageConfigSchema {
  *
  * @remarks
  * All methods are static; the class cannot be instantiated. Uses synchronous
- * I/O with three registered AJV schemas (output, target, root) so callers can
- * load config at startup without top-level `await`.
+ * I/O with the registered AJV schemas (output, predicate, and the single-run
+ * root config schema) so callers can load config at startup without top-level
+ * `await`. The config file IS one run — its root holds `input`, `output`, and
+ * the run knobs directly; there is no targets map.
  *
  * Throws {@link SquashageConfigError} on I/O failure, JSON parse failure, or
  * AJV schema violation. The error message includes the absolute config path
@@ -545,8 +547,7 @@ class SquashageConfigSchema {
  * @example
  * ```ts
  * const config = SquashageConfig.loadFromFile('./squashage.config.json');
- * const target = config.targets['aonprd'];
- * console.log(target.output.path);   // './graphs/aonprd.jsonld'
+ * console.log(config.output.path);   // './graphs/aonprd.jsonld'
  * ```
  *
  * @category Configuration
@@ -613,10 +614,10 @@ export class SquashageConfig {
    * Pure validation with no I/O. Useful for callers that have already parsed
    * the config JSON (e.g. from an environment variable or a test fixture).
    *
-   * After AJV schema validation passes, cross-validation is performed for each
-   * target's `output.jsonldContext` vs the resolved output format.
-   * (Classify task config-namespace and proposer-count rules now live in the
-   * per-plugin AJV schemas and the orchestrator's startup manifest check.)
+   * After AJV schema validation passes, cross-validation checks the run's
+   * `output.jsonldContext` against the resolved output format. Classify task
+   * config-namespace and proposer-count rules live in the per-plugin AJV
+   * schemas.
    *
    * @param raw - Unknown value to validate.
    * @param configPath - Optional path shown in error messages for context.

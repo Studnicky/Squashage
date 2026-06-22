@@ -1,12 +1,13 @@
 /**
- * record-init — pre-phase node for `squashage:record` and
+ * record-init — entrypoint node for `squashage:record` and
  * `squashage:record-induce`.
  *
  * Reads the `currentLocator` metadata key (a `RecordLocator`) written by the
  * scatter and seeds the per-record state fields before `json-read` runs.
  *
- * Registered via `.phase('record-init', 'pre', recordInitNode)` on both
- * record DAGs. The phase runs before the entrypoint; errors abort the run.
+ * Wired as the record DAG `.node` entrypoint (`record-init` → `json-read`) on
+ * both record DAGs. It is the first node each scattered record traverses;
+ * errors abort the run.
  */
 
 import { ScalarNode, NodeOutputBuilder } from '@studnicky/dagonizer';

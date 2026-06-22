@@ -21,7 +21,7 @@ When neither field exists or both are empty strings, the classifier emits no pro
 
 ## Config slot
 
-Under `targets[].classification.urlPattern`:
+Under `classification.urlPattern`:
 
 ```json
 {

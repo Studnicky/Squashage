@@ -1,14 +1,14 @@
 ---
 layout: doc
 title: Provenance (PROV-O graph)
-description: ProvObserver writes one prov:Activity per node execution into a dedicated PROV-O named graph; rdfjs-finalize emits it to a sibling file alongside the success graph.
+description: SquashageDagonizer's lifecycle hooks write one prov:Activity per node execution into a dedicated PROV-O named graph; rdfjs-finalize emits it to a sibling file alongside the success graph.
 ---
 
 # Provenance (PROV-O graph)
 
 Every Squashage run emits PROV-O activity quads describing what happened: the run itself, every per-node execution, every termination outcome. The graph lands in its own named graph (`urn:squashage:prov:<runStartTime>`) and `rdfjs-finalize` serializes it to a sibling file next to the success graph.
 
-This is detached observation: `SquashageDagonizer` forwards its five lifecycle hooks to a swappable `ProvObserver` instance. Tests can substitute `NullObserver`; consumers who want to push events somewhere else (OpenTelemetry, an event bus, an analytics sink) implement `ProvObserverInterface` and inject their own.
+PROV-O is written directly from `SquashageDagonizer`'s five lifecycle hook overrides (`onFlowStart`, `onFlowEnd`, `onNodeStart`, `onNodeEnd`, `onError`). Quads land in `services.provSink` in stream mode, or `services.dataset` in dataset mode, using `services.factory` and the `ProvVocabulary` term builder.
 
 ## Output files
 
@@ -50,9 +50,9 @@ For every per-node execution:
 
 When a node errors, the activity carries `dag:error "<error message>"` and the `prov:endedAtTime` reflects the failure point.
 
-## Per-record output-provenance (legacy hook)
+## Per-record output-provenance
 
-A separate `output-provenance` node also runs inside the per-record DAG (between `squash` and end). It writes per-record `prov:Activity` quads scoped to each record's subject, controlled by `targets[].output.provenance`:
+A separate `output-provenance` node also runs inside the per-record DAG (between `squash` and end). It writes per-record `prov:Activity` quads scoped to each record's subject, controlled by `output.provenance`:
 
 ```json
 {
@@ -75,25 +75,11 @@ A separate `output-provenance` node also runs inside the per-record DAG (between
 
 These quads land in `<instancesBase>/provenance` (or the full IRI when `graph` is `http://`/`https://`-prefixed). When the block is absent or `enabled !== true`, the node returns `skipped`.
 
-## Custom observers
+## PROV sink
 
-Implement `ProvObserverInterface` and pass it to `SquashageRun.forTarget({ observer })`:
+The destination follows the output mode. In dataset mode, lifecycle quads accumulate in `services.dataset` and `rdfjs-finalize` splits the PROV named graph out to the sibling `.prov.<ext>` file. In stream mode, the hooks write to `services.provSink`, which streams the PROV quads to disk alongside the success graph so neither buffer grows unbounded.
 
-```ts
-import type { ProvObserverInterface } from '@studnicky/squashage/observer/ProvObserverInterface';
-
-class StdoutObserver implements ProvObserverInterface {
-  recordFlowStart(dag) { process.stdout.write(`flow-start ${dag}\n`); }
-  recordFlowEnd(dag, kind) { process.stdout.write(`flow-end ${dag} ${kind}\n`); }
-  recordNodeStart(name) { process.stdout.write(`> ${name}\n`); }
-  recordNodeEnd(name, output) { process.stdout.write(`< ${name} → ${output}\n`); }
-  recordError(name, err) { process.stderr.write(`! ${name}: ${err.message}\n`); }
-}
-
-await SquashageRun.forTarget({ ...opts, observer: new StdoutObserver() });
-```
-
-The dispatcher invokes the observer exactly once per lifecycle event. Observers should not throw — they're behind a try/catch, but throws are recorded into state and may flip the run to `failed`.
+The hooks fire exactly once per lifecycle event. The flow-end hook records the run's terminal outcome from `state.lifecycle.variant` onto the run activity. Tests suppress PROV emission with `SquashageRun.forTargetWithNullObserver(...)`, which wires a no-op sink.
 
 ## See also
 

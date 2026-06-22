@@ -12,7 +12,7 @@ Fingerprints are loaded from a JSON file at construction time and compiled into 
 
 ## Config slot
 
-Under `targets[].classification.propertyFingerprint`:
+Under `classification.propertyFingerprint`:
 
 ```json
 {

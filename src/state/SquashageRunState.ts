@@ -26,9 +26,9 @@ export type RecordErrorRollupType = {
  *
  * The bounded fold fields (`squashedCount`, `quarantinedCount`, `errorCount`,
  * `perClassCounts`, `sampleSummaries`, `errorRollup`) are populated
- * incrementally by `RecordFoldGather` as each scatter clone completes. They
- * provide O(1) checkpoint state; callers read them instead of
- * `SquashageServices.recordSummaries` once the gather strategy is wired.
+ * incrementally by the native fold `squashage:record-fold` as each scatter
+ * clone completes. They provide O(1) checkpoint state; callers read them
+ * instead of `SquashageServices.recordSummaries`.
  *
  * V8 monomorphism: property writes occur in the same fixed order in every
  * constructor. Do not introduce conditional spreads.

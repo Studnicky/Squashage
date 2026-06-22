@@ -1,12 +1,12 @@
 ---
 layout: doc
 title: Architecture
-description: Squashage's module map, layered taxonomic model, classifier cascade, and class lineage. Single SquashageDagonizer per target; one run-scope DAG that fans out the per-record deep-DAG; PROV-O observer writes activity quads into a dedicated graph.
+description: Squashage's module map, layered taxonomic model, classifier cascade, and class lineage. One run per config file; a run-scope DAG scatters per-record fan-out over the per-record deep-DAG; a native fold gathers the results; the PROV-O observer writes activity quads into a dedicated graph.
 ---
 
 # Architecture
 
-Squashage is a graph reconstitution pipeline built on `@noocodex/dagonizer`. One `SquashageDagonizer` instance per target invocation owns two registered DAGs: a run-scope DAG and a per-record deep-DAG. State, services, and a swappable observer flow through the dispatcher.
+Squashage is a graph reconstitution pipeline built on the native `@studnicky/dagonizer@0.25` engine. A config file is one run. Each run owns two authored DAG documents loaded via `DAGDocument.load` and registered through `dispatcher.registerBundle`: a run-scope DAG and a per-record deep-DAG. The run-scope DAG uses native `scatter { dag }` to fan out one per-record DAG execution per input record, and a native fold node (`squashage:record-fold`) to gather the per-record results. State, services, and a swappable observer flow through the dispatcher.
 
 ```text
 JSON records → walk-input → fan-out (record DAG) → enrich → finalize → catalog
@@ -22,19 +22,19 @@ Three artifacts land on disk per run:
 |---|---|
 | `<output.path>` | the success graph |
 | `<output.path-stem>.prov.<ext>` | PROV-O activity graph (one `prov:Activity` per node) |
-| `<outDir>/<target>/quarantine/<bucket>/<id>.json` | one file per failed record, grouped by bucket |
+| `<outDir>/quarantine/<bucket>/<id>.json` | one file per failed record, grouped by bucket |
 
 ## Composition root
 
-`SquashageRun.forTarget(...)` is the only constructor. In one async call it:
+`SquashageRun.forRun(...)` is the only constructor. It takes the resolved run config (the root config object, which holds `input`, `output`, and the run knobs directly) and CLI options. In one async call it:
 
-1. Builds the `SquashageServices` bag from the target config and CLI options (logger, AJV, RDF factory + dataset, builder, prefix resolution, IRI namespace, named-graph map, optional ontology, quarantine writer, runStartTime).
+1. Builds the `SquashageServices` bag from the run config and CLI options (logger, AJV, RDF factory + dataset, builder, prefix resolution, IRI namespace, named-graph map, optional ontology, quarantine writer, runStartTime).
 2. Wires a `ProvObserver` (or accepts a swap-in observer) bound to `services.dataset`.
 3. Instantiates `SquashageDagonizer` with the services bag + observer.
 4. Constructs every per-record classifier instance from its config slot; substitutes `NoOpClassifierNode` for every slot that's absent.
-5. Calls `registerRecordNodes(dispatcher, instances)` and `registerRunNodes(dispatcher)`.
-6. Builds the run-scope DAG inline (so per-target `concurrency` can be baked into the `process-all-records` placement at build time).
-7. Registers both DAGs.
+5. Loads the authored run-scope and per-record DAG documents via `DAGDocument.load` and registers their node implementations.
+6. Bakes the run-level `concurrency` into the native `scatter { dag }` fan-out placement at registration time.
+7. Registers both DAG bundles via `dispatcher.registerBundle`.
 
 `run.execute()` returns the dagonizer `Execution<TState>` — both `PromiseLike` (await for the final summary) and `AsyncIterable` (`for await` to observe each node).
 
@@ -42,10 +42,10 @@ Three artifacts land on disk per run:
 
 ```text
 src/
-  SquashageRun.ts              composition root
-  cli/dagonizerCli.ts          `squashage-dag build` entry point
+  SquashageRun.ts              composition root (SquashageRun.forRun)
+  cli/dagonizerCli.ts          `squashage-dag build` entry point (--config)
   state/
-    SquashageRunState.ts       NodeStateBase + locators[], results[], target, runStartTime
+    SquashageRunState.ts       NodeStateBase + locators[], results[], runStartTime
     SquashageRecordState.ts    NodeStateBase + source, input, proposals{}, classification, squashedQuads
     schemas/                   JSON Schema 2020-12 + FromSchema-derived types
   services/
@@ -58,13 +58,12 @@ src/
   dispatcher/
     SquashageDagonizer.ts      extends Dagonizer; forwards hooks to ProvObserver
   dag/
-    runDag.ts                  (run DAG built inline in SquashageRun)
-    recordDag.ts               static export — references nodes by name
-    recordDagClassifierMembers.ts  parallel + sequential member name lists
-    registerRecordNodes.ts     molecular helper
-    registerRunNodes.ts        molecular helper
+    squashage-run.dag.jsonld   authored run-scope DAG (native scatter + record-fold)
+    squashage-record.dag.jsonld  authored per-record deep-DAG
+    registerRecordNodes.ts     binds per-record node implementations to the dispatcher
+    registerRunNodes.ts        binds run-scope node implementations to the dispatcher
   nodes/
-    run/                       walkInput, processAllRecords, enrichEntityLink, rdfjsFinalize, catalogEmit
+    run/                       walkInput, recordScatter, recordFold, enrichEntityLink, rdfjsFinalize, catalogEmit
     record/                    jsonRead, classifyConflict, recordHealthGate, squashNode, outputProvenance, recordQuarantine
     record/classifiers/        Discriminator (primary), Source, UrlPattern, Structural, Rules, Schema, ShaclShape, PropertyFingerprint, WinknlpEntities, Ontology, TaxonomicNarrowing, NoOp
   induction/
@@ -75,10 +74,10 @@ src/
     ShapeObservation.ts        per-property observation accumulator
     SubjectIriPolicy.ts        policy-resolved subject IRI derivation
   classification/
-    PrefixResolver.ts          target → (instance, graph, vocabulary) base IRIs
+    PrefixResolver.ts          run → (instance, graph, vocabulary) base IRIs
     predicates/Predicate.ts    compile / evaluate JSON-pointer predicates
-    tasks/ShaclShapeClassifier.ts  SHACL machinery (kept; called by the classifier node adapter)
-  config/                      AJV-validated target config + output config
+    tasks/ShaclShapeClassifier.ts  SHACL machinery, called by the classifier node adapter
+  config/                      AJV-validated single-run config + output config
   rdf/                         DataFactory, Dataset, GraphBuilder, Namespaces, Parser, Vocab
   shacl/                       ShaclGate (rdf-validate-shacl wrapper)
   output/                      FileOutput, FormatResolver, OutputReport — used by rdfjs-finalize
@@ -86,14 +85,14 @@ src/
   ontology/                    JsonTologyOntology + adapters
   errors/                      BaseError + every subclass; every throw is one of these
   modules/logger/              Logger.forComponent
-  viz/                         JsonLdGraph, ChunkBuilder, SigmaGraphRenderer (used by `squashage-dag viz`)
-  schemas/                     JSON Schema 2020-12 sources (squashage-config, target, refinement, predicate, output)
+  viz/                         NQuadsGraph, ChunkBuilder, CosmosGraphRenderer (used by `squashage-dag viz`)
+  schemas/                     JSON Schema 2020-12 sources (squashage-config, refinement, predicate, output)
   schemas/core/                squashage-core upper ontology (10 classes — Thing through Container)
 ```
 
 ## Run-scope DAG
 
-The diagrams below are emitted by [`scripts/render-dags.ts`](https://github.com/Studnicky/Squashage/blob/main/scripts/render-dags.ts) via `MermaidRenderer.render(dag)` from `@noocodex/dagonizer/viz`. They regenerate on every `docs:build` from the exact DAG objects the dispatcher executes — what you see here is what runs.
+The diagrams below are emitted by [`scripts/render-dags.ts`](https://github.com/Studnicky/Squashage/blob/main/scripts/render-dags.ts) via `MermaidRenderer.render(dag)` from `@studnicky/dagonizer/viz`. They regenerate on every `docs:build` from the exact DAG documents the dispatcher executes — what you see here is what runs.
 
 <DagDiagram name="squashage-run" caption="Run-scope DAG">
 
@@ -101,7 +100,7 @@ The diagrams below are emitted by [`scripts/render-dags.ts`](https://github.com/
 
 </DagDiagram>
 
-`process-all-records` closes over the dispatcher and invokes `dispatcher.execute('squashage:record', recordState)` for each `RecordLocator`, capped at `targetConfig.concurrency`. The per-record results are appended into `state.results` as `RecordSummary` entries.
+The run-scope DAG declares a native `scatter { dag }` over the `squashage:record` deep-DAG: the engine spawns one per-record DAG execution per `RecordLocator`, bounded by the run-level `concurrency`. The native fold node `squashage:record-fold` gathers the per-record results into `state.results` as `RecordSummary` entries.
 
 ## Per-record DAG (deep-DAG, registered as `squashage:record`)
 
@@ -111,9 +110,9 @@ The diagrams below are emitted by [`scripts/render-dags.ts`](https://github.com/
 
 </DagDiagram>
 
-<!-- legacy inline diagram preserved for context but rendered Mermaid above is canonical -->
+<!-- inline reference diagram; the rendered Mermaid above is canonical -->
 <details>
-<summary>Inline reference (legacy)</summary>
+<summary>Inline reference</summary>
 
 ```mermaid
 flowchart TB
@@ -152,8 +151,8 @@ flowchart TB
 
 | Base | Subclass | Where |
 |---|---|---|
-| `Dagonizer` (dagonizer) | `SquashageDagonizer` | `src/dispatcher/SquashageDagonizer.ts` |
-| `NodeStateBase` (dagonizer) | `SquashageRunState`, `SquashageRecordState` | `src/state/` |
+| `Dagonizer` (`@studnicky/dagonizer`) | `SquashageDagonizer` | `src/dispatcher/SquashageDagonizer.ts` |
+| `NodeStateBase` (`@studnicky/dagonizer`) | `SquashageRunState`, `SquashageRecordState` | `src/state/` |
 | `BaseError` | `OutputConfigError`, `SquashageConfigError`, `FileOutputError`, `ExternalSchemaError`, `QuarantineError`, `ShaclValidationError` | `src/errors/` |
 | `ProvObserverInterface` | `ProvObserver`, `NullObserver` | `src/observer/` |
 
@@ -168,11 +167,12 @@ One level of inheritance everywhere. The dispatcher subclass forwards five lifec
 | RDF | `@rdfjs/data-model`, `@rdfjs/dataset`, `n3`, `rdf-canonize` | wrapped behind `src/rdf/` |
 | SHACL | `rdf-validate-shacl` | wrapped behind `src/shacl/ShaclGate` |
 | Schema validation | `ajv` (one instance per run) | lives on `services.ajv` |
-| Workflow | `@noocodex/dagonizer` | dispatcher + state + observer hooks |
+| Workflow | `@studnicky/dagonizer@0.25` | native dispatcher (DAGDocument.load + registerBundle, scatter/fold) + state + observer hooks |
+| Projection | `@studnicky/json-tology@0.26` | lenient ABox projection of records to RDF quads |
 
 ## Determinism
 
-Same target config + same input directory + same node modules ⇒ byte-identical success graph and byte-identical PROV graph (timestamps are sourced from `services.runStartTime`, a single frozen ISO string per run).
+Same run config + same input directory + same node modules ⇒ byte-identical success graph and byte-identical PROV graph (timestamps are sourced from `services.runStartTime`, a single frozen ISO string per run).
 
 The PROV observer uses `Date()` for `prov:startedAtTime` / `prov:endedAtTime` on individual node activities — these vary across runs by design (different wall-clock per execution) but every other quad is content-determined.
 
@@ -247,7 +247,7 @@ A leaf class may extend multiple parents. The `allOf` array carries one `$ref` p
 
 ## Classifier cascade — open-world model
 
-The per-record DAG runs up to 11 classifier nodes. The primary classification path for targets that carry a discriminator field is `classify:discriminator`. The legacy enumerative classifiers remain available as fallbacks.
+The per-record DAG runs up to 11 classifier nodes. The primary classification path for records that carry a discriminator field is `classify:discriminator`. The enumerative classifiers serve as lower-priority fallbacks.
 
 ```mermaid
 flowchart TD
@@ -296,12 +296,12 @@ Config slot: `classification.discriminator`
 
 When the pointer resolves to a non-empty string, a proposal is emitted with `confidence: 1.0`. When the pointer is absent or resolves to a non-string, the node outputs `no-match`.
 
-### Legacy classifiers — fallback roles
+### Enumerative classifiers — fallback roles
 
-The enumerative classifiers (`urlPattern`, `structural`, `rules`, `schema`, `shaclShape`, `propertyFingerprint`, `winknlpEntities`) remain available for:
+The enumerative classifiers (`urlPattern`, `structural`, `rules`, `schema`, `shaclShape`, `propertyFingerprint`, `winknlpEntities`) cover:
 
-- Records missing a `_type` field (legacy compat with unstructured dumps).
-- Targets that cannot add a discriminator field to their records.
+- Records missing a `_type` field (unstructured dumps).
+- Dumps that cannot add a discriminator field to their records.
 - Additional confidence signals when `evidence: true` is enabled.
 
 When a discriminator is configured at priority 80 and a urlPattern rule fires at priority 35, `classify-conflict` picks the discriminator proposal — priority wins.
@@ -380,9 +380,9 @@ Warn-loud, write-anyway semantics: when a rule references a property not found i
 **DAG:** `src/dag/recordDag.ts` (the standard per-record DAG)  
 **Squash node:** `src/nodes/record/ontologyProjection.ts`
 
-`ontologyProjectionNode` is the generic squash node used when `ontology.engine: json-tology` is configured. It:
+`ontologyProjectionNode` is the generic squash node backed by json-tology. It:
 
-1. Resolves the classified class name to the registered schema `$id`.
+1. Resolves the classified class name to a registered schema `$id`. When no schema maps the class, projection falls back to the `Generic` class so the record is still projected.
 2. Calls `services.ontology.toQuads(schema.$id, record)` — json-tology projects the record to RDF quads per the schema.
 3. Rebinds the minted subject to the policy-resolved IRI (`SubjectIriPolicy`).
 4. Rebinds every quad's graph to `services.graphs['default']`.
@@ -390,39 +390,35 @@ Warn-loud, write-anyway semantics: when a rule references a property not found i
 6. Calls `VocabEnricher.enrich()` for vocabulary-class-specific enrichment.
 7. Writes all quads to `state.squashedQuads` and `services.dataset`.
 
-**Streaming serialization:** `rdfjs-finalize` streams per-record projected quads directly to disk via an async-iterable execution over the dataset. This avoids the V8 string-length wall that blocked large graph serialization in earlier versions.
+**Lenient projection:** the json-tology ABox projection is lenient — a record that does not match its schema's shape is projected on a best-effort basis rather than dropped. No record is discarded on shape mismatch, and unmapped classes resolve to the `Generic` fallback class.
+
+**Streaming serialization:** with `output.mode: 'stream'`, `rdfjs-finalize` streams per-record projected ABox and PROV quads directly to disk via an async-iterable execution over the dataset. Memory stays bounded regardless of corpus size.
 
 **CURIE expansion:** the wrapper post-processes `toQuads()` output to expand any compact CURIEs (e.g. `rdf:type`) that json-tology emits — only fully-resolved IRI terms reach the dataset.
 
 ---
 
-## Onboarding a new target
+## Onboarding a new dump
 
-A complete recipe for adding a new domain dump to Squashage.
+A complete recipe for adding a new domain dump to Squashage. A config file is one run.
 
 ### Step 1 — configure
 
-Create `plugins/<target>/<target>.config.json`. The minimum shape:
+Create `plugins/<name>/<name>.config.json`. The root object holds `input`, `output`, and the run knobs directly. The minimum shape:
 
-```json
+```jsonc
 {
-  "input":   { "basePath": "./output", "format": "json" },
-  "targets": {
-    "<target>": {
-      "input":  "./output/<target>",
-      "output": { "kind": "file", "path": "./graphs/<target>.nq", "format": "nquads" },
-      "concurrency": 8,
-      "graphs": { "default": "https://<target>.example.org/graph/default" },
-      "ontology": {
-        "engine":  "json-tology",
-        "baseIRI": "https://<target>.example.org/",
-        "schemas": []
-      },
-      "classification": {
-        "conflict":      { "onConflict": "pickPriority", "evidence": true },
-        "discriminator": { "from": "/_type", "sanitize": "pascalCase", "priority": 80 }
-      }
-    }
+  "input":  { "basePath": "./output/<name>", "format": "json" },
+  "output": { "type": "file", "path": "./graphs/<name>.nq", "format": "nquads", "mode": "stream" },
+  "concurrency": 8,
+  "graphs": { "default": "https://<name>.example.org/graph/default" },
+  "ontology": {
+    "baseIri": "https://<name>.example.org/",
+    "schemas": []
+  },
+  "classification": {
+    "conflict":      { "onConflict": "pickPriority", "evidence": true },
+    "discriminator": { "from": "/_type", "sanitize": "pascalCase", "priority": 80 }
   }
 }
 ```
@@ -432,14 +428,14 @@ Create `plugins/<target>/<target>.config.json`. The minimum shape:
 Run the inducer against the dump to discover classes and generate draft schemas:
 
 ```bash
-squashage-dag induce --target <target> --config plugins/<target>/<target>.config.json
+squashage-dag induce --config plugins/<name>/<name>.config.json
 ```
 
-This writes `plugins/<target>/schemas/inferred/` with one `*.draft.json` per discovered class plus extracted primitive and object schemas.
+This writes `plugins/<name>/schemas/inferred/` with one `*.draft.json` per discovered class plus extracted primitive and object schemas.
 
 ### Step 3 — author refinements
 
-Review the draft schemas. For each discovered class, create `plugins/<target>/schemas/refinements/<ClassName>.refine.json`:
+Review the draft schemas. For each discovered class, create `plugins/<name>/schemas/refinements/<ClassName>.refine.json`:
 
 ```json
 {
@@ -477,17 +473,17 @@ Choose `parents` from the core inventory based on what the class represents:
 Apply the refinements to materialize final schemas:
 
 ```bash
-squashage-dag refine --target <target> --config plugins/<target>/<target>.config.json
+squashage-dag refine --config plugins/<name>/<name>.config.json
 ```
 
-Final schemas land in `plugins/<target>/schemas/`. Register each schema path in the `ontology.schemas` array of the target config.
+Final schemas land in `plugins/<name>/schemas/`. Register each schema path in the `ontology.schemas` array of the run config.
 
 ### Step 5 — build
 
 Project the dump into the graph:
 
 ```bash
-squashage-dag build --target <target> --config plugins/<target>/<target>.config.json
+squashage-dag build --config plugins/<name>/<name>.config.json
 ```
 
 The output lands at the path specified in `output.path`.
@@ -530,7 +526,7 @@ AONPRD (Archives of Nethys, Pathfinder 2nd Edition) is the primary production ta
 | `Weapon` | `ContentEntry` | Weapon items |
 | `Unknown` | — | Fallback for records with unrecognized `_type`; no core inheritance |
 
-The `rule` class was added with zero changes to the classifier: the discriminator read `_type: "rule"`, sanitized to `Rule`, and resolved to `Rule.schema.json` automatically.
+The `Rule` class needs zero classifier changes: the discriminator reads `_type: "rule"`, sanitizes it to `Rule`, and resolves to `Rule.schema.json` automatically.
 
 ### AONPRD config excerpt
 

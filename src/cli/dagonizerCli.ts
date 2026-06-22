@@ -1,10 +1,9 @@
 /**
- * dagonizer CLI entry — wraps `SquashageRun.forRun(...).execute()` for the
- * new DAG-based pipeline. Coexists with the legacy `cli.ts` during the
- * migration; once the legacy CLI is deleted (Phase 10), this becomes the only
- * entry point.
+ * dagonizer CLI entry — the squashage command-line entry point. Wraps
+ * `SquashageRun.forRun(...).execute()` to drive the DAG-based pipeline for a
+ * single-run config.
  *
- *   squashage-dag build --target <name> --config <path>
+ *   squashage-dag build --config <path>
  *                       [--out <path>] [--format <fmt>] [--dry-run]
  *
  * Stream mode (output.encoding === 'stream') consumes the Execution async
