@@ -1,0 +1,25 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/primitives/SpellCost.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "enum": [
+    "3 gp game piece focus",
+    "black onyx, see Creature Creation Rituals",
+    "fine ash, magically imbued pigments, and a gem in a marquise cut worth 100,000 gp in total",
+    "gemstones worth a total value of 75 gp × the target’s level",
+    "gemstones worth a total value of the target’s level (minimum 1) × 200 gp",
+    "herbs, 1/5 the value on Creature Creation Rituals",
+    "high-quality ingredients and brewing equipment worth 25 gp",
+    "powdered mithral and rare grave dirt worth 10,000 gp",
+    "rare candles and incense worth a total value of 50 gp",
+    "rare incense worth a total value of 60 gp",
+    "splendid art supplies worth at least 100 gp × the target's level, at least one pint of blood from the target",
+    "warding circle ingredients worth a total value of 2 gp × the spell rank × the target’s level",
+    null
+  ],
+  "title": "SpellCost",
+  "type": [
+    "string",
+    "null"
+  ],
+  "x-squashage-closed-enum": true
+}

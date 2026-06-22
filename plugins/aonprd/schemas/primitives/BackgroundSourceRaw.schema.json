@@ -1,0 +1,11 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/primitives/BackgroundSourceRaw.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "enum": [
+    "Pathfinder #150: Broken Promises pg. 73",
+    "Player Core pg. 88"
+  ],
+  "title": "BackgroundSourceRaw",
+  "type": "string",
+  "x-squashage-closed-enum": true
+}

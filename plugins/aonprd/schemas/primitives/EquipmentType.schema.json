@@ -1,0 +1,10 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/primitives/EquipmentType.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "enum": [
+    "equipment"
+  ],
+  "title": "EquipmentType",
+  "type": "string",
+  "x-squashage-closed-enum": true
+}

@@ -1,0 +1,26 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/primitives/FeatFrequency.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "enum": [
+    "Once per day",
+    "Once per hour",
+    "Once per minute",
+    "once every 10 minutes",
+    "once per 10 minutes",
+    "once per Crimson Shroud",
+    "once per day",
+    "once per hour",
+    "once per minute",
+    "once per round",
+    "once per round.",
+    "once per turn",
+    "three times a day",
+    null
+  ],
+  "title": "FeatFrequency",
+  "type": [
+    "string",
+    "null"
+  ],
+  "x-squashage-closed-enum": true
+}

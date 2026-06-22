@@ -1,0 +1,18 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/objects/MonsterFamilyMember.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+    "kind": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/MonsterFamilyMemberKind.draft.json"
+    },
+    "monster_id": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/MonsterFamilyMemberMonsterId.draft.json"
+    },
+    "name": {
+      "type": "string",
+      "x-squashage-open-vocab": true
+    }
+  },
+  "title": "MonsterFamilyMember",
+  "type": "object"
+}

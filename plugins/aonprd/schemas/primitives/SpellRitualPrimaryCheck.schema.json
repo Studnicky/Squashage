@@ -1,0 +1,26 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/primitives/SpellRitualPrimaryCheck.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "enum": [
+    "Arcana (expert), Occultism (expert), or Religion (expert)",
+    "Arcana (legendary), Nature (legendary), Occultism (legendary), or Religion (legendary)",
+    "Arcana (master) or Occultism (master)",
+    "Crafting, Nature, or Society (expert)",
+    "Nature (expert)",
+    "Nature (master)",
+    "Occultism (expert) or Religion (expert)",
+    "Occultism or Religion (legendary)",
+    "Occultism or Religion (master)",
+    "Religion (expert)",
+    "Religion (expert; you must be a demon)",
+    "Religion (expert; you must be a devil)",
+    "Religion (expert; you must be an angel)",
+    null
+  ],
+  "title": "SpellRitualPrimaryCheck",
+  "type": [
+    "string",
+    "null"
+  ],
+  "x-squashage-closed-enum": true
+}

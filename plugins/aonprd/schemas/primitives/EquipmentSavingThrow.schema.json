@@ -1,0 +1,14 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/primitives/EquipmentSavingThrow.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "enum": [
+    "DC 22 Fortitude;",
+    null
+  ],
+  "title": "EquipmentSavingThrow",
+  "type": [
+    "string",
+    "null"
+  ],
+  "x-squashage-closed-enum": true
+}

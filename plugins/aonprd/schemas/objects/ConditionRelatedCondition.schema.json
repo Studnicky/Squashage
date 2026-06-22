@@ -1,0 +1,14 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/objects/ConditionRelatedCondition.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+    "condition_id": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/ConditionEntityId.draft.json"
+    },
+    "name": {
+      "type": "string"
+    }
+  },
+  "title": "ConditionRelatedCondition",
+  "type": "object"
+}

@@ -1,0 +1,20 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/objects/ConditionSource.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+    "book": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/ConditionSourceBook.draft.json"
+    },
+    "page": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/ConditionSourcePage.draft.json"
+    },
+    "raw": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/ConditionSourceRaw.draft.json"
+    },
+    "source_id": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/ConditionSourceSourceId.draft.json"
+    }
+  },
+  "title": "ConditionSource",
+  "type": "object"
+}

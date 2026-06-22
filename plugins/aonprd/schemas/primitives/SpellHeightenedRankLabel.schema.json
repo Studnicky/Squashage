@@ -1,0 +1,21 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/primitives/SpellHeightenedRankLabel.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "enum": [
+    "+1",
+    "+2",
+    "+3",
+    "10th",
+    "2nd",
+    "3rd",
+    "4th",
+    "5th",
+    "6th",
+    "7th",
+    "8th",
+    "9th"
+  ],
+  "title": "SpellHeightenedRankLabel",
+  "type": "string",
+  "x-squashage-closed-enum": true
+}

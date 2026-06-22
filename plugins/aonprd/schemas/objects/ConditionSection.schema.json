@@ -1,0 +1,26 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/objects/ConditionSection.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+    "body_html": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/ConditionSectionBodyHtml.draft.json"
+    },
+    "body_text": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/ConditionSectionBodyText.draft.json"
+    },
+    "heading": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/ConditionSectionHeading.draft.json"
+    },
+    "level": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/ConditionSectionLevel.draft.json"
+    },
+    "links": {
+      "items": {
+        "type": "null"
+      },
+      "type": "array"
+    }
+  },
+  "title": "ConditionSection",
+  "type": "object"
+}

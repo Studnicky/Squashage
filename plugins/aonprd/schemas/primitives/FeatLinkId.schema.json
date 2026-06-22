@@ -1,0 +1,11 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/primitives/FeatLinkId.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "maximum": 8904,
+  "minimum": 1,
+  "title": "FeatLinkId",
+  "type": [
+    "integer",
+    "null"
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/primitives/FeatAccess.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "enum": [
+    "A character who is Magaambyan of at least attendant rank has access to this option.",
+    "Bright Lion background",
+    "Character follows the ways of Sangpotshi or studies texts and lore containing Sangpotshi secrets",
+    "Defeat a member of the Butterfly Blades in a sanctioned bout.",
+    "Pine leshies have access to this feat",
+    "This feat is available to all players in a Stolen Fate campaign",
+    "You are from Absalom.",
+    "You are from Jalmeray.",
+    "You are from Mediogalti Island.",
+    "You have been initiated by the grand duchess of Alkenstar or one of her agents.",
+    "You must befriend at least one Turpin Rowe logger.",
+    "You're from Alkenstar or the Mana Wastes.",
+    "You've encountered a kaiju and survived.",
+    "You’re a member of the Hellbreakers league.",
+    "member of the Magaambya",
+    null
+  ],
+  "title": "FeatAccess",
+  "type": [
+    "string",
+    "null"
+  ],
+  "x-squashage-closed-enum": true
+}

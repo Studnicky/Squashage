@@ -1,0 +1,8 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/primitives/ConditionEntityId.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "maximum": 99,
+  "minimum": 1,
+  "title": "ConditionEntityId",
+  "type": "integer"
+}

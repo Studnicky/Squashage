@@ -1,0 +1,14 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/objects/SpellPatronTheme.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+    "name": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/SpellPatronThemeName.draft.json"
+    },
+    "patron_id": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/SpellPatronThemePatronId.draft.json"
+    }
+  },
+  "title": "SpellPatronTheme",
+  "type": "object"
+}

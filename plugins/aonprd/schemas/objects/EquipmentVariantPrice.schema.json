@@ -1,0 +1,20 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/objects/EquipmentVariantPrice.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+    "cp": {
+      "type": "null"
+    },
+    "gp": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/EquipmentVariantPriceGp.draft.json"
+    },
+    "raw": {
+      "type": "string"
+    },
+    "sp": {
+      "type": "null"
+    }
+  },
+  "title": "EquipmentVariantPrice",
+  "type": "object"
+}

@@ -1,0 +1,17 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/primitives/ConditionSourceRaw.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "enum": [
+    "Kingmaker Adventure Path pg. 582",
+    "Kingmaker Adventure Path pg. 583",
+    "Player Core pg. 442",
+    "Player Core pg. 443",
+    "Player Core pg. 444",
+    "Player Core pg. 445",
+    "Player Core pg. 446",
+    "Player Core pg. 447"
+  ],
+  "title": "ConditionSourceRaw",
+  "type": "string",
+  "x-squashage-closed-enum": true
+}

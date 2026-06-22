@@ -1,0 +1,8 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/primitives/EquipmentItemLevel.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "maximum": 23,
+  "minimum": 0,
+  "title": "EquipmentItemLevel",
+  "type": "integer"
+}

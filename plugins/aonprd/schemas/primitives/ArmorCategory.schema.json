@@ -1,0 +1,17 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/primitives/ArmorCategory.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "enum": [
+    "heavy",
+    "light",
+    "medium",
+    "unarmored",
+    null
+  ],
+  "title": "ArmorCategory",
+  "type": [
+    "string",
+    "null"
+  ],
+  "x-squashage-closed-enum": true
+}

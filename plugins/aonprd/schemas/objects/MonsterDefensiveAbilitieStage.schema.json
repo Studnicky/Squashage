@@ -1,0 +1,14 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/objects/MonsterDefensiveAbilitieStage.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+    "stage": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/MonsterDefensiveAbilitieStageStage.draft.json"
+    },
+    "text": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/MonsterDefensiveAbilitieStageText.draft.json"
+    }
+  },
+  "title": "MonsterDefensiveAbilitieStage",
+  "type": "object"
+}

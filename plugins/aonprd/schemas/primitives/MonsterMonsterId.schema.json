@@ -1,0 +1,8 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/primitives/MonsterMonsterId.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "maximum": 4755,
+  "minimum": 1,
+  "title": "MonsterMonsterId",
+  "type": "integer"
+}

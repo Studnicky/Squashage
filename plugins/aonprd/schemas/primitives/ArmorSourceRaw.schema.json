@@ -1,0 +1,12 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/primitives/ArmorSourceRaw.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "enum": [
+    "Core Rulebook pg. 275",
+    "Player Core pg. 273",
+    "Player Core pg. 274"
+  ],
+  "title": "ArmorSourceRaw",
+  "type": "string",
+  "x-squashage-closed-enum": true
+}

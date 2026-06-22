@@ -1,0 +1,17 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/objects/EquipmentVariantSource.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+    "book": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/EquipmentVariantSourceBook.draft.json"
+    },
+    "page": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/EquipmentVariantSourcePage.draft.json"
+    },
+    "source_id": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/EquipmentVariantSourceSourceId.draft.json"
+    }
+  },
+  "title": "EquipmentVariantSource",
+  "type": "object"
+}

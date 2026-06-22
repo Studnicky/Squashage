@@ -1,0 +1,17 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/objects/MonsterSpellListSlot.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+    "rank": {
+      "type": "string"
+    },
+    "spells": {
+      "items": {
+        "$ref": "https://2e.aonprd.com/schemas/inferred/objects/MonsterSpellListSlotSpell.draft.json"
+      },
+      "type": "array"
+    }
+  },
+  "title": "MonsterSpellListSlot",
+  "type": "object"
+}

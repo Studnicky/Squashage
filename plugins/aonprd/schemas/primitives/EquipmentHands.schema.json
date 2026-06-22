@@ -1,0 +1,16 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/primitives/EquipmentHands.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "enum": [
+    "1",
+    "1 or 2",
+    "2",
+    null
+  ],
+  "title": "EquipmentHands",
+  "type": [
+    "string",
+    "null"
+  ],
+  "x-squashage-closed-enum": true
+}

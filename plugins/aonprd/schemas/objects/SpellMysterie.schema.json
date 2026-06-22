@@ -1,0 +1,14 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/objects/SpellMysterie.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+    "mystery_id": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/SpellMysterieMysteryId.draft.json"
+    },
+    "name": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/SpellMysterieName.draft.json"
+    }
+  },
+  "title": "SpellMysterie",
+  "type": "object"
+}

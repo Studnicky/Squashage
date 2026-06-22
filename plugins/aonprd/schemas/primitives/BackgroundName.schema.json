@@ -1,0 +1,15 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/primitives/BackgroundName.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "enum": [
+    "Aiudara Seeker",
+    "Hermean Heritor",
+    "Legendary Parents",
+    "Raised by Belief",
+    "Scholar",
+    "Touched by Dahak"
+  ],
+  "title": "BackgroundName",
+  "type": "string",
+  "x-squashage-closed-enum": true
+}

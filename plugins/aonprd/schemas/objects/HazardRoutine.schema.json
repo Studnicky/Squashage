@@ -1,0 +1,20 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/objects/HazardRoutine.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+    "actions": {
+      "type": "null"
+    },
+    "effect": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/HazardRoutineEffect.draft.json"
+    },
+    "name": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/HazardRoutineName.draft.json"
+    },
+    "trigger": {
+      "type": "null"
+    }
+  },
+  "title": "HazardRoutine",
+  "type": "object"
+}

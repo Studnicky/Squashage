@@ -1,0 +1,15 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/primitives/BackgroundAltEditionUrl.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "enum": [
+    "Backgrounds.aspx?ID=132&NoRedirect=1",
+    "Backgrounds.aspx?ID=36&NoRedirect=1",
+    null
+  ],
+  "title": "BackgroundAltEditionUrl",
+  "type": [
+    "string",
+    "null"
+  ],
+  "x-squashage-closed-enum": true
+}

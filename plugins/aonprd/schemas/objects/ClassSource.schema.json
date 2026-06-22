@@ -1,0 +1,20 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/objects/ClassSource.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+    "book": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/ClassSourceBook.draft.json"
+    },
+    "page": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/ClassSourcePage.draft.json"
+    },
+    "raw": {
+      "type": "string"
+    },
+    "source_id": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/ClassSourceSourceId.draft.json"
+    }
+  },
+  "title": "ClassSource",
+  "type": "object"
+}

@@ -1,0 +1,11 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/primitives/MonsterSourcePage.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "maximum": 952,
+  "minimum": 0,
+  "title": "MonsterSourcePage",
+  "type": [
+    "integer",
+    "null"
+  ]
+}

@@ -76,8 +76,6 @@ dist/
 /graphs/
 /graphs.partial/
 /viz/
-/plugins/*/schemas/primitives/
-/plugins/*/schemas/objects/
 
 # Scratch debug scripts (one-off conversions, ad-hoc tests).
 /scripts/test-*.mjs

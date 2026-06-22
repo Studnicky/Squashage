@@ -1,0 +1,11 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/primitives/SpellHeightenedIncrement.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "maximum": 3,
+  "minimum": 1,
+  "title": "SpellHeightenedIncrement",
+  "type": [
+    "integer",
+    "null"
+  ]
+}

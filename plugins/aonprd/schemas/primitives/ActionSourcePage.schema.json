@@ -1,0 +1,8 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/primitives/ActionSourcePage.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "maximum": 582,
+  "minimum": 9,
+  "title": "ActionSourcePage",
+  "type": "integer"
+}

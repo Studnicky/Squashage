@@ -1,0 +1,10 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/primitives/GenericType.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "enum": [
+    "generic"
+  ],
+  "title": "GenericType",
+  "type": "string",
+  "x-squashage-closed-enum": true
+}

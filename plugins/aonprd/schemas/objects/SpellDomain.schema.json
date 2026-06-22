@@ -1,0 +1,14 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/objects/SpellDomain.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+    "domain_id": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/SpellDomainDomainId.draft.json"
+    },
+    "name": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/SpellDomainName.draft.json"
+    }
+  },
+  "title": "SpellDomain",
+  "type": "object"
+}

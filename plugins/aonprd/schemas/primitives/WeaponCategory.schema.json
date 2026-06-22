@@ -1,0 +1,17 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/primitives/WeaponCategory.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "enum": [
+    "advanced",
+    "martial",
+    "simple",
+    "unarmed",
+    null
+  ],
+  "title": "WeaponCategory",
+  "type": [
+    "string",
+    "null"
+  ],
+  "x-squashage-closed-enum": true
+}

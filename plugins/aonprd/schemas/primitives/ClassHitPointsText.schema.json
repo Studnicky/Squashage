@@ -1,0 +1,16 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/primitives/ClassHitPointsText.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "enum": [
+    "10 plus your Constitution modifier",
+    "6 plus your Constitution modifier",
+    "8 plus your Constitution modifier",
+    null
+  ],
+  "title": "ClassHitPointsText",
+  "type": [
+    "string",
+    "null"
+  ],
+  "x-squashage-closed-enum": true
+}

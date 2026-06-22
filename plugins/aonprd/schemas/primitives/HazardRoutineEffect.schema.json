@@ -1,0 +1,16 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/primitives/HazardRoutineEffect.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "enum": [
+    "): “They’re the ones! They’re the blasphemers who can’t even properly serve tea! Send them along to the Lady!”",
+    "+15",
+    "+33 (master); creatures in the area automatically notice the eerily swaying shadows",
+    ".",
+    "34",
+    "The PCs overcome this hazard by moving out of the area that the Ox’s tail can reach. A PC escapes (and is not subject to tail Strikes) by ascending the Ox’s sloped back, traveling a distance based on the result of the PC’s Reflex save from the Shaken Loose hazard. PCs can Climb up the Ox’s back with a successful DC 24 Athletics check or—by finding and scrambling up improvised paths—a DC 26 Acrobatics, Perception, or Survival check. With a successful DC 20 Acrobatics check, a flying PC can ascend half their fly Speed (or their full Speed on a critical success). PCs can attempt to Disable the hazard whether or not they’re in range of the tail.",
+    "below."
+  ],
+  "title": "HazardRoutineEffect",
+  "type": "string",
+  "x-squashage-closed-enum": true
+}

@@ -1,0 +1,15 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/primitives/WeaponWeaponType.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "enum": [
+    "melee",
+    "ranged",
+    null
+  ],
+  "title": "WeaponWeaponType",
+  "type": [
+    "string",
+    "null"
+  ],
+  "x-squashage-closed-enum": true
+}

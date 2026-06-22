@@ -1,0 +1,29 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/objects/GenericSection.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+    "body_html": {
+      "type": "string",
+      "x-squashage-open-vocab": true
+    },
+    "body_text": {
+      "type": "string",
+      "x-squashage-open-vocab": true
+    },
+    "heading": {
+      "type": "string",
+      "x-squashage-open-vocab": true
+    },
+    "level": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/AncestrySectionLevel.draft.json"
+    },
+    "links": {
+      "items": {
+        "$ref": "https://2e.aonprd.com/schemas/inferred/objects/GenericSectionLink.draft.json"
+      },
+      "type": "array"
+    }
+  },
+  "title": "GenericSection",
+  "type": "object"
+}

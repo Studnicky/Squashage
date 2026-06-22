@@ -1,0 +1,16 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/primitives/EquipmentPfs.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "enum": [
+    "limited",
+    "restricted",
+    "standard",
+    null
+  ],
+  "title": "EquipmentPfs",
+  "type": [
+    "string",
+    "null"
+  ],
+  "x-squashage-closed-enum": true
+}

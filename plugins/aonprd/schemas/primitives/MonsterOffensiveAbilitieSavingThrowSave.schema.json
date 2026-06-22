@@ -1,0 +1,15 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/primitives/MonsterOffensiveAbilitieSavingThrowSave.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "enum": [
+    "fort",
+    "will",
+    null
+  ],
+  "title": "MonsterOffensiveAbilitieSavingThrowSave",
+  "type": [
+    "string",
+    "null"
+  ],
+  "x-squashage-closed-enum": true
+}

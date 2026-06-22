@@ -1,0 +1,14 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/primitives/SpellAccess.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "enum": [
+    "Character follows the ways of Sangpotshi or studies texts and lore containing Sangpotshi secrets",
+    null
+  ],
+  "title": "SpellAccess",
+  "type": [
+    "string",
+    "null"
+  ],
+  "x-squashage-closed-enum": true
+}

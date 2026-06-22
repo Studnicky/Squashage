@@ -1,0 +1,14 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/primitives/IriString_4.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "enum": [
+    "https://2e.aonprd.com/Actions.aspx?ID=2175",
+    "https://2e.aonprd.com/Actions.aspx?ID=2864",
+    "https://2e.aonprd.com/Actions.aspx?ID=639",
+    "https://2e.aonprd.com/Actions.aspx?ID=683"
+  ],
+  "title": "IriString_4",
+  "type": "string",
+  "x-squashage-closed-enum": true,
+  "x-squashage-iri-promotion": true
+}

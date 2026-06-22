@@ -1,0 +1,25 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/primitives/SpellPatronThemeName.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "enum": [
+    "baba yaga",
+    "choir politic",
+    "cobyslarni",
+    "devourer of decay",
+    "faith's flamekeeper",
+    "mosquito witch",
+    "paradox of opposites",
+    "ripple in the deep",
+    "silence in snow",
+    "spinner of threads",
+    "starless shadow",
+    "the inscribed one",
+    "the resentment",
+    "the unseen broker",
+    "whisper of wings",
+    "wilding steward"
+  ],
+  "title": "SpellPatronThemeName",
+  "type": "string",
+  "x-squashage-closed-enum": true
+}

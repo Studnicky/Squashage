@@ -1,0 +1,23 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/primitives/ArmorAltEditionUrl.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "enum": [
+    "Armor.aspx?ID=10&NoRedirect=1",
+    "Armor.aspx?ID=12&NoRedirect=1",
+    "Armor.aspx?ID=13&NoRedirect=1",
+    "Armor.aspx?ID=2&NoRedirect=1",
+    "Armor.aspx?ID=3&NoRedirect=1",
+    "Armor.aspx?ID=4&NoRedirect=1",
+    "Armor.aspx?ID=5&NoRedirect=1",
+    "Armor.aspx?ID=6&NoRedirect=1",
+    "Armor.aspx?ID=7&NoRedirect=1",
+    "Armor.aspx?ID=8&NoRedirect=1",
+    "Armor.aspx?ID=9&NoRedirect=1",
+    "Shields.aspx?ID=1&NoRedirect=1",
+    "Shields.aspx?ID=2&NoRedirect=1",
+    "Shields.aspx?ID=3&NoRedirect=1"
+  ],
+  "title": "ArmorAltEditionUrl",
+  "type": "string",
+  "x-squashage-closed-enum": true
+}

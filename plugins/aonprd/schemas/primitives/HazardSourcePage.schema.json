@@ -1,0 +1,8 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/primitives/HazardSourcePage.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "maximum": 525,
+  "minimum": 6,
+  "title": "HazardSourcePage",
+  "type": "integer"
+}

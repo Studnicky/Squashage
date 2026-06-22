@@ -1,0 +1,12 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/primitives/ConditionSectionHeading.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "enum": [
+    "Assisted Recovery",
+    "Immunities, Resistances, And Weaknesses",
+    "Multiple Persistent Damage Conditions"
+  ],
+  "title": "ConditionSectionHeading",
+  "type": "string",
+  "x-squashage-closed-enum": true
+}

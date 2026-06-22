@@ -1,0 +1,20 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/objects/EquipmentActivation.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+    "action_cost": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/EquipmentActivationActionCost.draft.json"
+    },
+    "components": {
+      "items": {
+        "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/EquipmentActivationComponent.draft.json"
+      },
+      "type": "array"
+    },
+    "text": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/EquipmentActivationText.draft.json"
+    }
+  },
+  "title": "EquipmentActivation",
+  "type": "object"
+}

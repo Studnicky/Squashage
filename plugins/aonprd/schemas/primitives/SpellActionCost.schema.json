@@ -1,0 +1,17 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/primitives/SpellActionCost.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "enum": [
+    "one-action",
+    "reaction",
+    "three-actions",
+    "two-actions",
+    null
+  ],
+  "title": "SpellActionCost",
+  "type": [
+    "string",
+    "null"
+  ],
+  "x-squashage-closed-enum": true
+}

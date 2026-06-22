@@ -1,0 +1,11 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/primitives/BackgroundLinkId.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "maximum": 854,
+  "minimum": 2,
+  "title": "BackgroundLinkId",
+  "type": [
+    "integer",
+    "null"
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/objects/ArmorSource.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+    "book": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/ArmorSourceBook.draft.json"
+    },
+    "page": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/ArmorSourcePage.draft.json"
+    },
+    "raw": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/ArmorSourceRaw.draft.json"
+    },
+    "source_id": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/ArmorSourceSourceId.draft.json"
+    }
+  },
+  "title": "ArmorSource",
+  "type": "object"
+}

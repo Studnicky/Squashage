@@ -1,0 +1,64 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/objects/MonsterOffensiveAbilitie.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+    "actions": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/primitives/ActionActionCost.draft.json"
+    },
+    "body_html": {
+      "type": "string",
+      "x-squashage-open-vocab": true
+    },
+    "body_text": {
+      "type": "string",
+      "x-squashage-open-vocab": true
+    },
+    "effect": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "x-squashage-open-vocab": true
+    },
+    "frequency": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "name": {
+      "type": "string",
+      "x-squashage-open-vocab": true
+    },
+    "requirements": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "x-squashage-open-vocab": true
+    },
+    "saving_throw": {
+      "$ref": "https://2e.aonprd.com/schemas/inferred/objects/MonsterOffensiveAbilitieSavingThrow.draft.json"
+    },
+    "stages": {
+      "items": {
+        "$ref": "https://2e.aonprd.com/schemas/inferred/objects/MonsterOffensiveAbilitieStage.draft.json"
+      },
+      "type": "array"
+    },
+    "traits": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "trigger": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "title": "MonsterOffensiveAbilitie",
+  "type": "object"
+}

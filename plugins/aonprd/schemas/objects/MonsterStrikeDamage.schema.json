@@ -1,0 +1,19 @@
+{
+  "$id": "https://2e.aonprd.com/schemas/inferred/objects/MonsterStrikeDamage.draft.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+    "dice": {
+      "type": "string",
+      "x-squashage-open-vocab": true
+    },
+    "persistent": {
+      "type": "boolean"
+    },
+    "type": {
+      "type": "string",
+      "x-squashage-open-vocab": true
+    }
+  },
+  "title": "MonsterStrikeDamage",
+  "type": "object"
+}
