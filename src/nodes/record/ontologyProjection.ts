@@ -145,6 +145,7 @@ export class OntologyProjectionNode
       rawQuads = await this.#ontology.toQuads(schema.$id, state.input);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
+      log.error('executeOne', 'SQUASH_PROJECTION_FAILED: toQuads() threw', { className, schemaId: schema.$id, errorMessage: message });
       state.collectError(NodeErrorBuilder.from(
         'SQUASH_PROJECTION_FAILED',
         `OntologyProjectionNode: toQuads() threw: ${message}`,
