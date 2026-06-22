@@ -20,6 +20,10 @@ const CORE_SCHEMAS_DIR: string = join(
   'core',
 );
 
+// Debug: log path at module load time so CI can show us what's being computed
+import { existsSync } from 'node:fs';
+console.error('[coreSchemas] CORE_SCHEMAS_DIR:', CORE_SCHEMAS_DIR, '| exists:', existsSync(CORE_SCHEMAS_DIR), '| import.meta.url:', import.meta.url);
+
 let coreSchemaCache: ReadonlyArray<JsonTologySchemaInputInterface> | null = null;
 
 /**
