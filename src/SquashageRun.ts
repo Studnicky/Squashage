@@ -18,7 +18,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { OutputConfigInterface } from './config/OutputConfig.js';
 import { FormatResolver } from './output/FormatResolver.js';
-import type { TargetConfigInterface } from './config/SquashageConfig.js';
+import type { SquashageRunConfigInterface } from './config/SquashageConfig.js';
 import { DAGDocument } from '@studnicky/dagonizer';
 import type { ChildStateFactoryType } from '@studnicky/dagonizer';
 
@@ -88,8 +88,9 @@ import { SquashageBootstrapState } from './state/SquashageBootstrapState.js';
 import type { DispatcherBundleType, NodeStateInterface } from '@studnicky/dagonizer';
 
 export interface SquashageRunOptionsInterface {
-  readonly target:       string;
-  readonly targetConfig: TargetConfigInterface;
+  /** Optional run identifier — defaults to `targetConfig.name ?? 'run'` when absent. */
+  readonly target?:      string | undefined;
+  readonly targetConfig: SquashageRunConfigInterface;
   readonly output:       OutputConfigInterface;
   readonly outDir:       string;
   readonly schemasBase:  string;
@@ -115,11 +116,12 @@ export class SquashageRun {
     this.dispatcher = slots.dispatcher;
   }
 
-  static async forTarget(options: SquashageRunOptionsInterface): Promise<SquashageRun> {
+  static async forRun(options: SquashageRunOptionsInterface): Promise<SquashageRun> {
     const runStartTime = new Date().toISOString();
+    const target = options.target ?? options.targetConfig.name ?? 'run';
 
     const servicesOpts: SquashageServicesOptionsInterface = {
-      target:       options.target,
+      target,
       targetConfig: options.targetConfig,
       output:       options.output,
       outDir:       options.outDir,
@@ -211,7 +213,7 @@ export class SquashageRun {
       squashNode = ontologyProjectionNode;
     } else {
       const log = services.logger.forComponent('SquashageRun');
-      log.warn('forTarget', `target "${options.target}" has no ontology engine configured; falling back to rdf:type-only defaultSquashNode`, { target: options.target });
+      log.warn('forRun', `run "${target}" has no ontology engine configured; falling back to rdf:type-only defaultSquashNode`, { target });
       squashNode = defaultSquashNode;
     }
 
@@ -219,7 +221,7 @@ export class SquashageRun {
     //       than cloning the parent (which has a different shape).
     const recordStateFactory: ChildStateFactoryType = (_parent) =>
       new SquashageRecordState(
-        { target: options.target, path: '' },
+        { target, path: '' },
         '',
         0,
       );
@@ -377,6 +379,6 @@ export class SquashageRun {
 
   /** Convenience constructor alias (tests and smoke paths). */
   static async forTargetWithNullObserver(options: SquashageRunOptionsInterface): Promise<SquashageRun> {
-    return SquashageRun.forTarget(options);
+    return SquashageRun.forRun(options);
   }
 }

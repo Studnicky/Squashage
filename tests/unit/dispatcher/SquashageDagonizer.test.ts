@@ -15,7 +15,7 @@ class S extends NodeStateBase {
 }
 
 const baseTarget: TargetConfigInterface = {
-  input:    './input/aonprd',
+  input:    { basePath: './input/aonprd', format: 'json' },
   output:   { kind: 'file', path: './graphs/aonprd.jsonld' } as OutputConfigInterface,
   graphs:   { default: 'https://squashage.dev/graph/aonprd/default' },
   ontology: { baseIri: 'https://aonprd.example.org/' },

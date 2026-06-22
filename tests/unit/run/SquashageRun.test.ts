@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 
 import { SquashageRun } from '../../../src/SquashageRun.js';
 import { SquashageRunState } from '../../../src/state/SquashageRunState.js';
-import type { TargetConfigInterface } from '../../../src/config/SquashageConfig.js';
+import type { SquashageRunConfigInterface } from '../../../src/config/SquashageConfig.js';
 import type { OutputConfigInterface } from '../../../src/config/OutputConfig.js';
 
 const fixturesDir = join(
@@ -15,35 +15,37 @@ const fixturesDir = join(
   'fixtures', 'dagonizer-port',
 );
 
-function buildTargetConfig(outputPath: string): TargetConfigInterface {
-  const output: OutputConfigInterface = {
-    kind:   'file',
-    path:   outputPath,
-    format: 'trig',
-  } as OutputConfigInterface;
-  return {
-    input:    fixturesDir,
-    output,
-    graphs:   { default: 'https://squashage.dev/graph/aonprd/default' },
-    ontology: { baseIri: 'https://2e.aonprd.com/' },
-    classification: {
-      conflict:   { onConflict: 'pickPriority', evidence: true },
-      structural: [
-        {
-          className: 'feat',
-          priority:  20,
-          predicate: { path: '/_type', equals: 'feat' },
-          reasons:   ['_type=feat'],
-        },
-      ],
-      urlPattern: {
-        patterns: [
-          { className: 'feat', match: '/Feats\\.aspx', priority: 35 },
+class RunTestConfig {
+  static forPath(outputPath: string): SquashageRunConfigInterface {
+    const output: OutputConfigInterface = {
+      kind:   'file',
+      path:   outputPath,
+      format: 'trig',
+    } as OutputConfigInterface;
+    return {
+      input:    { basePath: fixturesDir, format: 'json' },
+      output,
+      graphs:   { default: 'https://squashage.dev/graph/aonprd/default' },
+      ontology: { baseIri: 'https://2e.aonprd.com/' },
+      classification: {
+        conflict:   { onConflict: 'pickPriority', evidence: true },
+        structural: [
+          {
+            className: 'feat',
+            priority:  20,
+            predicate: { path: '/_type', equals: 'feat' },
+            reasons:   ['_type=feat'],
+          },
         ],
+        urlPattern: {
+          patterns: [
+            { className: 'feat', match: '/Feats\\.aspx', priority: 35 },
+          ],
+        },
       },
-    },
-    concurrency: 2,
-  };
+      concurrency: 2,
+    };
+  }
 }
 
 test('happy path', async (t) => {
@@ -51,13 +53,13 @@ test('happy path', async (t) => {
     const work = await mkdtemp(join(tmpdir(), 'squashage-port-'));
     try {
       const outputPath = join(work, 'aonprd.trig');
-      const targetConfig = buildTargetConfig(outputPath);
+      const runConfig = RunTestConfig.forPath(outputPath);
 
       const run = await SquashageRun.forTargetWithNullObserver({
-        target: 'aonprd',
-        targetConfig,
-        output: targetConfig.output,
-        outDir: work,
+        target:      'aonprd',
+        targetConfig: runConfig,
+        output:      runConfig.output,
+        outDir:      work,
         schemasBase: process.cwd(),
       });
 
@@ -79,12 +81,12 @@ test('happy path', async (t) => {
     const work = await mkdtemp(join(tmpdir(), 'squashage-port-'));
     try {
       const outputPath = join(work, 'aonprd.trig');
-      const targetConfig = buildTargetConfig(outputPath);
+      const runConfig = RunTestConfig.forPath(outputPath);
       const run = await SquashageRun.forTargetWithNullObserver({
-        target: 'aonprd',
-        targetConfig,
-        output: targetConfig.output,
-        outDir: work,
+        target:      'aonprd',
+        targetConfig: runConfig,
+        output:      runConfig.output,
+        outDir:      work,
         schemasBase: process.cwd(),
       });
 

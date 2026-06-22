@@ -1,5 +1,5 @@
 /**
- * dagonizer CLI entry — wraps `SquashageRun.forTarget(...).execute()` for the
+ * dagonizer CLI entry — wraps `SquashageRun.forRun(...).execute()` for the
  * new DAG-based pipeline. Coexists with the legacy `cli.ts` during the
  * migration; once the legacy CLI is deleted (Phase 10), this becomes the only
  * entry point.
@@ -28,7 +28,6 @@ import { SigmaGraphRenderer } from '../viz/SigmaGraphRenderer.js';
 import { extname } from 'node:path';
 
 interface BuildOptionsInterface {
-  target:  string;
   config:  string;
   out?:    string;
   format?: string;
@@ -36,19 +35,16 @@ interface BuildOptionsInterface {
 }
 
 interface InduceOptionsInterface {
-  target: string;
   config: string;
   out?:   string;
 }
 
 interface RefineOptionsInterface {
-  target: string;
   config: string;
   out?:   string;
 }
 
 interface BootstrapOptionsInterface {
-  target:       string;
   config:       string;
   out?:         string;
   skipInduce?:  boolean;
@@ -61,31 +57,23 @@ export class DagonizerCli {
 
     program
       .command('build')
-      .description('Run the DAG pipeline for one target')
-      .requiredOption('--target <name>', 'Target name from config')
-      .requiredOption('--config <path>', 'Squashage config path')
+      .description('Run the DAG pipeline')
+      .requiredOption('--config <path>', 'Squashage run config path')
       .option('--out <path>',    'Output path override')
       .option('--format <fmt>',  'Output format override')
       .option('--dry-run',       'Skip writes')
       .action(async (opts: BuildOptionsInterface): Promise<void> => {
-        const cfg = SquashageConfig.loadFromFile(opts.config);
-        const targetConfig = cfg.targets[opts.target];
-        if (targetConfig === undefined) {
-          process.stderr.write(`Target "${opts.target}" not found\n`);
-          process.exitCode = 1;
-          return;
-        }
+        const runConfig = SquashageConfig.loadFromFile(opts.config);
 
         const output = {
-          ...targetConfig.output,
+          ...runConfig.output,
           ...(opts.out    !== undefined ? { path:   opts.out }    : {}),
           ...(opts.format !== undefined ? { format: opts.format } : {}),
           ...(opts.dryRun ? { dryRun: true } : {}),
-        } as typeof targetConfig.output;
+        } as typeof runConfig.output;
 
-        const run = await SquashageRun.forTarget({
-          target:       opts.target,
-          targetConfig,
+        const run = await SquashageRun.forRun({
+          targetConfig: runConfig,
           output,
           outDir:       './graphs',
           schemasBase:  dirname(opts.config),
@@ -93,11 +81,12 @@ export class DagonizerCli {
 
         const result = await run.execute();
         const finalState = result.state as unknown as SquashageRunState;
+        const runName  = runConfig.name ?? '(run)';
         const total    = finalState.squashedCount + finalState.quarantinedCount + finalState.errorCount;
         const successes = finalState.squashedCount;
         const failures  = finalState.quarantinedCount + finalState.errorCount;
         process.stdout.write(
-          `target: ${opts.target}\n` +
+          `target: ${runName}\n` +
           `records: ${String(total)}\n` +
           `succeeded: ${String(successes)}\n` +
           `failed: ${String(failures)}\n` +
@@ -109,34 +98,26 @@ export class DagonizerCli {
     program
       .command('induce')
       .description('Walk input, classify records, observe shapes, write draft schemas')
-      .requiredOption('--target <name>', 'Target name from config')
-      .requiredOption('--config <path>', 'Squashage config path')
+      .requiredOption('--config <path>', 'Squashage run config path')
       .option('--out <dir>', 'Override output directory for draft schemas')
       .action(async (opts: InduceOptionsInterface): Promise<void> => {
-        const cfg = SquashageConfig.loadFromFile(opts.config);
-        const targetConfig = cfg.targets[opts.target];
-        if (targetConfig === undefined) {
-          process.stderr.write(`Target "${opts.target}" not found\n`);
-          process.exitCode = 1;
-          return;
-        }
-
+        const runConfig = SquashageConfig.loadFromFile(opts.config);
         const configDir = dirname(opts.config);
-        const run = await SquashageRun.forTarget({
-          target:      opts.target,
-          targetConfig,
-          output:      targetConfig.output,
-          outDir:      './graphs',
-          schemasBase: opts.out !== undefined ? resolve(opts.out) : configDir,
+        const run = await SquashageRun.forRun({
+          targetConfig: runConfig,
+          output:       runConfig.output,
+          outDir:       './graphs',
+          schemasBase:  opts.out !== undefined ? resolve(opts.out) : configDir,
         });
 
         const result = await run.executeInduce();
         const finalState = result.state as unknown as SquashageInduceRunState;
         const classList  = finalState.discoveredClasses.join(', ') || '(none)';
         const inferredDir = run.services.schemaPaths.inferred;
+        const runName = runConfig.name ?? '(run)';
 
         process.stdout.write(
-          `target: ${opts.target}\n` +
+          `target: ${runName}\n` +
           `observed: ${String(finalState.observedRecords)} records\n` +
           `discovered: ${String(finalState.discoveredClasses.length)} classes (${classList})\n` +
           `drafts: ${String(finalState.draftsWritten)} written to ${inferredDir}\n` +
@@ -147,32 +128,24 @@ export class DagonizerCli {
     program
       .command('refine')
       .description('Apply operator refinements to draft schemas, writing final schemas')
-      .requiredOption('--target <name>', 'Target name from config')
-      .requiredOption('--config <path>', 'Squashage config path')
+      .requiredOption('--config <path>', 'Squashage run config path')
       .option('--out <dir>', 'Override output directory for final schemas')
       .action(async (opts: RefineOptionsInterface): Promise<void> => {
-        const cfg = SquashageConfig.loadFromFile(opts.config);
-        const targetConfig = cfg.targets[opts.target];
-        if (targetConfig === undefined) {
-          process.stderr.write(`Target "${opts.target}" not found\n`);
-          process.exitCode = 1;
-          return;
-        }
-
+        const runConfig = SquashageConfig.loadFromFile(opts.config);
         const configDir = dirname(opts.config);
-        const run = await SquashageRun.forTarget({
-          target:      opts.target,
-          targetConfig,
-          output:      targetConfig.output,
-          outDir:      './graphs',
-          schemasBase: opts.out !== undefined ? resolve(opts.out) : configDir,
+        const run = await SquashageRun.forRun({
+          targetConfig: runConfig,
+          output:       runConfig.output,
+          outDir:       './graphs',
+          schemasBase:  opts.out !== undefined ? resolve(opts.out) : configDir,
         });
 
         const result     = await run.executeRefine();
         const finalState = result.state as unknown as SquashageRefineRunState;
+        const runName = runConfig.name ?? '(run)';
 
         process.stdout.write(
-          `target: ${opts.target}\n` +
+          `target: ${runName}\n` +
           `refined: ${String(finalState.refinedCount)}\n` +
           `passthrough: ${String(finalState.passthroughCount)}\n` +
           `errors: ${String(finalState.runErrors.length)}\n` +
@@ -189,28 +162,19 @@ export class DagonizerCli {
 
     program
       .command('bootstrap')
-      .description('Run the full induce → refine → build pipeline for one target')
-      .requiredOption('--target <name>', 'Target name from config')
-      .requiredOption('--config <path>', 'Squashage config path')
+      .description('Run the full induce → refine → build pipeline')
+      .requiredOption('--config <path>', 'Squashage run config path')
       .option('--out <dir>',    'Override output directory / schemas base')
       .option('--skip-induce', 'Skip induce phase; start at refine then build')
       .action(async (opts: BootstrapOptionsInterface): Promise<void> => {
-        const cfg = SquashageConfig.loadFromFile(opts.config);
-        const targetConfig = cfg.targets[opts.target];
-        if (targetConfig === undefined) {
-          process.stderr.write(`Target "${opts.target}" not found\n`);
-          process.exitCode = 1;
-          return;
-        }
-
+        const runConfig = SquashageConfig.loadFromFile(opts.config);
         const configDir  = dirname(opts.config);
         const schemasBase = opts.out !== undefined ? resolve(opts.out) : configDir;
 
-        const run = await SquashageRun.forTarget({
-          target:      opts.target,
-          targetConfig,
-          output:      targetConfig.output,
-          outDir:      './graphs',
+        const run = await SquashageRun.forRun({
+          targetConfig: runConfig,
+          output:       runConfig.output,
+          outDir:       './graphs',
           schemasBase,
         });
 

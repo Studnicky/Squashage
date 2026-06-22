@@ -62,7 +62,7 @@ class WalkInputNodeImpl extends ScalarNode<SquashageRunState, Output, SquashageS
     context: NodeContextType<SquashageServices>,
   ): Promise<NodeOutputType<Output>> {
     const log   = context.services.logger.forComponent('walk-input');
-    const input = context.services.targetConfig.input;
+    const input = context.services.targetConfig.input.basePath;
 
     let info: Awaited<ReturnType<typeof stat>>;
     try {

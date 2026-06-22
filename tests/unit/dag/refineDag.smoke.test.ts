@@ -21,25 +21,37 @@ const fixturesDir = join(
   'fixtures', 'dagonizer-port',
 );
 
-function buildTargetConfig(schemasBase: string): TargetConfigInterface {
-  const output: OutputConfigInterface = {
-    kind:   'file',
-    path:   join(schemasBase, 'aonprd.trig'),
-    format: 'trig',
-  } as OutputConfigInterface;
-  return {
-    input:    fixturesDir,
-    output,
-    graphs:   { default: 'https://squashage.dev/graph/aonprd/default' },
-    ontology: { baseIri: 'https://2e.aonprd.com/' },
-    classification: {
-      conflict:   { onConflict: 'pickPriority', evidence: true },
-      structural: [
-        { className: 'feat', priority: 20, predicate: { path: '/_type', equals: 'feat' }, reasons: ['_type=feat'] },
-      ],
-    },
-    concurrency: 1,
-  };
+class SmokeTestConfig {
+  static forSchemasBase(schemasBase: string): TargetConfigInterface {
+    const output: OutputConfigInterface = {
+      kind:   'file',
+      path:   join(schemasBase, 'aonprd.trig'),
+      format: 'trig',
+    } as OutputConfigInterface;
+    return {
+      input:    { basePath: fixturesDir, format: 'json' },
+      output,
+      graphs:   { default: 'https://squashage.dev/graph/aonprd/default' },
+      ontology: { baseIri: 'https://2e.aonprd.com/' },
+      classification: {
+        conflict:   { onConflict: 'pickPriority', evidence: true },
+        structural: [
+          {
+            className: 'feat',
+            priority:  20,
+            predicate: { path: '/_type', equals: 'feat' },
+            reasons:   ['_type=feat'],
+          },
+        ],
+        urlPattern: {
+          patterns: [
+            { className: 'feat', match: '/Feats\\.aspx', priority: 35 },
+          ],
+        },
+      },
+      concurrency: 1,
+    };
+  }
 }
 
 test('refineDag smoke — single draft + refinement', async (t) => {
@@ -78,7 +90,7 @@ test('refineDag smoke — single draft + refinement', async (t) => {
       };
       await writeFile(join(refinements, 'Feat.refine.json'), JSON.stringify(refinement, null, 2), 'utf8');
 
-      const targetConfig = buildTargetConfig(work);
+      const targetConfig = SmokeTestConfig.forSchemasBase(work);
       const run = await SquashageRun.forTargetWithNullObserver({
         target:      'aonprd',
         targetConfig,
@@ -124,7 +136,7 @@ test('refineDag smoke — single draft + refinement', async (t) => {
       };
       await writeFile(join(inferred, 'Trait.draft.json'), JSON.stringify(draft, null, 2), 'utf8');
 
-      const targetConfig = buildTargetConfig(work);
+      const targetConfig = SmokeTestConfig.forSchemasBase(work);
       const run = await SquashageRun.forTargetWithNullObserver({
         target:      'aonprd',
         targetConfig,
@@ -173,7 +185,7 @@ test('refineDag smoke — single draft + refinement', async (t) => {
         await mkdir(refinements, { recursive: true });
         await writeFile(join(inferred,    'Feat.draft.json'),  JSON.stringify(draft,      null, 2), 'utf8');
         await writeFile(join(refinements, 'Feat.refine.json'), JSON.stringify(refinement, null, 2), 'utf8');
-        const targetConfig = buildTargetConfig(work);
+        const targetConfig = SmokeTestConfig.forSchemasBase(work);
         const run = await SquashageRun.forTargetWithNullObserver({
           target:      'aonprd',
           targetConfig,

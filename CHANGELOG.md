@@ -16,6 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Lenient projection — no record is dropped on shape.** The ABox projection schema is relaxed (induced `required`/enum/bounds/null- and integer-narrowing stripped) so records project with whatever properties they carry; the strict schema is retained for TBox/SHACL and deviations surface as advisory warnings. Records that no classifier maps fall back to the `Generic` class (no-drop floor) instead of quarantining. On the aonprd corpus this takes quarantine from 100% of projectable records to 5 genuine cases.
 - **Ontology/TBox emission errors route through the DAG.** A malformed class schema makes `ontology-emit` collect a warning and return an `error` output port (routed onward to finalize) rather than throwing and aborting the whole run.
 
+- **Single-run config model.** A config file IS one run: the root carries `input`, `output`, and the run knobs (`graphs`, `ontology`, `classification`, `enrichment`, `quarantine`, `concurrency`, `subjectIri`) directly — the `targets` map and the CLI `--target` flag are removed. `SquashageRun.forTarget` → `SquashageRun.forRun`.
+
 ### Added
 
 - **Transient json-tology #126 workaround.** ABox projection inline-resolves cross-schema `$ref` property bodies so referenced object properties are not dropped during `toQuads`; TBox/SHACL emission stays on the strict-graph schemas. Removed when json-tology #126 ships upstream.

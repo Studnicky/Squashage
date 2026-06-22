@@ -21,42 +21,44 @@ const fixturesDir = join(
   'fixtures', 'dagonizer-port',
 );
 
-function buildTargetConfig(schemasBase: string): TargetConfigInterface {
-  const output: OutputConfigInterface = {
-    kind:   'file',
-    path:   join(schemasBase, 'aonprd.trig'),
-    format: 'trig',
-  } as OutputConfigInterface;
-  return {
-    input:    fixturesDir,
-    output,
-    graphs:   { default: 'https://squashage.dev/graph/aonprd/default' },
-    ontology: { baseIri: 'https://2e.aonprd.com/' },
-    classification: {
-      conflict:   { onConflict: 'pickPriority', evidence: true },
-      structural: [
-        {
-          className: 'feat',
-          priority:  20,
-          predicate: { path: '/_type', equals: 'feat' },
-          reasons:   ['_type=feat'],
-        },
-      ],
-      urlPattern: {
-        patterns: [
-          { className: 'feat', match: '/Feats\\.aspx', priority: 35 },
+class SmokeTestConfig {
+  static forSchemasBase(schemasBase: string): TargetConfigInterface {
+    const output: OutputConfigInterface = {
+      kind:   'file',
+      path:   join(schemasBase, 'aonprd.trig'),
+      format: 'trig',
+    } as OutputConfigInterface;
+    return {
+      input:    { basePath: fixturesDir, format: 'json' },
+      output,
+      graphs:   { default: 'https://squashage.dev/graph/aonprd/default' },
+      ontology: { baseIri: 'https://2e.aonprd.com/' },
+      classification: {
+        conflict:   { onConflict: 'pickPriority', evidence: true },
+        structural: [
+          {
+            className: 'feat',
+            priority:  20,
+            predicate: { path: '/_type', equals: 'feat' },
+            reasons:   ['_type=feat'],
+          },
         ],
+        urlPattern: {
+          patterns: [
+            { className: 'feat', match: '/Feats\\.aspx', priority: 35 },
+          ],
+        },
       },
-    },
-    concurrency: 1,
-  };
+      concurrency: 1,
+    };
+  }
 }
 
 test('induceDag smoke — one-record fixture', async (t) => {
   await t.test('executeInduce writes at least one draft file', async () => {
     const work = await mkdtemp(join(tmpdir(), 'induce-smoke-'));
     try {
-      const targetConfig = buildTargetConfig(work);
+      const targetConfig = SmokeTestConfig.forSchemasBase(work);
       const run = await SquashageRun.forTargetWithNullObserver({
         target:      'aonprd',
         targetConfig,
@@ -101,7 +103,7 @@ test('induceDag smoke — one-record fixture', async (t) => {
     const work2 = await mkdtemp(join(tmpdir(), 'induce-smoke-b-'));
     try {
       const makeRun = async (work: string): Promise<{ inferredDir: string }> => {
-        const targetConfig = buildTargetConfig(work);
+        const targetConfig = SmokeTestConfig.forSchemasBase(work);
         const run = await SquashageRun.forTargetWithNullObserver({
           target:      'aonprd',
           targetConfig,

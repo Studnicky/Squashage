@@ -25,42 +25,44 @@ const fixturesDir = join(
   'fixtures', 'dagonizer-port',
 );
 
-function buildTargetConfig(schemasBase: string): TargetConfigInterface {
-  const output: OutputConfigInterface = {
-    kind:   'file',
-    path:   join(schemasBase, 'aonprd.trig'),
-    format: 'trig',
-  } as OutputConfigInterface;
-  return {
-    input:    fixturesDir,
-    output,
-    graphs:   { default: 'https://squashage.dev/graph/aonprd/default' },
-    ontology: { baseIri: 'https://2e.aonprd.com/' },
-    classification: {
-      conflict:   { onConflict: 'pickPriority', evidence: true },
-      structural: [
-        {
-          className: 'feat',
-          priority:  20,
-          predicate: { path: '/_type', equals: 'feat' },
-          reasons:   ['_type=feat'],
-        },
-      ],
-      urlPattern: {
-        patterns: [
-          { className: 'feat', match: '/Feats\\.aspx', priority: 35 },
+class SmokeTestConfig {
+  static forSchemasBase(schemasBase: string): TargetConfigInterface {
+    const output: OutputConfigInterface = {
+      kind:   'file',
+      path:   join(schemasBase, 'aonprd.trig'),
+      format: 'trig',
+    } as OutputConfigInterface;
+    return {
+      input:    { basePath: fixturesDir, format: 'json' },
+      output,
+      graphs:   { default: 'https://squashage.dev/graph/aonprd/default' },
+      ontology: { baseIri: 'https://2e.aonprd.com/' },
+      classification: {
+        conflict:   { onConflict: 'pickPriority', evidence: true },
+        structural: [
+          {
+            className: 'feat',
+            priority:  20,
+            predicate: { path: '/_type', equals: 'feat' },
+            reasons:   ['_type=feat'],
+          },
         ],
+        urlPattern: {
+          patterns: [
+            { className: 'feat', match: '/Feats\\.aspx', priority: 35 },
+          ],
+        },
       },
-    },
-    concurrency: 1,
-  };
+      concurrency: 1,
+    };
+  }
 }
 
 test('bootstrapDag smoke — halts at gate when no refinements', async (t) => {
   await t.test('lifecycle completed, induceResult populated, refineResult null', async () => {
     const work = await mkdtemp(join(tmpdir(), 'bootstrap-smoke-norefine-'));
     try {
-      const targetConfig = buildTargetConfig(work);
+      const targetConfig = SmokeTestConfig.forSchemasBase(work);
       const run = await SquashageRun.forTargetWithNullObserver({
         target:      'aonprd',
         targetConfig,
@@ -113,7 +115,7 @@ test('bootstrapDag smoke — proceeds past gate with refinements', async (t) => 
   await t.test('refineResult and build results populated when refinements exist', async () => {
     const work = await mkdtemp(join(tmpdir(), 'bootstrap-smoke-full-'));
     try {
-      const targetConfig = buildTargetConfig(work);
+      const targetConfig = SmokeTestConfig.forSchemasBase(work);
       const run = await SquashageRun.forTargetWithNullObserver({
         target:      'aonprd',
         targetConfig,

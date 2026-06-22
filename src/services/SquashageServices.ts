@@ -24,7 +24,7 @@ import { PrefixResolver } from '../classification/PrefixResolver.js';
 import type { PrefixResolutionInterface } from '../classification/PrefixResolver.js';
 import { SubjectIriPolicy } from '../induction/SubjectIriPolicy.js';
 import type { ShapeObservation } from '../induction/ShapeObservation.js';
-import type { TargetConfigInterface } from '../config/SquashageConfig.js';
+import type { SquashageRunConfigInterface } from '../config/SquashageConfig.js';
 import type { OutputConfigInterface } from '../config/OutputConfig.js';
 import { Logger } from '../modules/logger/logger.js';
 import { JsonTologyOntology } from '../ontology/JsonTologyOntology.js';
@@ -74,8 +74,8 @@ let coreSchemaCache: ReadonlyArray<JsonTologySchemaInputInterface> | null = null
  * inside the class — defaults live in `SquashageConfig` and the CLI.
  */
 export interface SquashageServicesOptionsInterface {
-  /** Resolved target config (the per-target slice of squashage.config.json). */
-  readonly targetConfig: TargetConfigInterface;
+  /** Resolved run config (the validated single-run squashage config). */
+  readonly targetConfig: SquashageRunConfigInterface;
   /** Target identifier (the key in `targets[]`). */
   readonly target: string;
   /** Resolved output config; CLI overrides already merged. */
@@ -107,7 +107,7 @@ export class SquashageServices {
   readonly outDir:       string;
   readonly schemasBase:  string;
   readonly runStartTime: string;
-  readonly targetConfig: TargetConfigInterface;
+  readonly targetConfig: SquashageRunConfigInterface;
   readonly subjectIri:   SubjectIriPolicy;
   /** Mutable per-run shape accumulator; populated by the `shape-observe` node. */
   readonly shapeCache:   Map<string, ShapeObservation>;
@@ -194,7 +194,7 @@ export class SquashageServices {
     outDir:       string;
     schemasBase:  string;
     runStartTime: string;
-    targetConfig: TargetConfigInterface;
+    targetConfig: SquashageRunConfigInterface;
     subjectIri:   SubjectIriPolicy;
     shapeCache:       Map<string, ShapeObservation>;
     refineSummaries:  { refinedCount: number; passthroughCount: number; runErrors: string[] };
@@ -377,7 +377,7 @@ export class SquashageServices {
     return ajv;
   }
 
-  static #resolveBaseIri(targetConfig: TargetConfigInterface): string {
+  static #resolveBaseIri(targetConfig: SquashageRunConfigInterface): string {
     const ontology  = targetConfig.ontology as Readonly<Record<string, unknown>> | undefined;
     const candidate = ontology?.['baseIri'];
     return typeof candidate === 'string' && candidate.length > 0
@@ -386,7 +386,7 @@ export class SquashageServices {
   }
 
   static #mintGraphs(
-    targetConfig: TargetConfigInterface,
+    targetConfig: SquashageRunConfigInterface,
     factory:      DataFactory,
   ): Readonly<Record<string, NamedNode>> {
     const rawGraphs = targetConfig.graphs ?? {};
@@ -397,7 +397,7 @@ export class SquashageServices {
   }
 
   static #buildSchemaPaths(
-    targetConfig: TargetConfigInterface,
+    targetConfig: SquashageRunConfigInterface,
     schemasBase:  string,
   ): { inferred: string; refinements: string; finals: string } {
     const raw = targetConfig as unknown as Readonly<Record<string, unknown>>;
@@ -411,7 +411,7 @@ export class SquashageServices {
   }
 
   static async #buildOntology(
-    targetConfig: TargetConfigInterface,
+    targetConfig: SquashageRunConfigInterface,
     schemasBase:  string,
   ): Promise<JsonTologyOntology | null> {
     const ontologyBlock = targetConfig.ontology as Readonly<Record<string, unknown>> | undefined;

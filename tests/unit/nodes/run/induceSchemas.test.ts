@@ -17,45 +17,51 @@ const noopLogger = {
   }),
 } as unknown as SquashageServices['logger'];
 
-const BASE_IRI      = 'https://example.org/vocab/';
-const targetConfig  = {
-  input:  '/tmp',
+const BASE_IRI     = 'https://example.org/vocab/';
+const targetConfig = {
+  input:  { basePath: '/tmp', format: 'json' },
   output: { kind: 'file', path: '/tmp/out.trig', format: 'trig' },
   ontology: { engine: 'json-tology', baseIRI: BASE_IRI },
 } as unknown as TargetConfigInterface;
 
-function makeState(): SquashageInduceRunState {
-  return new SquashageInduceRunState('test', new Date().toISOString());
+class InduceSchemasTestState {
+  static empty(): SquashageInduceRunState {
+    return new SquashageInduceRunState('test', new Date().toISOString());
+  }
 }
 
-function makeServices(shapeCache: SquashageServices['shapeCache']): Partial<SquashageServices> {
-  return {
-    logger:       noopLogger,
-    shapeCache,
-    targetConfig,
-  };
+class InduceSchemasTestServices {
+  static forCache(shapeCache: SquashageServices['shapeCache']): Partial<SquashageServices> {
+    return {
+      logger:       noopLogger,
+      shapeCache,
+      targetConfig,
+    };
+  }
 }
 
-async function runNode(
-  state:   SquashageInduceRunState,
-  context: { services: SquashageServices },
-): Promise<string> {
-  const result = await induceSchemasNode.execute(
-    Batch.of(state),
-    context as unknown as Parameters<typeof induceSchemasNode.execute>[1],
-  );
-  const keys = [...result.keys()];
-  if (keys.length === 0) throw new Error('node produced no output port');
-  return keys[0] as string;
+class InduceSchemasNodeRunner {
+  static async run(
+    state:   SquashageInduceRunState,
+    context: { services: SquashageServices },
+  ): Promise<string> {
+    const result = await induceSchemasNode.execute(
+      Batch.of(state),
+      context as unknown as Parameters<typeof induceSchemasNode.execute>[1],
+    );
+    const keys = [...result.keys()];
+    if (keys.length === 0) throw new Error('node produced no output port');
+    return keys[0] as string;
+  }
 }
 
 describe('induceSchemasNode — empty cache', () => {
   it('returns empty output; state.inducedSchemas stays null', async () => {
-    const state    = makeState();
-    const services = makeServices(new Map());
-    const output   = await runNode(state, { services: services as SquashageServices });
-    assert.equal(output,                 'empty');
-    assert.equal(state.inducedSchemas,   null);
+    const state    = InduceSchemasTestState.empty();
+    const services = InduceSchemasTestServices.forCache(new Map());
+    const output   = await InduceSchemasNodeRunner.run(state, { services: services as SquashageServices });
+    assert.equal(output,               'empty');
+    assert.equal(state.inducedSchemas, null);
   });
 });
 
@@ -66,9 +72,9 @@ describe('induceSchemasNode — populated cache', () => {
     ShapeObservationAccumulator.fold(obs, { name: 'Power Attack', _type: 'feat' });
     shapeCache.set('Feat', obs);
 
-    const state    = makeState();
-    const services = makeServices(shapeCache as SquashageServices['shapeCache']);
-    const output   = await runNode(state, { services: services as SquashageServices });
+    const state    = InduceSchemasTestState.empty();
+    const services = InduceSchemasTestServices.forCache(shapeCache as SquashageServices['shapeCache']);
+    const output   = await InduceSchemasNodeRunner.run(state, { services: services as SquashageServices });
 
     assert.equal(output, 'induced');
     assert.ok(state.inducedSchemas !== null, 'inducedSchemas should be set');
@@ -85,13 +91,13 @@ describe('induceSchemasNode — populated cache', () => {
     ShapeObservationAccumulator.fold(obs, { name: 'Sword' });
     shapeCache.set('Item', obs);
 
-    const state    = makeState();
+    const state       = InduceSchemasTestState.empty();
     const noOntology = {
       logger:       noopLogger,
       shapeCache:   shapeCache as SquashageServices['shapeCache'],
-      targetConfig: { input: '/tmp', output: {} } as unknown as TargetConfigInterface,
+      targetConfig: { input: { basePath: '/tmp', format: 'json' }, output: {} } as unknown as TargetConfigInterface,
     };
-    const output   = await runNode(state, { services: noOntology as unknown as SquashageServices });
+    const output = await InduceSchemasNodeRunner.run(state, { services: noOntology as unknown as SquashageServices });
     assert.equal(output,  'induced');
     assert.ok(state.inducedSchemas !== null, 'inducedSchemas should be set');
     assert.equal(state.inducedSchemas.classes.length, 1);

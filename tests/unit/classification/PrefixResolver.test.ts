@@ -30,25 +30,22 @@ import type { TargetConfigInterface } from '../../../src/config/SquashageConfig.
 // Helpers
 // ---------------------------------------------------------------------------
 
-/**
- * Builds a minimal {@link TargetConfigInterface} for testing.
- * `output` satisfies the schema but is irrelevant to PrefixResolver.
- */
-function buildTargetConfig(
-  ontology?: Record<string, unknown>,
-): TargetConfigInterface {
-  return {
-    input:    './data',
-    output:   { kind: 'file', path: './out.ttl' },
-    ontology: ontology as Readonly<Record<string, unknown>> | undefined,
-  };
+class PrefixResolverTestConfig {
+  /** Builds a minimal TargetConfigInterface for testing. */
+  static forOntology(ontology?: Record<string, unknown>): TargetConfigInterface {
+    return {
+      input:    { basePath: './data', format: 'json' },
+      output:   { kind: 'file', path: './out.ttl' },
+      ontology: ontology as Readonly<Record<string, unknown>> | undefined,
+    };
+  }
 }
 
-/**
- * Builds a minimal {@link InputSourceInterface}.
- */
-function buildSource(path: string, target = 'test'): InputSourceInterface {
-  return { target, path };
+class PrefixResolverTestSource {
+  /** Builds a minimal InputSourceInterface for testing. */
+  static forPath(path: string, target = 'test'): InputSourceInterface {
+    return { target, path };
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -57,7 +54,7 @@ function buildSource(path: string, target = 'test'): InputSourceInterface {
 
 describe('PrefixResolver — config wins', () => {
   it('returns source === config when all three pairs come from ontology.prefixes + baseIri', () => {
-    const cfg = buildTargetConfig({
+    const cfg = PrefixResolverTestConfig.forOntology({
       baseIri:  'https://2e.aonprd.com/ontology/',
       prefixes: {
         aon:   'https://2e.aonprd.com/',
@@ -78,7 +75,7 @@ describe('PrefixResolver — config wins', () => {
   });
 
   it('uses hash-terminated prefix entry as vocabulary when no baseIri', () => {
-    const cfg = buildTargetConfig({
+    const cfg = PrefixResolverTestConfig.forOntology({
       prefixes: {
         ex:   'https://example.com/',
         exvoc: 'https://example.com/vocab#',
@@ -91,7 +88,7 @@ describe('PrefixResolver — config wins', () => {
   });
 
   it('picks the lex-sorted first hash entry when multiple hash IRIs exist', () => {
-    const cfg = buildTargetConfig({
+    const cfg = PrefixResolverTestConfig.forOntology({
       prefixes: {
         zzz:  'https://z.example.com/vocab#',
         aaa:  'https://a.example.com/vocab#',
@@ -111,8 +108,8 @@ describe('PrefixResolver — config wins', () => {
 
 describe('PrefixResolver — derived from _source.path URL', () => {
   it('extracts instance base from https://2e.aonprd.com/ path URL', () => {
-    const cfg    = buildTargetConfig();
-    const source = buildSource('https://2e.aonprd.com/Feats.aspx?ID=750', 'aonprd');
+    const cfg    = PrefixResolverTestConfig.forOntology();
+    const source = PrefixResolverTestSource.forPath('https://2e.aonprd.com/Feats.aspx?ID=750', 'aonprd');
 
     const result = PrefixResolver.resolve('aonprd', cfg, source);
 
@@ -123,8 +120,8 @@ describe('PrefixResolver — derived from _source.path URL', () => {
   });
 
   it('falls back for graphs and vocabulary when only sampleSource URL is available', () => {
-    const cfg    = buildTargetConfig();
-    const source = buildSource('https://2e.aonprd.com/Feats.aspx?ID=750', 'aonprd');
+    const cfg    = PrefixResolverTestConfig.forOntology();
+    const source = PrefixResolverTestSource.forPath('https://2e.aonprd.com/Feats.aspx?ID=750', 'aonprd');
 
     const result = PrefixResolver.resolve('aonprd', cfg, source);
 
@@ -138,13 +135,13 @@ describe('PrefixResolver — derived from _source.path URL', () => {
     // Provide config prefix for graphs so no fallback fires for graphs.
     // But vocabulary still falls back → overall is fallback.
     // To get source === 'derived', ALL three pairs must not fall back and at least one is derived.
-    const cfg = buildTargetConfig({
+    const cfg = PrefixResolverTestConfig.forOntology({
       prefixes: {
         aonprdg:    'https://squashage.dev/graph/aonprd/',
         aonprd:     'https://squashage.dev/vocabulary/aonprd#',
       },
     });
-    const source = buildSource('https://2e.aonprd.com/Feats.aspx?ID=750', 'aonprd');
+    const source = PrefixResolverTestSource.forPath('https://2e.aonprd.com/Feats.aspx?ID=750', 'aonprd');
 
     const result = PrefixResolver.resolve('aonprd', cfg, source);
 
@@ -164,7 +161,7 @@ describe('PrefixResolver — derived from _source.path URL', () => {
 
 describe('PrefixResolver — fallback', () => {
   it('falls back to all synthetic namespaces when no config and no sampleSource', () => {
-    const cfg    = buildTargetConfig();
+    const cfg    = PrefixResolverTestConfig.forOntology();
     const result = PrefixResolver.resolve('aonprd', cfg, undefined);
 
     assert.equal(result.source, 'fallback');
@@ -177,8 +174,8 @@ describe('PrefixResolver — fallback', () => {
   });
 
   it('falls back when sampleSource path is a filesystem path, not a URL', () => {
-    const cfg    = buildTargetConfig();
-    const source = buildSource('./output/aonprd/feats-750.json', 'aonprd');
+    const cfg    = PrefixResolverTestConfig.forOntology();
+    const source = PrefixResolverTestSource.forPath('./output/aonprd/feats-750.json', 'aonprd');
 
     const result = PrefixResolver.resolve('aonprd', cfg, source);
 
@@ -193,8 +190,8 @@ describe('PrefixResolver — fallback', () => {
 
 describe('PrefixResolver — determinism', () => {
   it('returns deep-equal results for identical inputs called twice', () => {
-    const cfg    = buildTargetConfig();
-    const source = buildSource('https://2e.aonprd.com/Feats.aspx?ID=1', 'aonprd');
+    const cfg    = PrefixResolverTestConfig.forOntology();
+    const source = PrefixResolverTestSource.forPath('https://2e.aonprd.com/Feats.aspx?ID=1', 'aonprd');
 
     const r1 = PrefixResolver.resolve('aonprd', cfg, source);
     const r2 = PrefixResolver.resolve('aonprd', cfg, source);
@@ -203,7 +200,7 @@ describe('PrefixResolver — determinism', () => {
   });
 
   it('returns deep-equal results with undefined sampleSource called twice', () => {
-    const cfg = buildTargetConfig();
+    const cfg = PrefixResolverTestConfig.forOntology();
 
     const r1 = PrefixResolver.resolve('aonprd', cfg, undefined);
     const r2 = PrefixResolver.resolve('aonprd', cfg, undefined);
@@ -218,7 +215,7 @@ describe('PrefixResolver — determinism', () => {
 
 describe('PrefixResolver — sanitize', () => {
   it('lowercases and slugifies target with spaces', () => {
-    const cfg    = buildTargetConfig();
+    const cfg    = PrefixResolverTestConfig.forOntology();
     const result = PrefixResolver.resolve('My Target Name', cfg, undefined);
 
     assert.equal(result.instances.prefix,  'my-target-name');
@@ -228,7 +225,7 @@ describe('PrefixResolver — sanitize', () => {
   });
 
   it('slugifies target with dots and slashes', () => {
-    const cfg    = buildTargetConfig();
+    const cfg    = PrefixResolverTestConfig.forOntology();
     const result = PrefixResolver.resolve('path/to.target', cfg, undefined);
 
     assert.equal(result.instances.prefix, 'path-to-target');
@@ -236,14 +233,14 @@ describe('PrefixResolver — sanitize', () => {
   });
 
   it('slugifies target with UPPERCASE', () => {
-    const cfg    = buildTargetConfig();
+    const cfg    = PrefixResolverTestConfig.forOntology();
     const result = PrefixResolver.resolve('AoNPRD', cfg, undefined);
 
     assert.equal(result.instances.prefix, 'aonprd');
   });
 
   it('throws OutputConfigError when target sanitizes to empty', () => {
-    const cfg = buildTargetConfig();
+    const cfg = PrefixResolverTestConfig.forOntology();
 
     assert.throws(
       () => PrefixResolver.resolve('...', cfg, undefined),
@@ -256,7 +253,7 @@ describe('PrefixResolver — sanitize', () => {
   });
 
   it('throws OutputConfigError when target is only hyphens after sanitize', () => {
-    const cfg = buildTargetConfig();
+    const cfg = PrefixResolverTestConfig.forOntology();
 
     assert.throws(
       () => PrefixResolver.resolve('---', cfg, undefined),
@@ -271,8 +268,8 @@ describe('PrefixResolver — sanitize', () => {
 
 describe('PrefixResolver — host heuristic', () => {
   const resolveHost = (host: string): PrefixResolutionInterface => {
-    const cfg    = buildTargetConfig();
-    const source = buildSource(`https://${host}/SomePage`, 'test');
+    const cfg    = PrefixResolverTestConfig.forOntology();
+    const source = PrefixResolverTestSource.forPath(`https://${host}/SomePage`, 'test');
     return PrefixResolver.resolve('test', cfg, source);
   };
 
@@ -295,8 +292,8 @@ describe('PrefixResolver — host heuristic', () => {
   });
 
   it('co.uk (degenerate — all labels filtered) → falls back for instances', () => {
-    const cfg    = buildTargetConfig();
-    const source = buildSource('https://co.uk/SomePage', 'test');
+    const cfg    = PrefixResolverTestConfig.forOntology();
+    const source = PrefixResolverTestSource.forPath('https://co.uk/SomePage', 'test');
     const result = PrefixResolver.resolve('test', cfg, source);
 
     // Host heuristic yields nothing → instance base falls back to synthetic namespace.
@@ -316,7 +313,7 @@ describe('PrefixResolver — host heuristic', () => {
 
 describe('PrefixResolver — graph base from config', () => {
   it('detects graph base by /graph/ path segment in IRI', () => {
-    const cfg = buildTargetConfig({
+    const cfg = PrefixResolverTestConfig.forOntology({
       prefixes: {
         mygraph: 'https://custom.example.com/graph/mydata/',
       },
@@ -329,7 +326,7 @@ describe('PrefixResolver — graph base from config', () => {
 
   it('detects graph base by conventional <slug>g prefix label', () => {
     const slug = 'aonprd';
-    const cfg  = buildTargetConfig({
+    const cfg  = PrefixResolverTestConfig.forOntology({
       prefixes: {
         aonprdg: 'https://custom.example.com/any-path/',
       },

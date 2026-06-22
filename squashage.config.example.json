@@ -1,93 +1,66 @@
 {
+  "name": "your-target",
   "input": {
-    "basePath": "./output",
+    "basePath": "./output/your-target",
     "format": "json"
   },
-  "targets": {
-    "your-target": {
-      "input": "./output/your-target",
-      "concurrency": 4,
-      "graphs": {
-        "default": "https://example.com/graph/default"
-      },
-      "classification": {
-        "source": true,
-        "structural": [
-          {
-            "className": "YourClass",
-            "priority": 10,
-            "predicate": {
+  "output": {
+    "kind": "file",
+    "path": "./graphs/your-target.trig",
+    "mode": "dataset"
+  },
+  "concurrency": 4,
+  "graphs": {
+    "default": "https://example.com/graph/default"
+  },
+  "classification": {
+    "source": true,
+    "structural": [
+      {
+        "className": "YourClass",
+        "priority": 10,
+        "predicate": {
+          "path": "/_type",
+          "equals": "your-type"
+        },
+        "reasons": [
+          "_type=your-type (structural)"
+        ]
+      }
+    ],
+    "rules": [
+      {
+        "className": "YourClass",
+        "priority": 20,
+        "predicate": {
+          "all": [
+            {
               "path": "/_type",
               "equals": "your-type"
             },
-            "reasons": [
-              "_type=your-type (structural)"
-            ]
-          }
-        ],
-        "rules": [
-          {
-            "className": "YourClass",
-            "priority": 20,
-            "predicate": {
-              "all": [
-                {
-                  "path": "/_type",
-                  "equals": "your-type"
-                },
-                {
-                  "path": "/id",
-                  "exists": true
-                }
-              ]
-            },
-            "reasons": [
-              "_type=your-type",
-              "id present"
-            ]
-          }
-        ],
-        "ontology": {
-          "classes": {
-            "YourClass": "https://example.com/class/YourClass"
-          }
-        },
-        "conflict": {
-          "onConflict": "quarantine",
-          "evidence": true
-        }
-      },
-      "quarantine": {
-        "dir": "./graphs/quarantine/your-target"
-      },
-      "output": {
-        "kind": "file",
-        "path": "./graphs/your-target.trig",
-        "mode": "dataset"
-      }
-    },
-    "your-target-bucketed": {
-      "input": "./output/your-target",
-      "output": {
-        "kind": "file",
-        "path": "./graphs/your-target",
-        "format": "trig",
-        "bucketing": {
-          "enabled": true,
-          "strategy": "per-graph-iri",
-          "defaultGraphFilename": "default",
-          "defaultGraphCatalogIri": "urn:x-arq:DefaultGraphNode"
-        },
-        "catalog": {
-          "enabled": true,
-          "rewriteRoots": [
             {
-              "uriStartString": "https://example.com/graph/your-target/",
-              "rewritePrefix": "./"
+              "path": "/id",
+              "exists": true
             }
           ]
-        }
+        },
+        "reasons": [
+          "_type=your-type",
+          "id present"
+        ]
       }
+    ],
+    "ontology": {
+      "classes": {
+        "YourClass": "https://example.com/class/YourClass"
+      }
+    },
+    "conflict": {
+      "onConflict": "quarantine",
+      "evidence": true
     }
+  },
+  "quarantine": {
+    "dir": "./graphs/quarantine/your-target"
   }
 }
