@@ -1,11 +1,13 @@
-# Squashage
+<p align="center"><a href="https://studnicky.github.io/Squashage/"><img src="https://raw.githubusercontent.com/Studnicky/Squashage/master/docs/public/og-image.png" alt="Squashage: JSON → deterministic RDF graphs" width="1200" /></a></p>
+
+# @studnicky/squashage
+
+> Graph reconstitution pipeline; classifies JSON records and squashes them into deterministic RDF.
 
 [![CI](https://github.com/Studnicky/Squashage/actions/workflows/ci.yml/badge.svg)](https://github.com/Studnicky/Squashage/actions/workflows/ci.yml)
 [![docs](https://img.shields.io/badge/docs-studnicky.github.io-8b5fbf)](https://studnicky.github.io/Squashage/)
 [![node](https://img.shields.io/badge/node-%3E%3D24.0.0-brightgreen)](package.json)
-[![version](https://img.shields.io/badge/version-0.1.0--beta.1-8b5fbf)](CHANGELOG.md)
-
-Graph reconstitution pipeline. Feed it structured JSON records. It classifies each one, reconstitutes the lot into a deterministic RDF graph, and squashes the result into a single file you can actually serve.
+[![version](https://img.shields.io/badge/version-0.7.1-8b5fbf)](CHANGELOG.md)
 
 **Upstream:** [Ripperoni](https://github.com/Studnicky/Ripperoni) produces the JSON records Squashage consumes. Pair them to go from raw web pages to structured RDF.
 

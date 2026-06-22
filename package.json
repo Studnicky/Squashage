@@ -53,8 +53,9 @@
     "viz:fingerprints": "tsx scripts/build-fingerprints.ts",
     "viz:refresh-vendor": "node scripts/refresh-viz-vendor.js",
     "docs:render-dags": "node --import tsx scripts/render-dags.ts",
-    "docs:dev": "npm run docs:render-dags && vitepress dev docs",
-    "docs:build": "npm run docs:render-dags && vitepress build docs",
+    "docs:render-favicons": "node scripts/render-favicons.mjs",
+    "docs:dev": "npm run docs:render-dags && npm run docs:render-favicons && vitepress dev docs",
+    "docs:build": "npm run docs:render-dags && npm run docs:render-favicons && vitepress build docs",
     "docs:preview": "vitepress preview docs"
   },
   "dependencies": {

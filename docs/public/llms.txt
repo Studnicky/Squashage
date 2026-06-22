@@ -23,21 +23,15 @@ Squashage is a TypeScript pipeline for converting structured JSON records into d
 - [Taxonomic narrowing](https://studnicky.github.io/Squashage/usage/taxonomic-narrowing): collapses supertype proposals when a more-specific subtype is present, using the OWL `subClassOf` transitive closure from the configured TBox. Runs before the conflict resolver.
 - [Ontology (json-tology)](https://studnicky.github.io/Squashage/usage/ontology): two modes — hand-map (flat class → IRI map) and json-tology engine (derives SHACL shapes, JSON Schemas, and OWL TBox from a single ontology definition file).
 - [Output](https://studnicky.github.io/Squashage/usage/output): one file per target. Formats: Turtle, TriG, N-Triples, N-Quads, JSON-LD. Atomic write by default; stream mode available for very large datasets.
-- [Streaming output](https://studnicky.github.io/Squashage/usage/streaming-output): `encoding: stream` eliminates the in-memory quad accumulation ceiling. File handle opened once; each quad serialised immediately on emission.
 - [Provenance (PROV-O sidecar)](https://studnicky.github.io/Squashage/usage/provenance): writes PROV-O classification metadata into a dedicated named graph alongside the ABox. SPARQL-queryable provenance without log scraping.
 - [Viz](https://studnicky.github.io/Squashage/usage/viz): `squashage viz --in graph.jsonld --out graph.html` produces a self-contained cytoscape HTML document — no network, no `node_modules` required to open.
 - [Plugins](https://studnicky.github.io/Squashage/usage/plugins): a plugin calls `TaskRegistry.register` or `TaskRegistry.registerHook` at module load time. Config lists plugin paths (globs, absolute, or relative). Load failure exits code 2 before any record is processed.
-- [Cache](https://studnicky.github.io/Squashage/usage/cache): `ScraperCache` — sharded, content-addressed pointer cache. Stores fetched payloads so subsequent runs skip the network.
-- [Crawler](https://studnicky.github.io/Squashage/usage/crawler): `LinkLister` recursively follows links from starting URLs and returns the set matching a target pattern. Hands the URL list to a scraper.
-- [Scrapers](https://studnicky.github.io/Squashage/usage/scrapers): `HtmlScraper` (native fetch + cheerio) and `MediaWikiScraper` (MediaWiki JSON API, three enumeration modes).
-- [MediaWiki](https://studnicky.github.io/Squashage/usage/mediawiki): hits the MediaWiki JSON API directly — no mwn, no axios, no browser. Category listing with full pagination, 50-page batch wikitext fetches.
+- [Taxonomy (upper ontology)](https://studnicky.github.io/Squashage/usage/taxonomy): upper ontology wiring — how the TBox is loaded, how subClassOf closure is computed, and how the narrowing pass consumes it.
 
 ## Reference
 
 - [Architecture](https://studnicky.github.io/Squashage/architecture): pipeline phases, package boundaries, output contract. JSON record → classify → normalize → RDF/JS quads → serialized file.
-- [Context silo (plugin contract)](https://studnicky.github.io/Squashage/context-silo): the cross-plugin coordination protocol. Well-known keys on `PipelineContextInterface` (run-wide) and `PipelineStateInterface` (per-record). Who writes, who reads, what guarantees.
-- [Classifier engines (deep dive)](https://studnicky.github.io/Squashage/classification-engines): why each engine exists, the determinism guarantees, considered alternatives that did not ship.
-- [Roadmap](https://studnicky.github.io/Squashage/roadmap): shipped features (v2.x), planned work, and the v2.0 ground-up rewrite history from PathRipper.
+- [Roadmap](https://studnicky.github.io/Squashage/roadmap): shipped features, planned work, and the v2.0 ground-up rewrite history from PathRipper.
 
 ## Demo
 
