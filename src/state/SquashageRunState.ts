@@ -1,6 +1,7 @@
 import { NodeStateBase } from '@studnicky/dagonizer';
 import type { JsonObjectType, JsonValueType } from '@studnicky/dagonizer/entities';
 
+import type { SquashageServices } from '../services/SquashageServices.js';
 import type { RecordLocator } from './schemas/RecordLocator.js';
 import type { RecordSummary } from './schemas/RecordSummary.js';
 
@@ -87,6 +88,13 @@ export class SquashageRunState extends NodeStateBase {
    */
   totalQuadCount: number;
 
+  /**
+   * Services reference injected by SquashageRun before execute().
+   * Not part of the snapshot — used by RecordFoldGather to write worker quads
+   * to services.dataset after the gather phase receives each worker clone.
+   */
+  servicesRef: SquashageServices | null;
+
   constructor(target: string, runStartTime: string) {
     super();
     this.locators         = [];
@@ -100,6 +108,7 @@ export class SquashageRunState extends NodeStateBase {
     this.sampleSummaries  = [];
     this.errorRollup      = { errorRecordCount: 0, sampleMessages: [] };
     this.totalQuadCount   = 0;
+    this.servicesRef      = null;
   }
 
   override clone() {
@@ -118,6 +127,7 @@ export class SquashageRunState extends NodeStateBase {
       sampleMessages:   [...this.errorRollup.sampleMessages],
     };
     base.totalQuadCount   = this.totalQuadCount;
+    base.servicesRef      = this.servicesRef;
     return base;
   }
 

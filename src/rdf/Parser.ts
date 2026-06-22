@@ -219,6 +219,35 @@ export class Parser {
     }
   }
 
+  /**
+   * Synchronously parses an N-Quads string and returns the extracted quads.
+   *
+   * @remarks
+   * n3's `Parser.parse()` callback fires synchronously — each quad callback is
+   * called inline, and the end-of-document callback fires before `parse()` returns.
+   * This is the worker snapshot restore path — `NodeStateBase.restoreData()` is not
+   * async, so parsing must be synchronous.
+   *
+   * @param nquads - N-Quads document string (empty string returns empty array).
+   * @returns Array of parsed quads.
+   * @throws {Error} When the document is syntactically invalid.
+   *
+   * @since 2.5.0
+   */
+  public static parseNquadsSync(nquads: string): Quad[] {
+    if (nquads.length === 0) return [];
+    const parser = new N3Parser({ format: 'N-Quads' });
+    const quads: Quad[] = [];
+
+    type N3Callback = Parameters<typeof parser.parse>[1];
+    parser.parse(nquads, ((error: Error | null, quad: Quad | null) => {
+      if (error !== null) throw error;
+      if (quad !== null) quads.push(quad);
+    }) as unknown as N3Callback);
+
+    return quads;
+  }
+
   // ---------------------------------------------------------------------------
   // Private dispatch helpers
   // ---------------------------------------------------------------------------

@@ -375,6 +375,7 @@ export class SquashageRun {
   /** Returns the dagonizer Execution for the run-scope DAG. */
   execute(initialState?: SquashageRunState): ReturnType<SquashageDagonizer<NodeStateInterface>['execute']> {
     const state = initialState ?? new SquashageRunState(this.services.target, this.services.runStartTime);
+    state.servicesRef = this.services;
     return this.dispatcher.execute(RUN_DAG_NAME, state);
   }
 

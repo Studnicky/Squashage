@@ -547,6 +547,33 @@ export class Serializer {
   // ---------------------------------------------------------------------------
 
   /**
+   * Synchronously serializes an array of RDF quads to an N-Quads string.
+   *
+   * @remarks
+   * Uses n3's `Writer.end()` callback path, which fires synchronously when no
+   * transform stream is attached and all quads have been added before the call.
+   * This is the worker snapshot path — snapshot production must be synchronous
+   * because `NodeStateBase.snapshotData()` is not async.
+   *
+   * @param quads - Quads to serialize.
+   * @returns A complete N-Quads document string (empty string when `quads` is empty).
+   *
+   * @since 2.5.0
+   */
+  public static serializeNquadsSync(quads: ReadonlyArray<Quad>): string {
+    if (quads.length === 0) return '';
+    const writer = new Writer({ format: 'N-Quads' });
+    for (const quad of quads) {
+      writer.addQuad(quad);
+    }
+    let result = '';
+    writer.end((_error, output) => {
+      result = output as string;
+    });
+    return result;
+  }
+
+  /**
    * Serializes quads using `n3.Writer` for Turtle-family formats.
    */
   private static serializeN3(

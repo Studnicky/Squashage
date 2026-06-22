@@ -26,8 +26,10 @@ import type { GatherConfigType } from '@studnicky/dagonizer/types';
 import type { NodeStateInterface } from '@studnicky/dagonizer';
 import type { GatherRecordType, StateAccessorInterface } from '@studnicky/dagonizer/contracts';
 
+import type { Quad } from '@rdfjs/types';
 import type { SquashageRecordState } from '../state/SquashageRecordState.js';
 import type { RecordSummary } from '../state/schemas/RecordSummary.js';
+import { SquashageRunState } from '../state/SquashageRunState.js';
 import type { RecordErrorRollupType } from '../state/SquashageRunState.js';
 
 // ── Module constants ───────────────────────────────────────────────────────────
@@ -92,6 +94,8 @@ export class RecordFoldGather extends GatherStrategy {
     state: NodeStateInterface,
     accessor: StateAccessorInterface,
   ): void {
+    const runState = state instanceof SquashageRunState ? state : null;
+
     for (const item of batch) {
       const record: GatherRecordType = item.state;
       const cloneState = record.cloneState as SquashageRecordState;
@@ -103,6 +107,16 @@ export class RecordFoldGather extends GatherStrategy {
       this.foldSampleRing(summary);
       this.foldErrors(cloneState);
       this.acc.totalQuadCount += cloneState.squashedQuads.length;
+
+      // Write worker quads to the main-process dataset when a services reference
+      // is available. In non-worker (in-process) mode squashedQuads are written
+      // to the dataset by OntologyProjectionNode and cleared before arrive here,
+      // so iterating an empty array is a safe no-op.
+      if (runState !== null && runState.servicesRef !== null) {
+        for (const quad of cloneState.squashedQuads as Quad[]) {
+          runState.servicesRef.dataset.add(quad);
+        }
+      }
 
       RecordFoldGather.mirrorToState(this.acc, state, accessor);
     }

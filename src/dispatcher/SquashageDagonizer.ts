@@ -32,6 +32,10 @@ export class SquashageDagonizer<TState extends NodeStateInterface>
   #lastActivity:          NamedNode | null = null;
   readonly #activeByNode: Map<string, NamedNode> = new Map();
 
+  get squashageServices(): SquashageServices {
+    return this.#services;
+  }
+
   constructor(options: SquashageDagonizerOptionsInterface) {
     super({
       services: options.services,

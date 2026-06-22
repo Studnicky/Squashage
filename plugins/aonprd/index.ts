@@ -29,7 +29,7 @@ import { aonprdPluginConfig }                   from './aonprd.plugin.config.js'
 
 const PLUGIN_DIR: string = dirname(fileURLToPath(import.meta.url));
 
-async function buildOntology(): Promise<JsonTologyOntology> {
+export async function buildOntology(): Promise<JsonTologyOntology> {
   const { baseIRI, schemas } = aonprdPluginConfig.ontology;
 
   const [coreInputs, extractedInputs] = await Promise.all([
@@ -55,6 +55,9 @@ async function buildOntology(): Promise<JsonTologyOntology> {
 export async function register(dispatcher: SquashageDagonizer<NodeStateInterface>): Promise<void> {
   // ── ontology + squash node ──────────────────────────────────────────────────
   const ontology = await buildOntology();
+  // Expose the ontology on services so framework builtins that read
+  // `services.ontology` (ontology-emit, classify:shacl-shape) get the value.
+  dispatcher.squashageServices.ontology = ontology;
   dispatcher.registerNode(new OntologyProjectionNode(ontology));
 
   // ── classifier nodes ────────────────────────────────────────────────────────

@@ -1,6 +1,9 @@
 import { NodeStateBase } from '@studnicky/dagonizer';
 import type { JsonObjectType, JsonValueType } from '@studnicky/dagonizer/entities';
 
+import type { Quad } from '@rdfjs/types';
+import { Parser } from '../rdf/Parser.js';
+import { Serializer } from '../rdf/Serializer.js';
 import type { ClassificationEvidence } from './schemas/ClassificationEvidence.js';
 import type { ClassificationProposal } from './schemas/ClassificationProposal.js';
 import type { InputSource } from './schemas/InputSource.js';
@@ -72,6 +75,7 @@ export class SquashageRecordState extends NodeStateBase {
       input:            this.input            as unknown as JsonValueType,
       proposals:        this.proposals        as unknown as JsonValueType,
       classification:   (this.classification ?? null) as unknown as JsonValueType,
+      squashedNQuads:   Serializer.serializeNquadsSync(this.squashedQuads as Quad[]),
       quarantineBucket: (this.quarantineBucket ?? null) as unknown as JsonValueType,
       recordPath:       this.recordPath,
       recordLine:       this.recordLine,
@@ -105,6 +109,10 @@ export class SquashageRecordState extends NodeStateBase {
     this.classification = isPlainObject(classification)
       ? classification as unknown as ClassificationEvidence
       : null;
+    const nquads = snap['squashedNQuads'];
+    if (typeof nquads === 'string' && nquads.length > 0) {
+      this.squashedQuads = Parser.parseNquadsSync(nquads);
+    }
     const bucket = snap['quarantineBucket'];
     this.quarantineBucket = bucket === 'unknown' || bucket === 'conflicts' || bucket === 'projection' || bucket === 'output'
       ? bucket

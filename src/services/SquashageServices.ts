@@ -80,11 +80,11 @@ export class SquashageServices {
    * Plugin-supplied ontology engine. Null when no plugin registers one.
    *
    * Framework nodes (`ontology-emit`, `classify:shacl-shape`) guard on null
-   * and skip gracefully. Plugins that need an ontology construct their own
-   * instance (e.g. `new OntologyProjectionNode(ontology)`) rather than
-   * relying on the framework to build it from config.
+   * and skip gracefully. Plugins set this field in their `register(dispatcher)`
+   * call after building their ontology instance, so framework builtins that
+   * read `services.ontology` receive the value.
    */
-  readonly ontology:     JsonTologyOntology | null;
+  ontology:     JsonTologyOntology | null;
   readonly quarantine:   QuarantineWriter;
   readonly output:       OutputConfigInterface;
   readonly target:       string;

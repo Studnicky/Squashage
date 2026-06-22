@@ -38,7 +38,7 @@
   },
   "scripts": {
     "prebuild": "rm -rf dist",
-    "build": "tsc --noEmit false && npm run build:plugins && npm run build:assets",
+    "build": "tsc --noEmit false && npm run build:plugins && npm run build:assets && npm run docs:render-dags",
     "build:assets": "node scripts/copy-dag-assets.mjs",
     "author:dags": "node --import tsx scripts/author-dags.ts",
     "typecheck": "tsc --noEmit",

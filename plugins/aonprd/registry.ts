@@ -36,13 +36,13 @@ import { recordHealthGateNode }      from '../../src/nodes/record/recordHealthGa
 import { recordQuarantineNode }      from '../../src/nodes/record/recordQuarantine.js';
 import { outputProvenanceNode }      from '../../src/nodes/record/outputProvenance.js';
 import { OntologyProjectionNode }    from '../../src/nodes/record/ontologyProjection.js';
-import { defaultSquashNode }         from '../../src/nodes/record/squashNode.js';
 
 import { DiscriminatorClassifierNode } from '../../src/nodes/record/classifiers/DiscriminatorClassifierNode.js';
 import { UrlPatternClassifierNode }    from '../../src/nodes/record/classifiers/UrlPatternClassifierNode.js';
 import { StructuralClassifierNode }    from '../../src/nodes/record/classifiers/StructuralClassifierNode.js';
 import { ClassifyConflictNode }        from '../../src/nodes/record/classifyConflict.js';
 import { aonprdPluginConfig }          from './aonprd.plugin.config.js';
+import { buildOntology }               from './index.js';
 
 // ─── WorkerServicesConfigType ─────────────────────────────────────────────────
 
@@ -104,12 +104,12 @@ const aonprdRegistry: RegistryModuleInterface<SquashageServices> = {
       readFileSync(join(PLUGIN_DIR, 'aonprd-record.dag.jsonld'), 'utf-8'),
     );
 
-    // Select the squash node: use OntologyProjectionNode when an ontology engine
-    // is configured (the normal aonprd production path), fall back to the default
-    // rdf:type-only node otherwise.
-    const squashNode = services.ontology !== null
-      ? new OntologyProjectionNode(services.ontology)
-      : defaultSquashNode;
+    // Build the ontology and expose it on services so framework builtins that
+    // read `services.ontology` (ontology-emit, classify:shacl-shape) receive
+    // the value. Workers always use OntologyProjectionNode — no fallback.
+    const ontology = await buildOntology();
+    services.ontology = ontology;
+    const squashNode = new OntologyProjectionNode(ontology);
 
     return {
       bundle: {

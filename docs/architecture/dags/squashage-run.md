@@ -9,8 +9,11 @@ flowchart TB
   %% squashage:run (v1.0)
   walk-input
   walk-input[walk-input]
-  walk-input -->|walked| process-all-records
+  walk-input -->|walked| index-entities
   walk-input -->|empty| rdfjs-finalize
+  index-entities[index-entities]
+  index-entities -->|indexed| process-all-records
+  index-entities -->|skipped| process-all-records
   process-all-records[/process-all-records/]
   process-all-records -->|all-success| enrich-entity-link
   process-all-records -->|partial| enrich-entity-link
