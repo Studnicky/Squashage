@@ -186,11 +186,11 @@ export class SquashageRun {
     // (which adds classifier nodes), and returns the plugin's DAGs sorted in
     // registration order.  DAGs are registered AFTER registerBundle so that all
     // framework nodes the plugin DAGs reference are already present.
-    // Prefer an explicit pluginsDir. Default to process.cwd()/plugins so that
-    // both tsx test runs (CWD = project root) and compiled dist/ usage find the
-    // plugins/ directory reliably. import.meta.dirname is NOT used here because
-    // its resolution differs between tsx (points at src/) and dist/ builds.
-    const pluginsDir = options.pluginsDir ?? join(process.cwd(), 'plugins');
+    // Resolve plugins/ relative to this module file. new URL() with import.meta.url
+    // is always defined in ESM and resolves correctly in both tsx (source) and
+    // compiled dist/ contexts — unlike import.meta.dirname which was added in Node 21.2.
+    const pluginsDir = options.pluginsDir
+      ?? new URL('../plugins', import.meta.url).pathname;
     const pluginNs   = options.pluginNamespace;
     let pluginDags: ReadonlyArray<DAGType> | null = null;
     if (pluginNs !== undefined) {
